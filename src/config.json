@@ -1,0 +1,6 @@
+{
+	"sample_sheet": "samplesheet.txt",
+	"amplicon_info": "ampliconinfo.txt",
+	"sortparamsdir": "sortParams",
+	"fastqdir": "fastq"
+}

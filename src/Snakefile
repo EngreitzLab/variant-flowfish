@@ -1,0 +1,305 @@
+###############################################################################
+
+### SNAKEMAKE PIPELINE FOR ANALYSIS OF FLOWFISH DATA
+### Benjamin Doughty, 190123
+### Adapted from Tejal/Charlie/Jesse/Ben's FlowFISH code
+
+###############################################################################
+
+# imports
+from glob import glob
+import pandas as pd
+
+# populate variables from config file
+configfile: "/seq/lincRNA/Ben/LanderLab-EP-Prediction/src/BFF/config.json"
+
+# global variables
+codedir = "/seq/lincRNA/Ben/LanderLab-EP-Prediction/src/BFF"
+sortparamsdir = config['sortparamsdir']
+fastqdir = config['fastqdir']
+n_reps = 2 # config['n_reps']
+
+def parse_sample_sheet(path_to_sample_sheet):
+    return pd.read_table(path_to_sample_sheet)
+
+sample_sheet = parse_sample_sheet(config['sample_sheet'])
+
+# Screen    Experiment    Amplicon    Spike   SortParam   Plate   Row
+# IL2RA-1   IL2RA-FF   rs61839660  Yes     IL2RA-1     8       A
+
+def parse_amplicon_info(path_to_amplicon_info):
+    return pd.read_table(path_to_amplicon_info)
+
+amplicon_info = parse_amplicon_info(config['amplicon_info'])
+
+# Amplicon  Seq     Guide   Read 
+# HEK4      ATCG    ATCG    2
+
+rule all:
+    input: ['{experiment}.average_effects.txt'.format(experiment=experiment) for experiment in sample_sheet['Experiment'].unique()]
+
+# grab screens that should be compared
+def compare_reps_helper(wildcards):
+    experiment = wildcards.experiment
+    screens = pd.unique(sample_sheet.loc[sample_sheet['Experiment'] == experiment, 'Screen'])
+    return ['{screen}/{screen}.combined_effects.txt'.format(screen=screen) for screen in screens]
+
+rule compare_bio_reps:
+    input:
+        compare_reps_helper
+    output:
+        scatter='{experiment}.scatter_reps.png',
+        boxplot='{experiment}.effects_boxplot.png',
+        hist='{experiment}.effects_hist.png',
+        avg_eff='{experiment}.average_effects.txt'
+    params:
+        codedir=codedir
+    shell:
+        "python {params.codedir}/compare_bio_reps.py -s {output.scatter} -b {output.boxplot} \
+            -t {output.hist} -a {output.avg_eff} -i {input}"
+
+# need a way of finding all of the different amplicons that should be considered part of the same screen
+def summarize_screen_helper(wildcards):
+    screen = wildcards.screen
+    amplicons = pd.unique(sample_sheet.loc[sample_sheet['Screen'] == screen, 'Amplicon'])
+    targets = []
+    for amplicon in amplicons:
+        for guide in amplicon_info.loc[amplicon_info.Amplicon == amplicon, 'Guide']:
+            targets.append('{}/{}-{}.corrected_effects.txt'.format(screen, amplicon, guide))
+    return targets
+
+rule summarize_screen:
+    input:
+        summarize_screen_helper
+    output:
+        screen_df='{screen}/{screen}.combined_effects.txt'
+    params:
+        codedir=codedir
+    shell:
+        "python {params.codedir}/summarize_screen.py -o {output} -i {input}"
+
+# This makes sure to grab all the possible files (if there's more than one guide per amplicon)
+# this means that correct_with_spikein has to handle combining multiple guides...
+def correct_with_spike_helper(wildcards):
+    spike = '{}/{}-{}.Spike.raw_effects.txt'.format(wildcards.screen, wildcards.amplicon, wildcards.guide)
+    nospike = '{}/{}-{}.NoSpike.raw_effects.txt'.format(wildcards.screen, wildcards.amplicon, wildcards.guide)
+    # spike = []
+    # nospike = []
+    # for g in amplicon_info.loc[amplicon_info.Amplicon == wildcards.amplicon, 'Guide']:
+    #     spike.append('{}/{}-{}.Spike.raw_effects.txt'.format(wildcards.screen, wildcards.amplicon, g))
+    #     nospike.append('{}/{}-{}.NoSpike.raw_effects.txt'.format(wildcards.screen, wildcards.amplicon, g))
+    return {'spike': spike, 'nospike': nospike}
+
+# join each amplicon with its spiked-in equivalent such that we can correct the allelic expression levels
+rule correct_with_spikein:
+    input:
+        unpack(correct_with_spike_helper)
+        #spike='{screen}/{amplicon}.Spike.raw_effects.txt',
+        #nospike='{screen}/{amplicon}.NoSpike.raw_effects.txt'
+    output:
+        '{screen}/{amplicon}-{guide}.corrected_effects.txt'
+    log:
+        '{screen}/{amplicon}-{guide}.correct_log.txt'
+    params:
+        codedir=codedir
+    shell:
+        "python {params.codedir}/correct_with_spikein.py -n {input.nospike} -s {input.spike} -c {output} -l {log}"
+
+# NOTE -- do we want sortparams to be in the input? 
+# I think so but not necessarily (since it doesn't have to be generated)
+def convert_screenname_to_plate_format(wildcards):
+    screen, amplicon, guide, spike = wildcards.screen, wildcards.amplicon, wildcards.guide, wildcards.spike
+    counts = '{}/{}-{}.{}.counts.txt'.format(screen, amplicon, guide, spike)
+    design = '{}/{}-{}.{}.design.txt'.format(screen, amplicon, guide, spike)
+    # sortparams = sample_sheet.loc[(sample_sheet['Screen'] == screen) &
+    #                               (sample_sheet['Amplicon'] == amplicon) &
+    #                               (sample_sheet['Spike'] == spike), 'SortParam'].values[0]
+    return {'counts': counts, 'design': design}#, 'sortparams': sortparams}
+
+# run mle to calculate the effect sizes
+rule calculate_allelic_effect_sizes:
+    input:
+        unpack(convert_screenname_to_plate_format)
+    output:
+        '{screen}/{amplicon}-{guide}.{spike}.raw_effects.txt'
+    log:
+        '{screen}/{amplicon}-{guide}.{spike}.mle_log.txt'
+    params:
+        sortparamsdir=sortparamsdir,
+        sortparams=lambda wildcards: sample_sheet.loc[(sample_sheet['Screen'] == wildcards.screen) &
+                                                      (sample_sheet['Amplicon'] == wildcards.amplicon) &
+                                                      (sample_sheet['Spike'] == wildcards.spike), 'SortParam'].values[0] + '.txt'
+    shell:
+        '/seq/lincRNA/Ben/LanderLab-EP-Prediction/src/BFF/run_mle.sh {input.design} {input.counts} {params.sortparamsdir} {params.sortparams} {output} {log}'
+
+        # 'Rscript /seq/lincRNA/Ben/scripts/EstimateEffectsFromBins_BFF2.R \
+        #     --wd {wildcards.screen} \
+        #     --designDocLocation {input.design} --countsLocation {input.counts} \
+        #     --repSortParamsloc {params.sortparamsdir}/{params.sortparams} \
+        #     --output1 {output}'
+
+def write_design_file(counts_file, design):
+    counts = pd.read_table(counts_file, index_col=0)
+    ref_seq = counts[counts.columns[0]].idxmax() # note, this may not always work
+    df = pd.DataFrame()
+    df['MappingSequence'] = counts.index
+    df['OligoID'] = df.MappingSequence
+    df['OffTargetScore'] = 200
+    df['chr'] = 'NA'
+    df['start'] = 0
+    df['end'] = 0
+    df['name'] = '*'
+    df['score'] = '*'
+    df['strand'] = '*'
+    df['GuideSequence'] = '*'
+    df['GuideSequenceMinusG'] = '*'
+    df['target'] = '*'
+    df['subpool'] = '*'
+    design_doc = df[['chr', 'start', 'end', 'name', 'score', 'strand', 'GuideSequence', 'GuideSequenceMinusG', 'MappingSequence', 'OffTargetScore', 'target', 'subpool', 'OligoID']]
+    design_doc.loc[design_doc['MappingSequence'] == ref_seq, 'target'] = 'negative_control'
+    design_doc.to_csv(design, sep='\t')
+
+# use the alleles from above to write a design file for feeding into mle
+## NOTE - NOW THAT WE HAVE OWN MLE, DO WE NEED THIS??
+rule write_design_file:
+    input:
+        counts='{screen}/{amplicon}-{guide}.{spike}.counts.txt'
+    output:
+        design='{screen}/{amplicon}-{guide}.{spike}.design.txt'
+    run:
+        write_design_file(input.counts, output.design)
+
+# need a way of figuring out how many reps we want to do, we'll assume 2 for now, but this might change
+def collate_individual_counts_helper(wildcards):
+    screen, amplicon, guide, spike = wildcards.screen, wildcards.amplicon, wildcards.guide, wildcards.spike
+    return ['{}/{}-{}.{}.{}.individual_counts.txt'.format(screen, amplicon, guide, spike, rep+1) for rep in range(n_reps)]
+
+# combine PCR reps 
+rule merge_count_table:
+    input:
+        collate_individual_counts_helper
+    output:
+        counts='{screen}/{amplicon}-{guide}.{spike}.counts.txt',
+        plots='{screen}/{amplicon}-{guide}.{spike}.replicate_plots.png'
+    log:
+        '{screen}/{amplicon}-{guide}.{spike}.merge_counts_log.txt'
+    params:
+        codedir=codedir,
+        sortparam=lambda wildcards: sample_sheet.loc[(sample_sheet['Screen'] == wildcards.screen) &
+                                                     (sample_sheet['Amplicon'] == wildcards.amplicon) &
+                                                     (sample_sheet['Spike'] == wildcards.spike), 'SortParam'].values[0]
+    shell:
+        "python {params.codedir}/merge_count_table.py -o {output.counts} -p {output.plots} -s {params.sortparam} -i {input} -l {log}"
+
+def get_wells(plate, row, rep):
+    rep_start = 1 + 6 * (rep - 1)
+    rep_range = range(rep_start, rep_start + 6)
+    wells = [str(plate) + '-' + row.upper() + str(col) for col in rep_range]
+    return wells
+
+def find_crispresso_folders(wildcards):
+    screen, amplicon, guide, spike, rep = wildcards.screen, wildcards.amplicon, wildcards.guide, wildcards.spike, wildcards.rep
+    plate = sample_sheet.loc[(sample_sheet['Screen'] == screen) &
+                             (sample_sheet['Amplicon'] == amplicon) &
+                             (sample_sheet['Spike'] == spike), 'Plate'].values[0]
+    row = sample_sheet.loc[(sample_sheet['Screen'] == screen) &
+                           (sample_sheet['Amplicon'] == amplicon) &
+                           (sample_sheet['Spike'] == spike), 'Row'].values[0]
+    wells = get_wells(int(plate), row, int(rep))
+    # guide = amplicon_info.loc[amplicon_info['Amplicon'] == amplicon, 'Guide'].values[0]
+    return ['crispresso/CRISPResso_on_{}_{}-{}/Alleles_frequency_table_around_cut_site_for_{}.txt'.format(well, amplicon, guide, guide) for well in wells]
+
+
+def dir_to_sample(dirname):
+    return dirname.split('/')[1].split('_')[2]
+
+# This is the first/only step where we change informative names back into plate positions
+# Note that we will be assuming 2 reps laid out on one row of a PCR plate for now,
+# but that this should be expanded in the future, so as to be flexible to changes
+
+## ASSUMES A MAPPING BETWEEN REP AND PLATE LOCATION -- FIGURE THIS OUT
+# How to deal with lines in the file where the reference sequence is different??
+rule generate_count_table:
+    input:
+        find_crispresso_folders
+    output:
+        counts='{screen}/{amplicon}-{guide}.{spike}.{rep}.individual_counts.txt'
+    params:
+    run:
+        allele_tbls = []
+    
+        for t in input:
+            allele_tbl = pd.read_table(t)
+            # ref_seq = allele_tbl.loc[0, 'Reference_Sequence'] 
+            ref_seq = allele_tbl.loc[allele_tbl['Aligned_Sequence'] == allele_tbl['Reference_Sequence'], 'Reference_Sequence'].values[0]
+            allele_tbl = allele_tbl.loc[allele_tbl['Reference_Sequence'] == ref_seq] # necessary?
+            # allele_tbl = allele_tbl[['Aligned_Sequence', '%Reads']]
+            allele_tbl = allele_tbl[['Aligned_Sequence', '#Reads']]
+            # allele_tbl = allele_tbl.loc[allele_tbl['%Reads'] > read_percent_threshold]
+            allele_tbl.columns = ['Aligned_Sequence', dir_to_sample(t)]
+            allele_tbls.append(allele_tbl)       
+
+        count_tbl = allele_tbls.pop()
+
+        for tbl in allele_tbls:
+            count_tbl = count_tbl.merge(tbl, on='Aligned_Sequence', how='outer')
+
+        count_tbl = count_tbl.set_index('Aligned_Sequence')
+        count_tbl = count_tbl.fillna(0)
+        # count_tbl = count_tbl.div(count_tbl.sum(axis=0))*100
+
+        plate = sample_sheet.loc[(sample_sheet['Screen'] == wildcards.screen) &
+                                 (sample_sheet['Amplicon'] == wildcards.amplicon) &
+                                 (sample_sheet['Spike'] == wildcards.spike), 'Plate'].values[0]
+        row = sample_sheet.loc[(sample_sheet['Screen'] == wildcards.screen) &
+                               (sample_sheet['Amplicon'] == wildcards.amplicon) &
+                               (sample_sheet['Spike'] == wildcards.spike), 'Row'].values[0]
+
+        wells = get_wells(int(plate), row, int(wildcards.rep))
+        for_MLE = count_tbl[wells]
+        # subset for non-zero rows, maybe do something different?
+        for_MLE = for_MLE.loc[for_MLE.sum(axis=1) > 0]
+        # rename columns 
+        columns = ['{}-{}-{}-{}'.format(plate, row, wildcards.rep, b) for b in ['A', 'B', 'C', 'D', 'E', 'F']]
+        # columns = ['{}-{}'.format(params.sortparam, b) for b in ['A', 'B', 'C', 'D', 'E', 'F']]
+        for_MLE.columns = columns
+        # for_MLE = for_MLE.drop_duplicates() # is this necessary
+        for_MLE.index.name = 'MappingSequence'
+        for_MLE.to_csv(output.counts, sep='\t')
+
+def crispresso_helper(wildcards):
+    amplicon, guide, well = wildcards.amplicon, wildcards.guide, wildcards.well
+    read = amplicon_info.loc[(amplicon_info['Amplicon'] == amplicon) & (amplicon_info['Guide'] == guide), 'Read'].values[0]
+    #read1 = glob('fastq/{}_*R{}*'.format(well, read))
+    read1 = glob('{}/{}_*R{}*'.format(fastqdir, well, read))
+    assert(len(read1) == 1)
+    return read1[0]
+
+# run crispresso on invidual fastqs
+# Note -- can probably remove most of the stuff here, as long as I put the dependencies in the snake-qsub
+# However, maybe not, since I probably want venv_mip for everything else, but this relies on crispresso, we'll see
+# Prefix anything with "deactivate"? Would that work? Or am I going to get a python versioning problem?
+rule run_crispresso:
+    input:
+        crispresso_helper
+    output:
+        'crispresso/CRISPResso_on_{well}_{amplicon}-{guide}/Alleles_frequency_table_around_cut_site_for_{guide}.txt'
+    params:
+        amplicon_seq=lambda wildcards: amplicon_info.loc[(amplicon_info['Amplicon']==wildcards.amplicon) & (amplicon_info['Guide'] == wildcards.guide), 'Seq'].values[0],
+        guide=lambda wildcards: wildcards.guide, #amplicon_info.loc[amplicon_info['Amplicon']==wildcards.amplicon, 'Guide'].values[0],
+        well=lambda wildcards: wildcards.well,
+        codedir=codedir
+    # singularity:
+    #     "https://hub.docker.com/r/lucapinello/crispresso/"
+    shell:
+        "{params.codedir}/run_crispresso.sh {input} {params.amplicon_seq} {params.guide} {params.well}_{wildcards.amplicon}-{wildcards.guide}"
+        #"source /broad/software/scripts/useuse; reuse -q GridEngine8; reuse -q Python-2.7; reuse -q Java-1.8; source /seq/lincRNA/Ben/VENV_CRISPResso/bin/activate; export PATH=/home/unix/bdoughty/CRISPResso_dependencies/bin:$PATH; CRISPResso -r1 {input} -a {params.amplicon_seq} -g {params.guide} --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n {params.well}_+{wildcards.amplicon}"
+        # """
+        # source /broad/software/scripts/useuse
+        # reuse -q GridEngine8
+        # reuse -q Python-2.7
+        # reuse -q Java-1.8
+        # source /seq/lincRNA/Ben/VENV_CRISPResso/bin/activate
+        # export PATH=/home/unix/bdoughty/CRISPResso_dependencies/bin:$PATH
+        # CRISPResso -r1 {} -a {} -g {} --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n {} #-q 30
+        # """.format(input, '{params.amplicon_seq}', '{params.guide}', '{params.well}'+'_'+'{wildcards.amplicon}')

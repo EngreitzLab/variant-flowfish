@@ -1,0 +1,24 @@
+#!/bin/bash
+cp $1 /seq/lincRNA/Projects/MIP/mip-pipeline/tmp/$$.script
+SCRIPT=$1
+
+source /broad/software/scripts/useuse
+reuse -q GridEngine8
+
+echo -n '#!/bin/bash -l
+#$ -q gsa
+#$ -j y
+#$ -cwd
+#$ -o qsub_output
+#$ -e qsub_error
+#$ -l virtual_free=8G
+source /broad/software/scripts/useuse
+reuse -q GridEngine8
+reuse -q .python-3.5.1
+source /seq/lincRNA/Ben/VENV_MIP/bin/activate
+' > $SCRIPT
+
+cat /seq/lincRNA/Projects/MIP/mip-pipeline/tmp/$$.script >> $SCRIPT
+rm /seq/lincRNA/Projects/MIP/mip-pipeline/tmp/$$.script
+chmod +x $SCRIPT
+qsub -V $SCRIPT
