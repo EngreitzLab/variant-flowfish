@@ -10,11 +10,8 @@
 from glob import glob
 import pandas as pd
 
-# populate variables from config file
-configfile: "/seq/lincRNA/Ben/LanderLab-EP-Prediction/src/BFF/config.json"
-
 # global variables
-codedir = "/seq/lincRNA/Ben/LanderLab-EP-Prediction/src/BFF"
+codedir = config['codedir']  #"/seq/lincRNA/Ben/LanderLab-EP-Prediction/src/BFF"
 sortparamsdir = config['sortparamsdir']
 fastqdir = config['fastqdir']
 n_reps = 2 # config['n_reps']
@@ -130,7 +127,7 @@ rule calculate_allelic_effect_sizes:
                                                       (sample_sheet['Amplicon'] == wildcards.amplicon) &
                                                       (sample_sheet['Spike'] == wildcards.spike), 'SortParam'].values[0] + '.txt'
     shell:
-        '/seq/lincRNA/Ben/LanderLab-EP-Prediction/src/BFF/run_mle.sh {input.design} {input.counts} {params.sortparamsdir} {params.sortparams} {output} {log}'
+        "{params.codedir}/run_mle.sh {input.design} {input.counts} {params.sortparamsdir} {params.sortparams} {output} {log}"
 
         # 'Rscript /seq/lincRNA/Ben/scripts/EstimateEffectsFromBins_BFF2.R \
         #     --wd {wildcards.screen} \
@@ -292,7 +289,14 @@ rule run_crispresso:
     # singularity:
     #     "https://hub.docker.com/r/lucapinello/crispresso/"
     shell:
-        "{params.codedir}/run_crispresso.sh {input} {params.amplicon_seq} {params.guide} {params.well}_{wildcards.amplicon}-{wildcards.guide}"
+        """
+	conda activate crispresso2_env
+        CRISPResso -r1 {} -a {} -g {} --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n {} -q 30 -s 15
+         """.format(input, '{params.amplicon_seq}', '{params.guide}', '{params.well}'+'_'+'{wildcards.amplicon}')
+
+
+CRISPResso -r1 $1 -a $2 -g $3 --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n $4 -q 30 -s 15
+{params.codedir}/run_crispresso.sh {input} {params.amplicon_seq} {params.guide} {params.well}_{wildcards.amplicon}-{wildcards.guide}"
         #"source /broad/software/scripts/useuse; reuse -q GridEngine8; reuse -q Python-2.7; reuse -q Java-1.8; source /seq/lincRNA/Ben/VENV_CRISPResso/bin/activate; export PATH=/home/unix/bdoughty/CRISPResso_dependencies/bin:$PATH; CRISPResso -r1 {input} -a {params.amplicon_seq} -g {params.guide} --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n {params.well}_+{wildcards.amplicon}"
         # """
         # source /broad/software/scripts/useuse
