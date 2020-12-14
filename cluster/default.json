@@ -1,0 +1,7 @@
+{
+    "__default__" :
+    {
+        "memory" : 8,
+        "output" : "\"logs/{rule}.{wildcards}.out.txt\""
+    }
+}
