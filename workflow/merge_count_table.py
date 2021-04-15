@@ -37,7 +37,7 @@ def scatter_replicates(count_table):
             binned = percentage_table.filter(regex='.*-{}$'.format(b))
             binned.plot.scatter(binned.columns[0], binned.columns[1], ax=ax, color=colors[b], label=b)
 
-        ax.set(adjustable='box-forced', aspect='equal')
+        ax.set(adjustable='box', aspect='equal')  ## 'box-forced' not an option in later versions of matplotlib
 
         ax.set_xlim([0, bounds[idx]])
         ax.set_ylim([0, bounds[idx]])
