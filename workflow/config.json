@@ -3,5 +3,5 @@
 	"amplicon_info": "/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/ampliconinfo.txt",
 	"sortparamsdir": "/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/sortParams",
 	"fastqdir": "/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/fastq",
-    "codedir": "workflow/"
+    "codedir": "/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/variant-flowfish/workflow"
 }
