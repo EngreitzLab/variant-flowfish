@@ -123,15 +123,18 @@ rule calculate_allelic_effect_sizes:
         '{screen}/{amplicon}-{guide}.{spike}.mle_log.txt'
     params:
         sortparamsdir=sortparamsdir,
+        codedir=codedir,
         sortparams=lambda wildcards: sample_sheet.loc[(sample_sheet['Screen'] == wildcards.screen) &
                                                       (sample_sheet['Amplicon'] == wildcards.amplicon) &
                                                       (sample_sheet['Spike'] == wildcards.spike), 'SortParam'].values[0] + '.txt'
     shell:
-	"Rscript {params.codedir}/get_allele_effect_sizes.R \
-        	 --designDocLocation {input.design} \
-		 --countsLocation {input.counts} \
-		 --sortParamsloc {params.sortparamsdir}/{params.sortparams} \
-		 --outputmle {output} --log {log}"
+    	"""
+        Rscript {params.codedir}/get_allele_effect_sizes.R \
+             --designDocLocation {input.design} \
+    		 --countsLocation {input.counts} \
+    		 --sortParamsloc {params.sortparamsdir}/{params.sortparams} \
+    		 --outputmle {output} --log {log}
+        """
 
 def write_design_file(counts_file, design):
     counts = pd.read_table(counts_file, index_col=0)
@@ -284,11 +287,10 @@ rule run_crispresso:
         guide=lambda wildcards: wildcards.guide, #amplicon_info.loc[amplicon_info['Amplicon']==wildcards.amplicon, 'Guide'].values[0],
         well=lambda wildcards: wildcards.well,
         codedir=codedir
-    # singularity:
-    #     "https://hub.docker.com/r/lucapinello/crispresso/"
+    conda:
+        "envs/CRISPResso.yml"
     shell:
         """
-	conda activate crispresso2_env
         CRISPResso -r1 {} -a {} -g {} --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n {} -q 30 -s 15
          """.format(input, '{params.amplicon_seq}', '{params.guide}', '{params.well}'+'_'+'{wildcards.amplicon}')
 

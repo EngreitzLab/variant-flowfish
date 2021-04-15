@@ -1,0 +1,7 @@
+{
+	"sample_sheet": "/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/samplesheet.txt",
+	"amplicon_info": "/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/ampliconinfo.txt",
+	"sortparamsdir": "/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/sortParams",
+	"fastqdir": "/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/fastq",
+    "codedir": "workflow/"
+}

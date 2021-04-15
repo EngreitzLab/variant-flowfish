@@ -1,0 +1,12 @@
+## Python 3
+name: CRISPResso
+channels:
+  - defaults
+  - bioconda
+dependencies:
+  - python=2.7
+  - java-1.7.0-openjdk-cos6-x86_64
+  - crispresso
+
+
+
