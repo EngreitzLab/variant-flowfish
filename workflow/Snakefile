@@ -277,6 +277,7 @@ def crispresso_helper(wildcards):
 # Note -- can probably remove most of the stuff here, as long as I put the dependencies in the snake-qsub
 # However, maybe not, since I probably want venv_mip for everything else, but this relies on crispresso, we'll see
 # Prefix anything with "deactivate"? Would that work? Or am I going to get a python versioning problem?
+## TODO: Switch the pipeline to use CRISPResso2 instead 
 rule run_crispresso:
     input:
         crispresso_helper
@@ -287,23 +288,18 @@ rule run_crispresso:
         guide=lambda wildcards: wildcards.guide, #amplicon_info.loc[amplicon_info['Amplicon']==wildcards.amplicon, 'Guide'].values[0],
         well=lambda wildcards: wildcards.well,
         codedir=codedir
-    conda:
-        "envs/CRISPResso.yml"
+    #conda:
+    #    "envs/CRISPResso.yml"  
+    ## 4/14/21 JE - This is not working, and I am not sure why. Snakemake builds the conda environment, but then the conda environment doesn't work properly (CRISPResso not on the path)
+    #   (This was on Sherlock, running snakemake from EngreitzLab conda envrionment). Had to use weird bash syntax below instead
     shell:
         """
-        CRISPResso -r1 {} -a {} -g {} --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n {} -q 30 -s 15
-         """.format(input, '{params.amplicon_seq}', '{params.guide}', '{params.well}'+'_'+'{wildcards.amplicon}')
+        bash -c '
+            . $HOME/.bashrc 
+            conda activate CRISPResso
+            CRISPResso -r1 {input} -a {params.amplicon_seq} -g {params.guide} --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso/CRISPResso_on_{params.well}_{wildcards.amplicon}-{params.guide}/ -n {params.well}_{wildcards.amplicon} -q 30 -s 15
+            mv crispresso/CRISPResso_on_{params.well}_{wildcards.amplicon}-{params.guide}/CRISPResso*/* crispresso/CRISPResso_on_{params.well}_{wildcards.amplicon}-{params.guide}/
+        '
+        """
 
 
-	 #CRISPResso -r1 $1 -a $2 -g $3 --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n $4 -q 30 -s 15
-	 #{params.codedir}/run_crispresso.sh {input} {params.amplicon_seq} {params.guide} {params.well}_{wildcards.amplicon}-{wildcards.guide}"
-        #"source /broad/software/scripts/useuse; reuse -q GridEngine8; reuse -q Python-2.7; reuse -q Java-1.8; source /seq/lincRNA/Ben/VENV_CRISPResso/bin/activate; export PATH=/home/unix/bdoughty/CRISPResso_dependencies/bin:$PATH; CRISPResso -r1 {input} -a {params.amplicon_seq} -g {params.guide} --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n {params.well}_+{wildcards.amplicon}"
-        # """
-        # source /broad/software/scripts/useuse
-        # reuse -q GridEngine8
-        # reuse -q Python-2.7
-        # reuse -q Java-1.8
-        # source /seq/lincRNA/Ben/VENV_CRISPResso/bin/activate
-        # export PATH=/home/unix/bdoughty/CRISPResso_dependencies/bin:$PATH
-        # CRISPResso -r1 {} -a {} -g {} --cleavage_offset -14 --offset_around_cut_to_plot 10 -o crispresso -n {} #-q 30
-        # """.format(input, '{params.amplicon_seq}', '{params.guide}', '{params.well}'+'_'+'{wildcards.amplicon}')
