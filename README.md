@@ -42,7 +42,8 @@ For installation details, see the [instructions in the Snakemake documentation](
 Activate the conda environment:
 
     conda activate EngreitzLab 
-    ## TODO: Create specific environment  
+    cd variant-flowfish/
+    ## TODO: Create specific environment for thie pipeline and check in yml file to workflows/envs/
 
 Test your configuration by performing a dry-run via
 
@@ -55,12 +56,13 @@ Execute the workflow locally via
 using `$N` cores or run it in a cluster environment via
 
 `
+## Stanford Sherlock SLURM:
 snakemake \
   --directory results/ \
   --configfile workflow/config.json \
   --cores 1 \
   --jobs 50 \
-  --cluster "sbatch -n 1 -c 1 --mem 4G -t 4:00:00 -p engreitz -J VFF_{rule} -o logs/{rule}_{wildcards}.out.txt -e logs/{rule}_{wildcards}.out.txt"
+  --cluster "sbatch -n 1 -c 1 --mem 4G -t 4:00:00 -p engreitz -J VFF_{rule} -o logs/{rule}_{wildcards} -e logs/{rule}_{wildcards}"
 `
 
 For more about cluster configuration using snakemake, see [here](https://www.sichong.site/2020/02/25/snakemake-and-slurm-how-to-manage-workflow-with-resource-constraint-on-hpc/)
