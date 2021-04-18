@@ -47,11 +47,11 @@ Activate the conda environment:
 
 Test your configuration by performing a dry-run via
 
-    snakemake -n
+    snakemake --directory results/ --configfile workflow/config.json -n
 
 Execute the workflow locally via
 
-    snakemake --cores $N
+    snakemake --directory results/ --configfile workflow/config.json --cores 1 
 
 using `$N` cores or run it in a cluster environment via
 
