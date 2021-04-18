@@ -35,7 +35,7 @@ For installation details, see the [instructions in the Snakemake documentation](
 
 ### Step 4: Configure workflow
 
-[TODO]:  For now, edit workflow/config.json to point to the right files
+[TODO]:  For now, edit `workflow/config.json` to point to the right files
 
 ### Step 5: Execute workflow
 
@@ -56,7 +56,7 @@ Execute the workflow locally via
 using `$N` cores or run it in a cluster environment via
 
 `
-\# On Stanford Sherlock SLURM:
+\# On Stanford Sherlock SLURM: \
 snakemake \
   --directory results/ \
   --configfile workflow/config.json \
