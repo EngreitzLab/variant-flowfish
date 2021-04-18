@@ -53,10 +53,9 @@ Execute the workflow locally via
 
     snakemake --directory results/ --configfile workflow/config.json --cores 1 
 
-using `$N` cores or run it in a cluster environment via
+using `$N` cores or run it in a cluster environment (Stanford Sherlock SLURM) via
 
 `
-\# On Stanford Sherlock SLURM: \
 snakemake \
   --directory results/ \
   --configfile workflow/config.json \
