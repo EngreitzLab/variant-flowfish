@@ -29,13 +29,13 @@ Install Snakemake and conda environment using [conda](https://conda.io/projects/
 
 For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
 
-### Step 3: Create input regions BED file
+### Step 3: Set up input files
 
-[TODO] ... e.g. Create an input 'regions' BED file, with columns `chr   start   end     name`. The snakemake script will find and score guides in these regions, and label them with the provided region name.  If desired, also collect a list of pre-designed guideRNAs (BED file with regions, and filteredGuides.bed file with guide scores)
+[TODO]:  For the example, `cp -r /oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/{ampliconinfo.txt,fastq,samplesheet.txt,sortParams} $NEWDIR`
 
 ### Step 4: Configure workflow
 
-[TODO]
+[TODO]:  For now, edit workflow/config.json to point to the right files
 
 ### Step 5: Execute workflow
 
@@ -56,7 +56,7 @@ Execute the workflow locally via
 using `$N` cores or run it in a cluster environment via
 
 `
-## Stanford Sherlock SLURM:
+\# On Stanford Sherlock SLURM:
 snakemake \
   --directory results/ \
   --configfile workflow/config.json \
