@@ -1,0 +1,3 @@
+FCID,Lane,SampleID,SampleRef,Index,Index2,Description,Control,Recipe,Operator,SampleProject,Analysis,Bait,RRBS Restriction Enzyme,RRBS Desired,Investigator Name,referenceSequence,referenceVersion,projectManagerEmail,libraryName
+HL3GYBCX3,1,210426_primeFF,,AAAAAAAA,AAAA,,,,tamason,Lander Lab,,,Mspl,,munson@broadinstitute.org,,null,engreitz@stanford.edu,210426_primeFF
+HL3GYBCX3,2,210426_primeFF,,AAAAAAAA,AAAA,,,,tamason,Lander Lab,,,Mspl,,munson@broadinstitute.org,,null,engreitz@stanford.edu,210426_primeFF

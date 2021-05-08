@@ -1,0 +1,13 @@
+[Header],,
+Investigator Name,,
+Experiment Name,,
+Date,,
+Workflow,GenerateFASTQ,
+Chemistry,Amplicon,
+,,
+[Reads],,
+150,,
+150,,
+,,
+[Data],,
+Sample_ID,Sample_Name,Index
