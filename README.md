@@ -25,43 +25,86 @@ To do
 
 Install Snakemake and conda environment using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
 
-    conda env create --file envs/CRISPResso.yaml  [TODO: replace]
+    conda env create --file envs/CRISPResso.yaml  [TODO: replace with crispresso2_env]
 
 For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
 
-### Step 3: Set up input files
+### Step 3: Set up the Sample Sheet
 
-[TODO]:  For the example, `cp -r /oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210414_VFFPipelineTest/{ampliconinfo.txt,fastq,samplesheet.txt,sortParams} $NEWDIR`
+(Updated 5/7/21)
 
-### Step 4: Configure workflow
+The Sample Sheet lists all of the sequencing libraries that will be included in the analysis, and describes their relationships and groupings.
+
+Required columns:
+    
+    SampleID          Unique name for each amplicon library.
+    AmpliconID        Name of genomic amplicon contained in the library - must match corresponding AmpliconID column in the Amplicon Table (see below)
+    Bin               Name of a FACS-sorted bin (e.g.: A B C D E F). 'All' for input samples. 'Neg' or blank if not applicable
+    PCRRep            PCR replicate number or name
+    VFFSpikeIn        Integer from 0 to 100 representing the percentage of unedited cells spiked into this sample
+
+Optional columns:
+
+    AmpliconSeq       Sequence of the genomic amplicon to align to. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
+    GuideSpacer       Spacer of the gRNA used. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
+    [Experiment Keys] Provide any number of additional columns (e.g., CellLine) that distinguish different samples.
+                        Key columns are defined as such by the 'experiment_keycols' parameter in the config file.
+                        These columns will be combined to form a unique experiment key.
+                        Replicates for a given unique experiment key will be combined.
+    [Replicate Keys]  Provide any number of additional columns (e.g., FlowFISHRep) that distinguish different experimental replicates (not including PCR replicates)
+                        Replicate columns are defined as such by the 'replicate_keycols' parameter in the config file.
+                        These columns will be combined to form a unique replicate id.
+                        PCR replicate counts for each unique replicate key will be summed at the level of this replicate ID.
+                        MLE estimates and VFF spike-in calculations will also be performed at the level of this replicate ID, 
+                        then compared according to grouping of the experiment key.
+    fastqR1           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R1_*fastq.gz)
+    fastqR2           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R2_*fastq.gz)
+
+
+### Step 4: Set up the Amplicon Table
+
+(Updated 5/7/21)
+
+The Amplicon Table lists details for the genomic PCR amplicons used in the experiment.  It is optional; the information could be instead provided in the Sample Sheet.
+Information from the Amplicon Table is pulled into the Sample Sheet by the 'AmpliconID' column.
+
+Required columns:
+    AmpliconID        Arbitrary name of the amplicon
+    AmpliconSeq       Full genomic sequence to align to
+    GuideSpacer       Spacer sequence of the gRNA around which to quantify edits (no PAM)
+
+To do:  Add additional parameters here to control the crispresso2 quantification window.
+
+
+### Step 5: Configure workflow
 
 [TODO]:  For now, edit `workflow/config.json` to point to the right files
 
-### Step 5: Execute workflow
+
+### Step 6: Execute workflow
 
 Activate the conda environment:
 
     conda activate EngreitzLab 
-    cd variant-flowfish/
     ## TODO: Create specific environment for thie pipeline and check in yml file to workflows/envs/
 
 Test your configuration by performing a dry-run via
 
-    snakemake --directory results/ --configfile workflow/config.json -n
+    snakemake -s variant-flowfish/workflow/Snakefile --configfile config/config.json -n
 
 Execute the workflow locally via
 
-    snakemake --directory results/ --configfile workflow/config.json --cores 1 
+    snakemake -s variant-flowfish/workflow/Snakefile --configfile config/config.json -n
 
 using `$N` cores or run it in a cluster environment (Stanford Sherlock SLURM) via
 
 `
 snakemake \
-  --directory results/ \
-  --configfile workflow/config.json \
+  -s variant-flowfish/workflow/Snakefile \
+  --configfile config/config.json \
   --cores 1 \
-  --jobs 50 \
-  --cluster "sbatch -n 1 -c 1 --mem 4G -t 4:00:00 -p engreitz -J VFF_{rule} -o logs/{rule}_{wildcards} -e logs/{rule}_{wildcards}"
+  --jobs 200 \
+  --cluster "sbatch -n 1 -c 1 --mem 8G -t 4:00:00 -p owners -J VFF_{rule} -o log/{rule}_{wildcards} -e log/{rule}_{wildcards}"
 `
 
 For more about cluster configuration using snakemake, see [here](https://www.sichong.site/2020/02/25/snakemake-and-slurm-how-to-manage-workflow-with-resource-constraint-on-hpc/)
