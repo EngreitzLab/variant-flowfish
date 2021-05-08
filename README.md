@@ -76,12 +76,16 @@ Required columns:
 To do:  Add additional parameters here to control the crispresso2 quantification window.
 
 
-### Step 5: Configure workflow
+### Step 5: Provide sort params files
+
+To do.
+
+### Step 6: Configure workflow
 
 [TODO]:  For now, edit `workflow/config.json` to point to the right files
 
 
-### Step 6: Execute workflow
+### Step 7: Execute workflow
 
 Activate the conda environment:
 

@@ -75,13 +75,13 @@ def validate_sample_sheet(samplesheet):
 
 	for col in keyCols:
 		if not col in samplesheet.columns:
-			raise ValueError("Missing column in sample sheet that is specified as a samplekey in the config file: " + col)
+			raise ValueError("Missing column in sample sheet that is provided in experiment_keycols in the config file: " + col)
 
 	for col in requiredCols:
 		if not col in samplesheet.columns:
-			raise ValueError("Missing column in sample sheet that is specified as a replicate column in the config file: " + col)
+			raise ValueError("Missing column in sample sheet that is provided in replicate_keycols in the config file: " + col)
 
-	print("Found all samplekey columns. Generating comparisons for the following experiments:")
+	print("Found all Experiment Key columns. Generating comparisons for the following experiments:")
 	print('\t'.join(keyCols))
 	for index, row in samplesheet[keyCols].drop_duplicates().iterrows():
 		print('\t'.join([str(v) for v in row.values]))
@@ -122,8 +122,8 @@ def get_bin_list():
 # global variables
 requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
 ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer']  ## To do:  Allow specifying crispresso quantification window for different amplicons
-keyCols = config['samplekey'].split(',')
-repCols = config['replicates'].split(',')
+keyCols = config['experiment_keycols'].split(',')
+repCols = config['replicate_keycols'].split(',')
 codedir = config['codedir']
 sortparamsdir = config['sortparamsdir']
 fastqdir = config['fastqdir']
