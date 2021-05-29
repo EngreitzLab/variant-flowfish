@@ -82,7 +82,6 @@ def make_flat_table(samplesheet, outfile):
     flat.to_csv(outfile, sep='\t', index=False, compression='gzip')
 
 
-
 rule make_count_table_per_PCRrep:
     input: 
         lambda wildcards: 
@@ -92,7 +91,6 @@ rule make_count_table_per_PCRrep:
         freq='results/byPCRRep/{ExperimentIDPCRRep}.bin_freq.txt'
     run:
         make_count_table(samplesheet, 'ExperimentIDPCRRep', wildcards.ExperimentIDPCRRep, get_bin_list(), output.counts, output.freq)
-
 
 
 rule make_count_table_per_experimentalRep:
@@ -105,6 +103,15 @@ rule make_count_table_per_experimentalRep:
     run:
         make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq)
 
+rule trim_count_table:
+    input:
+        'results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt'
+    output:
+        'results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.filtered.txt'
+    params:
+        n=10000
+    shell:
+        'head -{params.n} {input} > {output}'
 
 
 rule make_flat_count_table_PCRrep:

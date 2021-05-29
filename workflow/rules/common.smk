@@ -77,7 +77,7 @@ def validate_sample_sheet(samplesheet):
 		if not col in samplesheet.columns:
 			raise ValueError("Missing column in sample sheet that is provided in experiment_keycols in the config file: " + col)
 
-	for col in requiredCols:
+	for col in repCols:
 		if not col in samplesheet.columns:
 			raise ValueError("Missing column in sample sheet that is provided in replicate_keycols in the config file: " + col)
 

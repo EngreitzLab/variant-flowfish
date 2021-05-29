@@ -46,8 +46,7 @@ def get_sortparams_file(wildcards):
 # run mle to calculate the effect sizes
 rule calculate_allelic_effect_sizes:
 	input:
-		counts='results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt',
-		design='results/byExperimentRep/{ExperimentIDReplicates}.design.txt',
+		counts='results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.filtered.txt',
 		sortparams=get_sortparams_file 
 	output:
 		'results/byExperimentRep/{ExperimentIDReplicates}.raw_effects.txt'
@@ -56,8 +55,17 @@ rule calculate_allelic_effect_sizes:
 	shell:
 		"""
 		Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \
-			 --designDocLocation {input.design} \
 			 --countsLocation {input.counts} \
 			 --sortParamsloc {input.sortparams} \
 			 --outputmle {output} --log {log}
 		"""
+
+
+
+
+
+
+# Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \
+# 			 --countsLocation '/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210426B001-VFF/results/byExperimentRep/IL2RA-Jurkat-IL2RA_peg10-0-1.bin_counts.txt' \
+# 			 --sortParamsloc '/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210426B001-VFF/sortParams/tmp/210426B001_3.csv' \
+# 			 --outputmle '/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210426B001-VFF/test/test.raw_effects.txt' --log '/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210426B001-VFF/test/test.mle_log.txt'
