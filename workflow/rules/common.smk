@@ -25,7 +25,10 @@ def find_fastq_files(samplesheet, fastqdir):
 			samplesheet[colName] = ""
 			for i in samplesheet.index:
 				currSample = samplesheet.at[i,'SampleID']
+				## Try looking for the bcl2fastq output file format
 				file = glob.glob("{}_*_R{}_*fastq.gz".format(os.path.join(fastqdir, currSample), read))
+				if len(file) == 0: ## Try looking for the barcode-splitter output format
+					file = glob.glob("{}-read-{}.fastq.gz".format(os.path.join(fastqdir, currSample), read))
 				if len(file) > 1:
 					raise ValueError("Found more than one FASTQ file for sample :" + currSample)
 				if len(file) == 1:
@@ -39,12 +42,19 @@ def add_experiment_names(samplesheet):
 		print("Warning: ExperimentID columns found and will be overwritten in the sample sheet")
 
 	## Experiments at the level of PCR replicates 
-	s = samplesheet[keyCols + ['VFFSpikeIn'] + repCols + ['PCRRep']].drop_duplicates()
+	if genotyping_only:
+		cols_ExperimentIDPCRRep = keyCols + repCols + ['PCRRep']
+		cols_ExperimentIDReplicates = keyCols + repCols
+	else:
+		cols_ExperimentIDPCRRep = keyCols + ['VFFSpikeIn'] + repCols + ['PCRRep']
+		cols_ExperimentIDReplicates = keyCols + ['VFFSpikeIn'] + repCols
+
+	s = samplesheet[cols_ExperimentIDPCRRep].drop_duplicates()
 	s['ExperimentIDPCRRep'] = ['-'.join([str(v) for v in list(row.values)]) for index,row in s.iterrows()]
 	samplesheet = samplesheet.merge(s)
 
 	## Experiments at the level of specified replicate columns, before spike correction
-	s = samplesheet[keyCols + ['VFFSpikeIn'] + repCols].drop_duplicates()
+	s = samplesheet[cols_ExperimentIDReplicates].drop_duplicates()
 	s['ExperimentIDReplicates'] = ['-'.join([str(v) for v in list(row.values)]) for index,row in s.iterrows()]
 	samplesheet = samplesheet.merge(s)
 
@@ -58,8 +68,9 @@ def add_experiment_names(samplesheet):
 
 def add_outputs(samplesheet):
 	samplesheet['CRISPRessoDir'] = ['results/crispresso/CRISPResso_on_{SampleID}/'.format(SampleID=row['SampleID']) for index, row in samplesheet.iterrows()]
-	samplesheet['ExperimentIDPCRRep_BinCounts'] = ['results/byPCRRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDPCRRep']]
-	samplesheet['ExperimentIDReplicates_BinCounts'] = ['results/byExperimentRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDReplicates']]
+	if not genotyping_only:
+		samplesheet['ExperimentIDPCRRep_BinCounts'] = ['results/byPCRRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDPCRRep']]
+		samplesheet['ExperimentIDReplicates_BinCounts'] = ['results/byExperimentRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDReplicates']]
 	return samplesheet
 
 
@@ -125,7 +136,12 @@ def load_variant_Table(variant_table, requiredCols):
 
 
 # global variables
-requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
+genotyping_only = bool(config['genotyping_only'])
+if genotyping_only:
+	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep']
+else:
+	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
+
 ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer']  ## To do:  Allow specifying crispresso quantification window for different amplicons
 variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
 keyCols = config['experiment_keycols'].split(',')
@@ -177,28 +193,29 @@ def all_input(wildcards):
 
 	## At what point do we merge in the spike-in data? 
 
-	## Output files for PCR replicates (before merging spike-in data)
-	wanted_input.extend(list(samplesheet['ExperimentIDPCRRep_BinCounts'].unique()))
+	if not genotyping_only:
+		## Output files for PCR replicates (before merging spike-in data)
+		wanted_input.extend(list(samplesheet['ExperimentIDPCRRep_BinCounts'].unique()))
 
-	## Output files for PCR replicates (after merging spike-in data) (?)
-	wanted_input.extend([])
+		## Output files for PCR replicates (after merging spike-in data) (?)
+		wanted_input.extend([])
 
-	## Output files for replicate experiments (before merging spike-in data)
-	if len(repCols) > 0:
-		wanted_input.extend(list(samplesheet['ExperimentIDReplicates_BinCounts'].unique()))
-		wanted_input.extend([
-			'results/byExperimentRep/{}.raw_effects.txt'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
-		])
+		## Output files for replicate experiments (before merging spike-in data)
+		if len(repCols) > 0:
+			wanted_input.extend(list(samplesheet['ExperimentIDReplicates_BinCounts'].unique()))
+			wanted_input.extend([
+				'results/byExperimentRep/{}.raw_effects.txt'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
+			])
 
 
-	## Output files for replicate experiments (after merging spike-in data)
-	wanted_input.extend([])
+		## Output files for replicate experiments (after merging spike-in data)
+		wanted_input.extend([])
 
-	## Output files for experiments (with replicates merged, before merging spike-in data)
-	wanted_input.extend([])
+		## Output files for experiments (with replicates merged, before merging spike-in data)
+		wanted_input.extend([])
 
-	## Output files for experiments (with replicates merged, after merging spike-in data)
-	wanted_input.extend([])
+		## Output files for experiments (with replicates merged, after merging spike-in data)
+		wanted_input.extend([])
 
 	return wanted_input
 
