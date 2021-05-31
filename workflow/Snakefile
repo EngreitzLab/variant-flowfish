@@ -13,6 +13,7 @@ include: "rules/crispresso2.smk"
 include: "rules/bowtie2.smk"
 include: "rules/make_count_tables.smk"
 include: "rules/estimate_effect_sizes.smk"
+include: "rules/plots.smk"
 
 rule all:
     input: all_input

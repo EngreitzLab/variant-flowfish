@@ -117,11 +117,17 @@ def get_bin_list():
 	print("Processing unique bins: " + ' '.join(binList))
 	return(binList)
 
+def load_variant_Table(variant_table, requiredCols):
+	variants = pd.read_table(variant_table, dtype=str)
+	if not set(requiredCols).issubset(variants.columns):
+		raise ValueError("Variant table is missing required cols: ", set(requiredCols).difference(variants.columns))
+	return(variants)
 
 
 # global variables
 requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
 ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer']  ## To do:  Allow specifying crispresso quantification window for different amplicons
+variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
 keyCols = config['experiment_keycols'].split(',')
 repCols = config['replicate_keycols'].split(',')
 codedir = config['codedir']
@@ -133,6 +139,10 @@ samplesheet = load_sample_sheet(config['sample_sheet'], config['amplicon_info'])
 samplesheet.to_csv("SampleList.snakemake.tsv", index=False, header=True, sep='\t')
 binList = get_bin_list()
 
+if 'variant_table' in config:
+	variants = load_variant_table(config['variant_table'], variantRequiredCols)
+else:
+	variants = None
 
 
 #######################################################################################
@@ -144,6 +154,12 @@ def all_input(wildcards):
 
 	## CRISPResso output:
 	wanted_input.extend(list(samplesheet['CRISPRessoDir'].unique()))
+	wanted_input.append("results/summary/VariantCounts.flat.tsv.gz")
+	wanted_input.append("results/summary/VariantCounts.DesiredVariants.flat.tsv")
+	wanted_input.append("results/summary/VariantCounts.DesiredVariants.matrix.tsv")
+
+	## Genotyping plots:
+	wanted_input.append("results/summary/DesiredVariants.RData")
 
 	#wanted_input.extend(
 	#	['crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'.format(
@@ -163,7 +179,6 @@ def all_input(wildcards):
 
 	## Output files for PCR replicates (before merging spike-in data)
 	wanted_input.extend(list(samplesheet['ExperimentIDPCRRep_BinCounts'].unique()))
-	wanted_input.append("results/summary/VariantCounts.flat.tsv.gz")
 
 	## Output files for PCR replicates (after merging spike-in data) (?)
 	wanted_input.extend([])

@@ -1,7 +1,12 @@
 {
-	"sample_sheet": "samplesheet.txt",
-	"amplicon_info": "ampliconinfo.txt",
-	"sortparamsdir": "sortParams",
+	"sample_sheet": "config/SampleList.tsv",
+	"amplicon_info": "config/AmpliconInfo.tsv",
+	"variant_info": "config/VariantList.tsv",
+	"sortparamsdir": "sortParams/tmp",
 	"fastqdir": "fastq",
-        "codedir": "pathTo/variant-flowfish/src/"
+    "codedir": "variant-flowfish/",
+    "replicate_keycols": "FlowFISHRep",    
+    "experiment_keycols": "AmpliconID,CellLine,Guides",
+    "crispresso_min_average_read_quality": 20,
+    "crispresso_min_single_bp_quality": 0
 }

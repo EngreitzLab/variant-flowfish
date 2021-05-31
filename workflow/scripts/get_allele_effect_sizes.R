@@ -32,6 +32,11 @@ log <- opt$log
 MAXMEAN <- 10000 # in FACS space, max value a guide can take
 MINMEAN <- 1  # in FACS space, max value a guide can take
 
+
+## Save image with input parameters for debugging purposes
+save.image(file=paste0(outputmle, ".RData"))
+
+
 ## load packages
 # suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(stats4))
@@ -85,9 +90,8 @@ estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=M
 # per bin (which is of length nbins+1, to account for missed cells)
 # returns the negative of the log likelihood of observing those counts with the given parameters
 ll <- function(mu, std, observations, bins) {
-  write("Invoked NLL",file=log,append=TRUE)
+  # write("Invoked NLL",file=log,append=TRUE)
   # write(dim(bins),file=log,append=TRUE)
-
   #writeLines("Invoked NLL", log)
   if (std < 0) {
     return(10^10) ## make the sum really high if it picks a negative standard deviation
@@ -127,6 +131,8 @@ getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total
   ## bins = matrix of bin boundaries (nrows = nbins, ncols = 2)
   ## returns mean and standard deviation in log-space
 
+  if (idx %% 1000 == 0) print(idx)
+
   # cast to numeric vector
   bin.counts <- as.numeric(as.matrix(bin.counts))
 
@@ -138,7 +144,6 @@ getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total
 
   if (seventh.bin.count < 0 || !input.present) {
     seventh.bin.count <- estimateSeventhBinEM(mu.i, sd.i, bin.counts, bins)
-    print(idx)
   }
   
   # add on "seventh" bin counts
@@ -255,15 +260,15 @@ loadSortParams_BigFoot <- function(filename, bin.names, total.binname="Total", f
   # check that it has all the required columns
   required.cols <- c("Mean","Min","Max","Barcode","Count")
   if (! all(required.cols %in% colnames(sort.params)) ) {
-    stop("Sort parameters file did not have the needed :", required.cols)
+    stop("Sort parameters file ", filename, " did not have the needed :", required.cols)
   }
   # check that it has a total count
   if (!(total.binname %in% sort.params$Barcode)) {
-    stop(paste0("Barcode column in sort parameters file needs an entry called '",total.binname,"' to represent the total cell count from FACS"))
+    stop(paste0("Barcode column in sort parameters file ", filename, " needs an entry called '",total.binname,"' to represent the total cell count from FACS"))
   }
   # check that it has all the bins that the countsFile has
   if (sum(sort.params$Barcode %in% bin.names) != length(bin.names)) {
-    stop("Sort parameters file did not have all the bins")
+    stop("Sort parameters file ", filename, " did not have all the bins")
   }
 
   ## Extract info from sortParams for each bin
@@ -356,5 +361,5 @@ runMLE <- function(mS, sort.params) {
 counts <- runMLE(counts, sort.params)
 
 write.table(counts, file=outputmle, sep="\t", quote=F, row.names=F, col.names=T)
-write("Test",file=log,append=TRUE)
-#writeLines("Test", log)
+write("Finished",file=log,append=TRUE)
+

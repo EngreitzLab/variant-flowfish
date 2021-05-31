@@ -103,6 +103,7 @@ rule make_count_table_per_experimentalRep:
     run:
         make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq)
 
+
 rule trim_count_table:
     input:
         'results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt'
@@ -121,4 +122,18 @@ rule make_flat_count_table_PCRrep:
         'results/summary/VariantCounts.flat.tsv.gz',
     run:
         make_flat_table(samplesheet, output[0])
+
+
+rule make_desired_variant_tables:
+    input:
+        variantCounts='results/summary/VariantCounts.flat.tsv.gz',
+        variantInfo=config['variant_info']
+    output: 
+        flat="results/summary/VariantCounts.DesiredVariants.flat.tsv",
+        matrix="results/summary/VariantCounts.DesiredVariants.matrix.tsv"
+    params:
+        codedir=config['codedir']
+    shell:
+        "Rscript {params.codedir}/workflow/scripts/AggregateDesiredAlleleCounts.R --variantCounts {input.variantCounts} --variantInfo {input.variantInfo} --outbase results/summary/VariantCounts.DesiredVariants"
+
 
