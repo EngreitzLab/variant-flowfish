@@ -80,6 +80,20 @@ To do:  Add additional parameters here to control the crispresso2 quantification
 
 To do.
 
+
+
+### Step 6: Set up the Variant Table (optional)
+
+The Variant Table lists details for specific variants/alleles in the experiment.  It is optional, to create condensed
+tables in which certain variants + alleles are named for plotting and downstream analysis.
+
+Required columns:
+    AmpliconID        Arbitrary name of the amplicon
+    VariantID         Unique readable name of the variant / allele
+    MappingSequence   Genomic sequence of this variant / allele + genomic context; must match the output of CRISPResso2.    
+    RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
+
+
 ### Step 6: Configure workflow
 
 [TODO]:  For now, edit `workflow/config.json` to point to the right files
