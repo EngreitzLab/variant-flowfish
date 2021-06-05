@@ -70,7 +70,8 @@ getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDReplicates
             mutate(Edited=ordered(ControlForAmplicon, levels=c(FALSE,TRUE), labels=c("Edited","Unedited"))) %>%
             as.data.frame()
   p <- ggplot(counts, aes_string(x=group, y="Frequency", fill=fill)) + geom_col()
-  p <- p + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6))
+  p <- p + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6)) +
+        ylab("Variant Frequency (%)")
   p <- p + theme(legend.key.size = unit(0.5, 'cm'), #change legend key size
                  legend.title = element_text(size=9), #change legend title font size
                  legend.text = element_text(size=8)) #change legend text font size
