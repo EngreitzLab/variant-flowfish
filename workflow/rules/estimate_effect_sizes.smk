@@ -24,7 +24,10 @@ def write_design_file(counts_file, design):
 
 
 def get_sortparams_file(wildcards):
-	currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentIDReplicates) & (samplesheet['Bin'].isin(binList))]
+	if wildcards.directory == "byExperimentRep":
+		currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentID) & (samplesheet['Bin'].isin(binList))]
+	else:
+		currSamples = samplesheet.loc[(samplesheet['ExperimentIDPCRRep'] == wildcards.ExperimentID) & (samplesheet['Bin'].isin(binList))]
 	Batch = currSamples['Batch'].unique()
 	SampleNumber = currSamples['SampleNumber'].unique()
 	if (len(Batch) != 1) or (len(SampleNumber) != 1):
@@ -50,9 +53,31 @@ rule calculate_allelic_effect_sizes:
 			 --outputmle {output} --log {log}
 		"""
 
+# Normalize allele effect sizes to reference allele specified in the variant info table
+rule normalize_allelic_effect_sizes:
+	input:
+		'results/{directory}/{ExperimentID}.raw_effects.txt'
+	output:
+		'results/{directory}/{ExperimentID}.effects_vs_ref.txt'
+	params:
+		codedir=config['codedir'],
+		variantInfo=config['variant_info']
+	shell:
+		"""
+		python {params.codedir}/workflow/scripts/normalize_allele_effects.py -i {input} -o {output} -v {params.variantInfo}
+		"""
 
-
-
+rule plot_allelic_effect_sizes:
+	input:
+		'results/{replicateDirectory}/{ExperimentIDReplicates}.effects_vs_ref.txt'
+	output:
+		'results/{replicateDirectory}/{ExperimentIDReplicates}.effects_vs_ref.pdf'
+	params:
+		codedir=config['codedir']
+	shell:
+		"""
+		Rscript {params.codedir}/workflow/scripts/PlotMleVariantEffects.R --mleEffects {input} --outfile {output} 
+		"""
 
 
 # Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \

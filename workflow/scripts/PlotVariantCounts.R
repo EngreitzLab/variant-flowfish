@@ -166,7 +166,7 @@ getReplicatePlot <- function(countsFlat, samplesheet) {
 
   p2 <- ggplot(vcv, aes(x=mean, y=CV)) + geom_point(alpha=0.5) +
       theme_classic() +
-      xlab("Variant Frequency") +
+      xlab("Variant Frequency (%)") +
       ylab("Coefficient of Variation") + 
       scale_x_log10()
 
@@ -234,8 +234,9 @@ pdf(file=paste0(opt$outbase, ".binBarplots.pdf"), width=7, height=8)
 for (expt in unique(samplesheet$ExperimentIDReplicates)) {
   currSamples <- samplesheet %>% filter(ExperimentIDReplicates == expt)
   if (any(currSamples$Bin %in% binList)) {
-    p <- getBinnedBarplot(countsFlat, currSamples, binList, group="ExperimentIDReplicates") + ggtitle(paste0("ExperimentIDReplicates==",expt))
-    print(p)
+    title <- ggdraw() + draw_label(paste0("ExperimentIDReplicates == ",expt), fontface='bold')
+    p <- getBinnedBarplot(countsFlat, currSamples, binList, group="ExperimentIDReplicates")
+    print(plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1)))
   }
 }
 invisible(dev.off()) 
