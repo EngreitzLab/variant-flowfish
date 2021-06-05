@@ -23,16 +23,6 @@ def write_design_file(counts_file, design):
 	design_doc.to_csv(design, sep='\t')
 
 
-# use the alleles from above to write a design file for feeding into mle
-rule write_design_file:
-	input: 
-		counts='results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt'
-	output:
-		design='results/byExperimentRep/{ExperimentIDReplicates}.design.txt'
-	run:
-		write_design_file(input.counts, output.design)
-
-
 def get_sortparams_file(wildcards):
 	currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentIDReplicates) & (samplesheet['Bin'].isin(binList))]
 	Batch = currSamples['Batch'].unique()
@@ -46,12 +36,12 @@ def get_sortparams_file(wildcards):
 # run mle to calculate the effect sizes
 rule calculate_allelic_effect_sizes:
 	input:
-		counts='results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.filtered.txt',
+		counts='{path}.bin_counts.topN.txt',
 		sortparams=get_sortparams_file 
 	output:
-		'results/byExperimentRep/{ExperimentIDReplicates}.raw_effects.txt'
+		'{path}.raw_effects.txt'
 	log:
-		'results/byExperimentRep/{ExperimentIDReplicates}.mle_log.txt'
+		'{path}.mle_log.txt'
 	shell:
 		"""
 		Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \

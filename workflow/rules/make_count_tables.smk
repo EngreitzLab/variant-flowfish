@@ -6,11 +6,16 @@ import pandas as pd
 import numpy as np
 
 
-def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies):
+def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, samplesToExclude=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
     ## To do: Move the python code for these rules into separate python scripts so they can be run independently of the snakemake pipeline (at least, this makes it easier to test and debug the code)
 
     currSamples = samplesheet.loc[samplesheet[group_col]==group_id]
+
+    if samplesToExclude is not None:
+        exclude = pd.read_table(samplesToExclude, header=None, names='SampleID')
+        currSamples = samplesheet[~samplesheet['SampleID']isin(exclude['SampleID'].values)]
+
 
     allele_tbls = []
 
@@ -106,13 +111,44 @@ rule make_count_table_per_experimentalRep:
 
 rule trim_count_table:
     input:
-        'results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt'
+        '{path}.bin_counts.txt'
     output:
-        'results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.filtered.txt'
+        '{path}.bin_counts.topN.txt'
     params:
-        n=10000
+        n=config['max_mle_variants']
     shell:
         'head -{params.n} {input} > {output}'
+
+
+rule write_pcr_replicate_correlation:
+    input:
+        variantCounts="results/summary/VariantCounts.DesiredVariants.flat.tsv",
+        samplesheet="SampleList.snakemake.tsv"
+    output: 
+        corfile="results/summary/PCRReplicateCorrelations.tsv",
+        cvfile="results/summary/VariationVsAlleleFrequency.tsv",
+        lowcorfile="results/summary/PCRReplicateCorrelations.LowQualSamples.tsv"
+    params:
+        codedir=config['codedir']
+    shell:
+        "Rscript {params.codedir}/workflow/scripts/GetPCRReplicateCorrelation.R \
+          --variantCounts {input.variantCounts} \
+          --samplesheet {input.samplesheet} \
+          --correlationFile {output.corfile} \
+          --cvFile {output.cvfile} \
+          --lowCorSamplesFile {output.lowcorfile}"
+
+
+rule make_count_table_per_experimentalRep_withCorFilter:
+    input: 
+        samplesToExclude='results/summary/PCRReplicateCorrelations.LowQualSamples.tsv',
+        lambda wildcards: 
+            samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['CRISPRessoDir']
+    output:
+        counts='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_counts.txt',
+        freq='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_freq.txt'
+    run:
+        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, input.samplesToExclude)
 
 
 rule make_flat_count_table_PCRrep:

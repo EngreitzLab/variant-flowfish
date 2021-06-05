@@ -136,7 +136,7 @@ def load_variant_Table(variant_table, requiredCols):
 
 
 # global variables
-genotyping_only = bool(config['genotyping_only'])
+genotyping_only = ('genotyping_only' in config.columns) and (bool(config['genotyping_only']))
 if genotyping_only:
 	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep']
 else:
@@ -201,12 +201,14 @@ def all_input(wildcards):
 		wanted_input.extend([])
 
 		## Output files for replicate experiments (before merging spike-in data)
-		if len(repCols) > 0:
-			wanted_input.extend(list(samplesheet['ExperimentIDReplicates_BinCounts'].unique()))
-			wanted_input.extend([
-				'results/byExperimentRep/{}.raw_effects.txt'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
-			])
+		wanted_input.extend(list(samplesheet['ExperimentIDReplicates_BinCounts'].unique()))
+		wanted_input.extend([
+			'results/byExperimentRep/{}.raw_effects.txt'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
+		])
 
+		wanted_input.extend([
+			'results/byExperimentRepCorFilter/{}.raw_effects.txt'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
+		])
 
 		## Output files for replicate experiments (after merging spike-in data)
 		wanted_input.extend([])

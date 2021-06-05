@@ -18,22 +18,23 @@ opt <- parse_args(OptionParser(option_list=option.list))
 dput(opt)
 
 if (FALSE) {
+  ## For testing purposes
   opt <- list()
   #opt$variantInfo = "../../config/AlleleList.txt"
-  opt$outbase = "./DesiredVariants"
-  opt$samplesheet = "../../SampleList.snakemake.tsv"
-  opt$variantCounts = "VariantCounts.DesiredVariants.flat.tsv"
+  opt$outbase = "results/summary/DesiredVariants"
+  opt$samplesheet = "SampleList.snakemake.tsv"
+  opt$variantCounts = "results/summary/VariantCounts.DesiredVariants.flat.tsv"
 }
 
 
 if (is.null(opt$outbase))
-  stop("AggregateAlleleCounts: --outbase should be specified.\n")
+  stop("PlotVariantCounts: --outbase should be specified.\n")
 
 if (is.null(opt$variantCounts) | !file.exists(opt$variantCounts)) 
-  stop("AggregateAlleleCounts: --variantCounts file not found.\n")
+  stop("PlotVariantCounts: --variantCounts file not found.\n")
 
 if (is.null(opt$samplesheet) | !file.exists(opt$samplesheet))
-    stop("AggregateAlleleCounts: --samplesheet file not found.\n")
+    stop("PlotVariantCounts: --samplesheet file not found.\n")
 
 #experimentKeys <- strsplit(opt$experimentKeyCols,",")[[1]]
 #if (length(experimentKeys) == 0)
@@ -173,11 +174,11 @@ getReplicatePlot <- function(countsFlat, samplesheet) {
   return(q)
 }
 
-
 pdf(file=paste0(opt$outbase, ".replicateCorrelations.pdf"), width=6, height=3)
 p <- getReplicatePlot(countsFlat, samplesheet)
 print(p)
 invisible(dev.off()) 
+
 
 
 ############################################
