@@ -147,8 +147,8 @@ variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
 keyCols = config['experiment_keycols'].split(',')
 repCols = config['replicate_keycols'].split(',')
 codedir = config['codedir']
-sortparamsdir = config['sortparamsdir']
 fastqdir = config['fastqdir']
+sortparamsdir = config['sortparamsdir'] if not genotyping_only else None
 #n_reps = 2 # config['n_reps']
 
 samplesheet = load_sample_sheet(config['sample_sheet'], config['amplicon_info'])
