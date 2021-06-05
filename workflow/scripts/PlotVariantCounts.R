@@ -8,7 +8,7 @@ suppressPackageStartupMessages(library("optparse"))
 option.list <- list(
   make_option("--variantCounts", type="character", help="Desired variant count flat file"),
   make_option("--samplesheet", type="character", help="Snakemake sample sheet including SampleID info"),
-  make_option("--groupby", type="character", default=NULL, help="column to group"),
+  #make_option("--groupby", type="character", default=NULL, help="column to group"),
   #make_option("--experimentKeyCols", type="character", help="Comma-separated list of experimental key columns in the sample sheet, as specified in snakemake config file"),
   #make_option("--replicateKeyCols", type="character", help="Comma-separated list of replicate key columns in the sample sheet, as specified in snakemake config file"),
   #make_option("--variantInfo", type="character", help="File containing desired variants. Tab-delimited file containing columns AmpliconID, GuideSpacer, MappingSequence, RefAllele;  where MappingSequence matches the Aligned_Sequence output column in the Alleles frequency table in CRISPResso"),
@@ -119,7 +119,7 @@ getPCRReplicateCorrelations <- function(countsFlat, samplesheet, includeRef=FALS
       as.matrix()
 
     correlations <- cor(currCounts)
-    if (nrow(correlations) > 2) {
+    if (nrow(correlations) > 1) {
       cor.df <- flattenCorrMatrix(correlations)
       results[[group]] <- cor.df
     }

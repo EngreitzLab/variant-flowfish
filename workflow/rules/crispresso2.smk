@@ -6,7 +6,7 @@ rule run_crispresso:
 		read1=lambda wildcards: samplesheet.at[wildcards.SampleID,'fastqR1'],
 		read2=lambda wildcards: samplesheet.at[wildcards.SampleID,'fastqR2']
 	output:
-		'crispresso/CRISPResso_on_{SampleID}/'
+		directory('results/crispresso/CRISPResso_on_{SampleID}/')
 		#'crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'
 	params:
 		amplicon_id=lambda wildcards: samplesheet.at[wildcards.SampleID,'AmpliconID'],
