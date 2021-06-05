@@ -221,7 +221,7 @@ def all_input(wildcards):
 			'results/byExperimentRepCorFilter/{}.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
 		])
 		wanted_input.extend([
-			'results/byExperimentRepCorFilter/{}.ignoreInputBin.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
+			'results/byExperimentRepCorFilter/{}.effects_vs_ref_ignoreInputBin.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
 		])
 
 		## Output files for replicate experiments (after merging spike-in data)

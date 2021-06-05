@@ -52,25 +52,6 @@ rule calculate_allelic_effect_sizes:
 		"""
 
 
-# run mle to calculate the effect sizes
-rule calculate_allelic_effect_sizes_ignoreInputBin:
-	input:
-		counts='results/{directory}/{ExperimentID}.bin_counts.topN.txt',
-		sortparams=get_sortparams_file 
-	output:
-		'results/{directory}/{ExperimentID}.ignoreInputBin.raw_effects.txt'
-	log:
-		'results/{directory}/{ExperimentID}.ignoreInputBin.mle_log.txt'
-	shell:
-		"""
-		Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \
-			 --countsLocation {input.counts} \
-			 --sortParamsloc {input.sortparams} \
-			 --outputmle {output} --log {log} \
-			 --ignoreInputBinCounts TRUE
-		"""
-
-
 # Normalize allele effect sizes to reference allele specified in the variant info table
 rule normalize_allelic_effect_sizes:
 	input:
@@ -98,7 +79,49 @@ rule plot_allelic_effect_sizes:
 		"""
 
 
-# Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \
-# 			 --countsLocation '/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210426B001-VFF/results/byExperimentRep/IL2RA-Jurkat-IL2RA_peg10-0-1.bin_counts.txt' \
-# 			 --sortParamsloc '/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210426B001-VFF/sortParams/tmp/210426B001_3.csv' \
-# 			 --outputmle '/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210426B001-VFF/test/test.raw_effects.txt' --log '/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/210426B001-VFF/test/test.mle_log.txt'
+###################################################################################
+## Run again, but ignore input bin counts
+
+# run mle to calculate the effect sizes
+rule calculate_allelic_effect_sizes_ignoreInputBin:
+	input:
+		counts='results/{directory}/{ExperimentID}.bin_counts.topN.txt',
+		sortparams=get_sortparams_file 
+	output:
+		'results/{directory}/{ExperimentID}.raw_effects_ignoreInputBin.txt'
+	log:
+		'results/{directory}/{ExperimentID}.mle_log_ignoreInputBin.txt'
+	shell:
+		"""
+		Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \
+			 --countsLocation {input.counts} \
+			 --sortParamsloc {input.sortparams} \
+			 --outputmle {output} --log {log} \
+			 --ignoreInputBinCounts TRUE
+		"""
+
+# Normalize allele effect sizes to reference allele specified in the variant info table
+rule normalize_allelic_effect_sizes_ignoreInputBin:
+	input:
+		'results/{directory}/{ExperimentID}.raw_effects_ignoreInputBin.txt'
+	output:
+		'results/{directory}/{ExperimentID}.effects_vs_ref_ignoreInputBin.txt'
+	params:
+		codedir=config['codedir'],
+		variantInfo=config['variant_info']
+	shell:
+		"""
+		python {params.codedir}/workflow/scripts/normalize_allele_effects.py -i {input} -o {output} -v {params.variantInfo}
+		"""
+
+rule plot_allelic_effect_sizes_ignoreInputBin:
+	input:
+		'results/{replicateDirectory}/{ExperimentIDReplicates}.effects_vs_ref_ignoreInputBin.txt'
+	output:
+		'results/{replicateDirectory}/{ExperimentIDReplicates}.effects_vs_ref_ignoreInputBin.pdf'
+	params:
+		codedir=config['codedir']
+	shell:
+		"""
+		Rscript {params.codedir}/workflow/scripts/PlotMleVariantEffects.R --mleEffects {input} --outfile {output} 
+		"""
