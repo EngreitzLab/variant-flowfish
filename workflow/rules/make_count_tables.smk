@@ -106,9 +106,9 @@ rule make_count_table_per_experimentalRep:
 
 rule trim_count_table:
     input:
-        'results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt'
+        'results/{directory}/{ExperimentID}.bin_counts.txt'
     output:
-        'results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.filtered.txt'
+        'results/{directory}/{ExperimentID}.bin_counts.filtered.txt'
     params:
         n=10000
     shell:
