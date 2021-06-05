@@ -24,27 +24,25 @@ def write_design_file(counts_file, design):
 
 
 def get_sortparams_file(wildcards):
-	if wildcards.directory == "byExperimentRep":
-		currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentID) & (samplesheet['Bin'].isin(binList))]
+	if wildcards.directory == "byExperimentRep" or "byExperimentRepCorFilter":
+		currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "")]
 	else:
-		currSamples = samplesheet.loc[(samplesheet['ExperimentIDPCRRep'] == wildcards.ExperimentID) & (samplesheet['Bin'].isin(binList))]
-	Batch = currSamples['Batch'].unique()
-	SampleNumber = currSamples['SampleNumber'].unique()
-	if (len(Batch) != 1) or (len(SampleNumber) != 1):
-		print(currSamples['SampleID'])
+		currSamples = samplesheet.loc[(samplesheet['ExperimentIDPCRRep'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "")]
+	sortParams = currSamples['sortParamsFile'].unique()
+	if (len(sortParams) > 1):
 		raise ValueError("Found more than one possible sort params file path. Correct the samplesheet and rerun.")
-	return os.path.join(config['sortparamsdir'], Batch[0] + "_" + SampleNumber[0] + ".csv")
+	return sortParams
 
 
 # run mle to calculate the effect sizes
 rule calculate_allelic_effect_sizes:
 	input:
-		counts='{path}.bin_counts.topN.txt',
+		counts='results/{directory}/{ExperimentID}.bin_counts.topN.txt',
 		sortparams=get_sortparams_file 
 	output:
-		'{path}.raw_effects.txt'
+		'results/{directory}/{ExperimentID}.raw_effects.txt'
 	log:
-		'{path}.mle_log.txt'
+		'results/{directory}/{ExperimentID}.mle_log.txt'
 	shell:
 		"""
 		Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \
@@ -52,6 +50,26 @@ rule calculate_allelic_effect_sizes:
 			 --sortParamsloc {input.sortparams} \
 			 --outputmle {output} --log {log}
 		"""
+
+
+# run mle to calculate the effect sizes
+rule calculate_allelic_effect_sizes_ignoreInputBin:
+	input:
+		counts='results/{directory}/{ExperimentID}.bin_counts.topN.txt',
+		sortparams=get_sortparams_file 
+	output:
+		'results/{directory}/{ExperimentID}.ignoreInputBin.raw_effects.txt'
+	log:
+		'results/{directory}/{ExperimentID}.ignoreInputBin.mle_log.txt'
+	shell:
+		"""
+		Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \
+			 --countsLocation {input.counts} \
+			 --sortParamsloc {input.sortparams} \
+			 --outputmle {output} --log {log} \
+			 --ignoreInputBinCounts TRUE
+		"""
+
 
 # Normalize allele effect sizes to reference allele specified in the variant info table
 rule normalize_allelic_effect_sizes:

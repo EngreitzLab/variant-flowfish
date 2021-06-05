@@ -37,6 +37,12 @@ def find_fastq_files(samplesheet, fastqdir):
 	return samplesheet
 
 
+def find_sort_params_files(samplesheet):
+	samplesheet['sortParamsFile'] = [os.path.join(config['sortparamsdir'], str(row['Batch']) + "_" + str(row['SampleNumber']) + ".csv") for idx, row in samplesheet.iterrows()]
+	samplesheet.loc[samplesheet['SampleNumber'].isnull(),'sortParamsFile'] = ""
+	return samplesheet
+
+
 def add_experiment_names(samplesheet):
 	if ('ExperimentIDReplicates' in samplesheet.columns) or ('ExperimentID' in samplesheet.columns) or ('ExperimentIDPCRRep' in samplesheet.columns):
 		print("Warning: ExperimentID columns found and will be overwritten in the sample sheet")
@@ -114,6 +120,8 @@ def load_sample_sheet(samplesheetFile, ampliconInfoFile, idcol='AmpliconID'):
 			raise ValueError("Failed to merge samplesheet and amplicon info file.")		
 
 	samplesheet = find_fastq_files(samplesheet, fastqdir)
+	if not genotyping_only:
+		samplesheet = find_sort_params_files(samplesheet)
 	samplesheet = add_experiment_names(samplesheet)
 	samplesheet = add_outputs(samplesheet)
 	samplesheet.index = samplesheet['SampleID']
@@ -136,7 +144,7 @@ def load_variant_Table(variant_table, requiredCols):
 
 
 # global variables
-genotyping_only = ('genotyping_only' in config.columns) and (bool(config['genotyping_only']))
+genotyping_only = ('genotyping_only' in config) and (bool(config['genotyping_only']))
 if genotyping_only:
 	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep']
 else:
@@ -196,6 +204,9 @@ def all_input(wildcards):
 	if not genotyping_only:
 		## Output files for PCR replicates (before merging spike-in data)
 		wanted_input.extend(list(samplesheet['ExperimentIDPCRRep_BinCounts'].unique()))
+		#wanted_input.extend([
+		#	'results/byPcrRep/{}.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDPCRRep'].unique()
+		#])
 
 		## Output files for PCR replicates (after merging spike-in data) (?)
 		wanted_input.extend([])
@@ -203,11 +214,14 @@ def all_input(wildcards):
 		## Output files for replicate experiments (before merging spike-in data)
 		wanted_input.extend(list(samplesheet['ExperimentIDReplicates_BinCounts'].unique()))
 		wanted_input.extend([
-			'results/byExperimentRep/{}.raw_effects.txt'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
+			'results/byExperimentRep/{}.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
 		])
 
 		wanted_input.extend([
-			'results/byExperimentRepCorFilter/{}.raw_effects.txt'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
+			'results/byExperimentRepCorFilter/{}.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
+		])
+		wanted_input.extend([
+			'results/byExperimentRepCorFilter/{}.ignoreInputBin.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
 		])
 
 		## Output files for replicate experiments (after merging spike-in data)

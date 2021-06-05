@@ -8,8 +8,8 @@ option.list <- list(
   make_option("--variantCounts", type="character", help="Desired variant count flat file"),
   make_option("--samplesheet", type="character", help="Snakemake sample sheet including SampleID info"),
   make_option("--minCorrelation", type="numeric", default=-1, help="PCR replicates with less than this correlation will be flagged for removal"),
-  make_option("--correlationFile", type="character", help="Output file for PCR replicate correlation table")
-  make_option("--lowCorSamplesFile", type="character", help="Output file to list samples flagged with low replicate correlations")
+  make_option("--correlationFile", type="character", help="Output file for PCR replicate correlation table"),
+  make_option("--lowCorSamplesFile", type="character", help="Output file to list samples flagged with low replicate correlations"),
   make_option("--cvFile", type="character", help="Output file for coefficient of variation table")
   )
 opt <- parse_args(OptionParser(option_list=option.list))
@@ -126,5 +126,5 @@ cor.df <- getPCRReplicateCorrelations(countsFlat, samplesheet, minCorrelation=op
 vcv <- getPCRReplicateVariantCV(countsFlat, samplesheet)
 
 write.table(cor.df$cor, file=opt$correlationFile, sep='\t', quote=F, col.names=T, row.names=F)
-write.table(cor.df$lowCorSamples, file=opt$lowCorrSamplesFiles, sep='\t', quote=F, col.names=F, row.names=F)
+write.table(cor.df$lowCorSamples, file=opt$lowCorSamplesFile, sep='\t', quote=F, col.names=F, row.names=F)
 write.table(vcv, file=opt$cvFile, sep='\t', quote=F, col.names=T, row.names=F)

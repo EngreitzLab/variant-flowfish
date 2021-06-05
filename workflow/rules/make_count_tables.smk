@@ -13,9 +13,8 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
     currSamples = samplesheet.loc[samplesheet[group_col]==group_id]
 
     if samplesToExclude is not None:
-        exclude = pd.read_table(samplesToExclude, header=None, names='SampleID')
-        currSamples = samplesheet[~samplesheet['SampleID']isin(exclude['SampleID'].values)]
-
+        exclude = pd.read_table(samplesToExclude, header=None, names=['SampleID'])
+        currSamples = currSamples[~currSamples['SampleID'].isin(exclude['SampleID'].values)]
 
     allele_tbls = []
 
@@ -142,7 +141,7 @@ rule write_pcr_replicate_correlation:
 rule make_count_table_per_experimentalRep_withCorFilter:
     input: 
         samplesToExclude='results/summary/PCRReplicateCorrelations.LowQualSamples.tsv',
-        lambda wildcards: 
+        samples = lambda wildcards: 
             samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['CRISPRessoDir']
     output:
         counts='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_counts.txt',

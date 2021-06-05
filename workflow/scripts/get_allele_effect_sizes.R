@@ -18,7 +18,8 @@ option.list <- list(
   make_option(c("-clo", "--countsLocation"), type="character", help="Counts document location, ex: ~/Documents/Harvard/LanderResearch/flo1/raw/4.tsv"),
   make_option(c("-sp", "--sortParamsloc"), type="character", help="MUST HAVE A MEAN, BOUNDS, AND BARCODE COLUMN!!, ex: ~/Documents/Harvard/LanderResearch/flo1/raw/sortParams/gata1ff3.txt"),
   make_option(c("-om", "--outputmle"), type="character", help="File to write the MLE mean into for each guide"),
-  make_option(c("-l", "--log"), type="character", help="Log results of MLE")
+  make_option(c("-l", "--log"), type="character", help="Log results of MLE"),
+  make_option("--ignoreInputBinCounts", type="logical", default=FALSE, help="If TRUE, ignore the input bin bounds (Bin == 'All') in the MLE procedure")
 )
 opt <- parse_args(OptionParser(option_list=option.list))
 
@@ -131,7 +132,7 @@ getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total
   ## bins = matrix of bin boundaries (nrows = nbins, ncols = 2)
   ## returns mean and standard deviation in log-space
 
-  if (idx %% 1000 == 0) print(idx)
+  if (idx %% 1000 == 0) cat(paste0("get_allele_effect_sizes.R: Processed ", idx, " alleles.\n"))
 
   # cast to numeric vector
   bin.counts <- as.numeric(as.matrix(bin.counts))
@@ -327,7 +328,7 @@ counts <- addWeightedAverage(counts, sort.params, bin.names)
 # write.table(mS, file='/seq/lincRNA/Ben/base_editing/190415_BFF_spike_test/IL2RA-2/rs61839660-TATCTATTTTGGTCCCAAAC.NoSpike.AFTER.txt', sep="\t", quote=F, row.names=F, col.names=T)
 
 # run MLE
-runMLE <- function(mS, sort.params) {
+runMLE <- function(mS, sort.params, ignoreInputBinCounts=FALSE) {
   ## seed mean and standard deviation
   sd.seed <- sort.params$sd.seed #.5 
   # print(sd.seed)
@@ -337,7 +338,7 @@ runMLE <- function(mS, sort.params) {
   input.bin.name <- 'All'
   input.present <- FALSE
 
-  if (input.bin.name %in% colnames(mS)) {
+  if (input.bin.name %in% colnames(mS) & !ignoreInputBinCounts) {
     mS$input.fraction <- mS[,input.bin.name] / sum(mS[,input.bin.name])
     input.present <- TRUE
   }
@@ -358,7 +359,7 @@ runMLE <- function(mS, sort.params) {
 
 
 # write(pe[7],file=log,append=TRUE)
-counts <- runMLE(counts, sort.params)
+counts <- runMLE(counts, sort.params, opt$ignoreInputBinCounts)
 
 write.table(counts, file=outputmle, sep="\t", quote=F, row.names=F, col.names=T)
 write("Finished",file=log,append=TRUE)
