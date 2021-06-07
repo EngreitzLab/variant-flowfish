@@ -143,7 +143,7 @@ getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total
     seventh.bin.count <- estimateSeventhBinInput(bin.counts, mS$input.fraction[idx], total.count)
   }
 
-  if (seventh.bin.count < 0 || !input.present) {
+  if (seventh.bin.count <= 0 || !input.present) {
     seventh.bin.count <- estimateSeventhBinEM(mu.i, sd.i, bin.counts, bins)
   }
   
@@ -245,6 +245,8 @@ loadSortParams_Astrios <- function(filename, mS, total.binname="Total") {
   return(list(bins=bins[filt.names,], totalCount=total.count, sd.seed=seed))
 }
 
+
+
 loadSortParams_BigFoot <- function(filename, bin.names, total.binname="Total", full.file=TRUE) {
   ## Returns a list with the following items:
   ## bins: data.frame with the following columns:
@@ -269,6 +271,8 @@ loadSortParams_BigFoot <- function(filename, bin.names, total.binname="Total", f
   }
   # check that it has all the bins that the countsFile has
   if (sum(sort.params$Barcode %in% bin.names) != length(bin.names)) {
+    print(bin.names)
+    print(sort.params$Barcode)
     stop("Sort parameters file ", filename, " did not have all the bins")
   }
 
@@ -279,7 +283,7 @@ loadSortParams_BigFoot <- function(filename, bin.names, total.binname="Total", f
 
   if (full.file) {
     # need to treat the rows differently and cast them away from "Factors"
-    bin.means <- log10(as.numeric(as.character(sort.params$Mean)[bin.indices]))
+    bin.means <- log10(as.numeric(as.character(sort.params$Mean)[bin.indices]))  ## FOR BIGFOOT, this number appears to be wrong
     bin.mins <- log10(as.numeric(as.character(sort.params$Min)[bin.indices]))
     bin.maxs <- log10(as.numeric(as.character(sort.params$Max)[bin.indices]))
     seed <- log10(1+(as.numeric(as.character(sort.params$StdDev[sort.params$Barcode == total.binname])) / as.numeric(as.character(sort.params$Mean[sort.params$Barcode == total.binname])))^2)
@@ -292,12 +296,14 @@ loadSortParams_BigFoot <- function(filename, bin.names, total.binname="Total", f
   
   bin.counts <- sort.params$Count[bin.indices]
 
+  mu.seed <- median(bin.mins)
+
   # compute some extra numbers which will help our estimation
   total.count <- sort.params$Count[sort.params$Barcode == total.binname]
 
   bins <- data.frame(name=bin.names.inorder, mean=bin.means, lowerBound=bin.mins, upperBound=bin.maxs, count=bin.counts, stringsAsFactors=F)
   rownames(bins) <- bin.names.inorder
-  return(list(bins=bins, totalCount=total.count, sd.seed=seed))
+  return(list(bins=bins, totalCount=total.count, sd.seed=seed, mu.seed=mu.seed))
 }
 
 
@@ -318,18 +324,16 @@ addWeightedAverage <- function(mS, sort.params, bin.names) {
 }
 
 ## Set up read count table and sort params
-# mS <- loadReadCounts(designDocLocation, countsLocation)
 counts <- loadReadCounts(countsLocation)
 bin.names <- getBinNames(counts)
 sort.params <- loadSortParams_BigFoot(sortParamsloc, bin.names)
 counts <- rescaleReadCounts(counts, sort.params, bin.names)
 counts <- addWeightedAverage(counts, sort.params, bin.names)
 
-# write.table(mS, file='/seq/lincRNA/Ben/base_editing/190415_BFF_spike_test/IL2RA-2/rs61839660-TATCTATTTTGGTCCCAAAC.NoSpike.AFTER.txt', sep="\t", quote=F, row.names=F, col.names=T)
-
 # run MLE
 runMLE <- function(mS, sort.params, ignoreInputBinCounts=FALSE) {
   ## seed mean and standard deviation
+  mu.seed <- sort.params$mu.seed
   sd.seed <- sort.params$sd.seed #.5 
   # print(sd.seed)
   bin.bounds <- as.matrix(sort.params$bins[,c("lowerBound","upperBound")])
@@ -349,7 +353,13 @@ runMLE <- function(mS, sort.params, ignoreInputBinCounts=FALSE) {
     # tryCatch({ getNormalMLE(mS$WeightedAvg[i], sd.seed, mS[i,sort.params$bins$name], mS[i,inputCountCol], bin.bounds) }, error = function(err) { write(paste0("MLE errored out at given initialization for guide: ", i, ", using weighted average instead: ", err),file=log,append=TRUE); result <- c(mS$WeightedAvg[i], sd.seed); names(result) <- c("mean", "sd"); return(result) }))))
     # estimate the number of cells falling in n+1th bin
     # estimated.seventh.bin <- estimateSeventhBinInput(mS[i,bin.names], mS[i,input.bin.name] / sum(mS[,input.bin.name]), total.count)    
-    tryCatch({ getNormalMLE(2.15, sd.seed, mS[i,bin.names], bin.bounds, input.present, i, total.count, mS) }, error = function(err) { write(paste0("MLE errored out at given initialization for guide: ", i, ", using weighted average instead: ", err),file=log,append=TRUE); result <- c(mS$WeightedAvg[i], sd.seed); names(result) <- c("mean", "sd"); return(result) }))))
+    tryCatch({ 
+      getNormalMLE(mu.seed, sd.seed, mS[i,bin.names], bin.bounds, input.present, i, total.count, mS) 
+    }, error = function(err) { 
+      write(paste0("MLE errored out at given initialization for guide: ", i, ", using weighted average instead: ", err),file=log,append=TRUE)
+      result <- c(mS$WeightedAvg[i], sd.seed); names(result) <- c("mean", "sd")
+      return(result) 
+    }))))
   
   mS$logMean <- mleOuts$mean
   mS$logSD <- mleOuts$sd
