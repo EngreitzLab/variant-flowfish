@@ -261,9 +261,9 @@ loadSortParams_BigFoot <- function(filename, bin.names, total.binname="Total", f
 
   ## Check the sort params
   # check that it has all the required columns
-  required.cols <- c("Mean","Min","Max","Barcode","Count")
+  required.cols <- c("Mean","Min","Max","Barcode","Count","StdDev")
   if (! all(required.cols %in% colnames(sort.params)) ) {
-    stop("Sort parameters file ", filename, " did not have the needed :", required.cols)
+    stop("Sort parameters file ", filename, " did not have the needed required column(s): ", setdiff(required.cols,colnames(sort.params)))
   }
   # check that it has a total count
   if (!(total.binname %in% sort.params$Barcode)) {
@@ -307,6 +307,71 @@ loadSortParams_BigFoot <- function(filename, bin.names, total.binname="Total", f
 }
 
 
+loadSortParams_Influx <- function(filename, bin.names, total.binname="Total", full.file=TRUE) {
+  ## 7/26/21 temporary fix for reading Influx data
+  ## TODO: Factor out these different loadSortParams files and add code to fix these before launching the pipeline
+
+  ## Returns a list with the following items:
+  ## bins: data.frame with the following columns:
+  ##   name
+  ##   mean (log10)
+  ##   lowerBound (log10)
+  ##   upperBound (log10)
+  ##   count
+  ## totalCount: Total count of cells sorted
+
+  sort.params <- read.csv(filename)
+
+  ## Check the sort params
+  # check that it has all the required columns
+  required.cols <- c("Mean","Min","Max","Barcode","Count")
+  if (! all(required.cols %in% colnames(sort.params)) ) {
+    stop("Sort parameters file ", filename, " did not have the needed required column(s): ", setdiff(required.cols,colnames(sort.params)))
+  }
+  # check that it has a total count
+  if (!(total.binname %in% sort.params$Barcode)) {
+    stop(paste0("Barcode column in sort parameters file ", filename, " needs an entry called '",total.binname,"' to represent the total cell count from FACS"))
+  }
+  # check that it has all the bins that the countsFile has
+  if (sum(sort.params$Barcode %in% bin.names) != length(bin.names)) {
+    print(bin.names)
+    print(sort.params$Barcode)
+    stop("Sort parameters file ", filename, " did not have all the bins")
+  }
+
+  ## Extract info from sortParams for each bin
+  bin.indices <- which(sort.params$Barcode %in% bin.names)
+  bin.names.inorder <- sort.params$Barcode[bin.indices]
+  # bin.names.inorder <- gsub("-",".",as.character(sort.params$Barcode[bin.indices]))
+
+  if (full.file) {
+    # need to treat the rows differently and cast them away from "Factors"
+    bin.means <- log10(as.numeric(as.character(sort.params$Mean)[bin.indices]))  
+    bin.mins <- log10(as.numeric(as.character(sort.params$Min)[bin.indices]))
+    bin.maxs <- log10(as.numeric(as.character(sort.params$Max)[bin.indices]))
+    seed <- log10(1+(as.numeric(as.character(sort.params$Mean)[bin.indices])))-1 ## For influx, missing this data — make a guess
+  } else {
+    bin.means <- log10(sort.params$Mean[bin.indices])
+    bin.mins <- log10(sort.params$Min[bin.indices])
+    bin.maxs <- log10(sort.params$Max[bin.indices])
+    seed <- log10(1+(as.numeric(as.character(sort.params$Mean)[bin.indices])))-1 ## For influx, imssing this data - make a guess
+  }
+  
+  bin.counts <- sort.params$Count[bin.indices]
+
+  mu.seed <- median(bin.mins)
+
+  # compute some extra numbers which will help our estimation
+  total.count <- sort.params$Count[sort.params$Barcode == total.binname]
+
+  bins <- data.frame(name=bin.names.inorder, mean=bin.means, lowerBound=bin.mins, upperBound=bin.maxs, count=bin.counts, stringsAsFactors=F)
+  rownames(bins) <- bin.names.inorder
+  return(list(bins=bins, totalCount=total.count, sd.seed=seed, mu.seed=mu.seed))
+}
+
+
+
+
 rescaleReadCounts <- function(mS, sort.params, bin.names, input="InputCount") {
   binNames <- bin.names
   # write.table(mS[,binNames]/colSums(mS[,binNames]), file='/seq/lincRNA/Ben/base_editing/190415_BFF_spike_test/IL2RA-2/rs61839660-TATCTATTTTGGTCCCAAAC.NoSpike.BEFORE.txt', sep="\t", quote=F, row.names=F, col.names=T)
@@ -326,7 +391,7 @@ addWeightedAverage <- function(mS, sort.params, bin.names) {
 ## Set up read count table and sort params
 counts <- loadReadCounts(countsLocation)
 bin.names <- getBinNames(counts)
-sort.params <- loadSortParams_BigFoot(sortParamsloc, bin.names)
+sort.params <- loadSortParams_Influx(sortParamsloc, bin.names); print("RUNNING loadSortParams_Influx() -- may need to edit this function in get_allele_effect_sizes.R. TODO: Factor out this code to fix the sort params files")
 counts <- rescaleReadCounts(counts, sort.params, bin.names)
 counts <- addWeightedAverage(counts, sort.params, bin.names)
 

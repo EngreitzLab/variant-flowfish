@@ -30,6 +30,8 @@ def get_sortparams_file(wildcards):
 		currSamples = samplesheet.loc[(samplesheet['ExperimentIDPCRRep'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "")]
 	sortParams = currSamples['sortParamsFile'].unique()
 	if (len(sortParams) > 1):
+		print(sortParams)
+		print(wildcards)
 		raise ValueError("Found more than one possible sort params file path. Correct the samplesheet and rerun.")
 	return sortParams
 
