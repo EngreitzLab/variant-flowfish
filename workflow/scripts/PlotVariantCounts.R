@@ -61,11 +61,11 @@ binList <- binList[!(binList %in% c("All","Neg",""))]
 ############################################
 ## Plot overall edited rate in a stacked barplot
 
-getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDReplicates", fill="VariantID", includeRef=FALSE) {
+getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", fill="VariantID", includeRef=FALSE) {
   counts <- countsFlat %>% 
             filter(SampleID %in% samples$SampleID) %>%
             filter(includeRef | !RefAllele) %>%
-            merge(samples %>% select("SampleID",group,"ControlForAmplicon","CellLine")) %>%
+            merge(samples %>% select("SampleID", group, "ControlForAmplicon","CellLine")) %>%
             dplyr:::rename(Frequency="%Reads") %>% 
             mutate(Edited=ordered(ControlForAmplicon, levels=c(FALSE,TRUE), labels=c("Edited","Unedited"))) %>%
             as.data.frame()
@@ -80,10 +80,10 @@ getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDReplicates
 }
 
 
-pdf(file=paste0(opt$outbase, ".totalEditing.stackedBarplots.pdf"), width=5, height=4)
+pdf(file=paste0(opt$outbase, ".totalEditing.stackedBarplots.pdf"), width=9, height=8)
 samplesInput <- samplesheet %>% filter(Bin == "All" | ControlForAmplicon)
 for (amplicon in unique(samplesheet$AmpliconID)) {
-  currSamples <- samplesInput %>% filter(AmpliconID == amplicon)
+  currSamples <- samplesheet %>% filter(AmpliconID == amplicon)
   p <- getStackedBarplot(countsFlat, currSamples) + ggtitle(paste0("AmpliconID==",amplicon))
   print(p)
 }
@@ -108,7 +108,7 @@ flattenCorrMatrix <- function(cormat) {
 getPCRReplicateCorrelations <- function(countsFlat, samplesheet, includeRef=FALSE) {
   ## Return correlations among all pairs of PCR replicates, considering editing rates of non-reference desired alleles
   results <- list()
-  samplesheet <- samplesheet %>% mutate(Grouping=paste0(ExperimentIDReplicates,Bin))
+  samplesheet <- samplesheet %>% mutate(Grouping=paste0(ExperimentIDReplicates))
   for (group in unique(samplesheet$Grouping)) {
     currSamples <- samplesheet %>% filter(Grouping == group)
 
@@ -134,7 +134,7 @@ getPCRReplicateCorrelations <- function(countsFlat, samplesheet, includeRef=FALS
 getPCRReplicateVariantCV <- function(countsFlat, samplesheet, includeRef=FALSE) {
   ## Return coefficient of variation for each variant among all pairs of PCR replicates — so that we can see the degree of variance as a function of allele frequency
   results <- list()
-  samplesheet <- samplesheet %>% mutate(Grouping=paste0(ExperimentIDReplicates,Bin))
+  samplesheet <- samplesheet %>% mutate(Grouping=paste0(ExperimentIDReplicates))
   for (group in unique(samplesheet$Grouping)) {
     currSamples <- samplesheet %>% filter(Grouping == group)
 
