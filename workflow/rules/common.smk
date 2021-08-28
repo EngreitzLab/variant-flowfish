@@ -38,8 +38,10 @@ def find_fastq_files(samplesheet, fastqdir):
 
 
 def find_sort_params_files(samplesheet):
-	samplesheet['sortParamsFile'] = [os.path.join(config['sortparamsdir'], str(row['Batch']) + "_" + str(row['SampleNumber']) + ".csv") for idx, row in samplesheet.iterrows()]
-	samplesheet.loc[samplesheet['SampleNumber'].isnull(),'sortParamsFile'] = ""
+	## If the user provided 'sortParamsFile' in the samplesheet, use that. Otherwise, look in the sortParams directory
+	if not 'sortParamsFile' in samplesheet.columns:
+		samplesheet['sortParamsFile'] = [os.path.join(config['sortparamsdir'], str(row['Batch']) + "_" + str(row['SampleNumber']) + ".csv") for idx, row in samplesheet.iterrows()]
+		samplesheet.loc[samplesheet['SampleNumber'].isnull(),'sortParamsFile'] = ""
 	return samplesheet
 
 
