@@ -35,12 +35,14 @@ rule run_bowtie2:
   output:
     bam='results/aligned/{SampleID}/{SampleID}.bam',
     bai='results/aligned/{SampleID}/{SampleID}.bam.bai',
-    unaligned='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.gz'
+    unaligned_R1='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.1.gz',
+    unaligned_R2='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.2.gz'
   params:
     amplicon_seq=lambda wildcards: samplesheet.at[wildcards.SampleID,'AmpliconSeq'],
     guide=lambda wildcards: samplesheet.at[wildcards.SampleID,'GuideSpacer'],
     q=config['crispresso_min_average_read_quality'],
     s=config['crispresso_min_single_bp_quality'],
+    unaligned='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.gz',
     codedir=codedir
   #conda:
   #    "envs/CRISPResso.yml"  
@@ -56,7 +58,7 @@ rule run_bowtie2:
       bowtie2 -x {input.fasta} \
           -1 {input.read1} \
           -2 {input.read2} \
-          --un-gz {output.unaligned} \
+          --un-conc-gz {params.unaligned} \
           --very-sensitive-local \
           | samtools sort -T tmp/sort.{wildcards.SampleID} -O bam -o {output.bam} - && samtools index {output.bam}'
     """
