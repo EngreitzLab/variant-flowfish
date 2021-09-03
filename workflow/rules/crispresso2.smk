@@ -13,12 +13,14 @@ rule run_crispresso:
 		amplicon_seq=lambda wildcards: samplesheet.at[wildcards.SampleID,'AmpliconSeq'],
 		guide=lambda wildcards: samplesheet.at[wildcards.SampleID,'GuideSpacer'],
 		q=config['crispresso_min_average_read_quality'],
-		s=config['crispresso_min_single_bp_quality']
+		s=config['crispresso_min_single_bp_quality'],
+		sample_cleavage=lambda wildcards: samplesheet.at[wildcards.SampleID, 'EditFromGuide']
 	#conda:
 	#    "envs/CRISPResso.yml"  
 	## 4/14/21 JE - Specifying the conda environment here is not working, and I am not sure why. Snakemake builds the conda environment, but then the conda environment doesn't work properly (CRISPResso not on the path)
 	#   (This was on Sherlock, running snakemake from EngreitzLab conda envrionment).
 	#  So, instead used the syntax below to activate the already installed conda env
+	##HJ -- adjusting quant window to compress alleles into fewer unique alleles (observerd unique alleles are likely products of seq/PCR errror)
 	shell:
 		"""
 		bash -c '
@@ -32,6 +34,8 @@ rule run_crispresso:
 				--amplicon_name {params.amplicon_id} \
 				--name {wildcards.SampleID} \
 				--guide_seq {params.guide} \
+				--cleavage_offset {params.sample_cleavage} \
+				--offset_around_cut_to_plot 7 \
 				-q {params.q} -s {params.s} || true'
 		"""
 
