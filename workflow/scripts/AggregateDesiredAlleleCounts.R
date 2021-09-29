@@ -64,6 +64,9 @@ getAlleleTable <- function(countsFlat, variantInfo, minFreq) {
     group_by(MatchSequence,SampleID) %>% summarise(`%Reads`=sum(`%Reads`), `#Reads`=sum(`#Reads`)) %>% ungroup() %>% ## in some cases, CRISPResso reports the same Amplicon_Sequence twice ... if it aligns differently to reference
     as.data.frame()
 
+  desiredCountsFlat <- desiredCountsFlat %>%
+    rename(MappingSequence = MatchSequence) # rename MatchSequence back to MappingSequence so the merge with variantInfo at the end works 
+    
   desiredCountsTable <- desiredCountsFlat %>% select(-`#Reads`) %>% spread("SampleID","%Reads",fill=0) %>% as.data.frame()
 
   if (nrow(desiredCountsTable) > 1 & ncol(desiredCountsTable) > 2) {
@@ -75,7 +78,7 @@ getAlleleTable <- function(countsFlat, variantInfo, minFreq) {
     maxVal <- apply(desiredCountsTable[,-1], 1, max)
     desiredCountsTable <- desiredCountsTable[maxVal >= minFreq,]
   }
-
+  
   desiredCountsFlat <- merge(variantInfo %>% mutate(origOrder=1:n()), desiredCountsFlat) %>% arrange(origOrder) %>% select(-origOrder)
   desiredCountsTable <- merge(variantInfo %>% mutate(origOrder=1:n()), desiredCountsTable) %>% arrange(origOrder) %>% select(-origOrder)
 
