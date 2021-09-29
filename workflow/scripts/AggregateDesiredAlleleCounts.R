@@ -22,7 +22,6 @@ if (FALSE) {
   opt$variantCounts = "VariantCounts.flat.tsv.gz"
 }
 
-
 if (is.null(opt$outbase))
   stop("AggregateAlleleCounts: --outbase should be specified.\n")
 
@@ -39,15 +38,30 @@ if (opt$minFrequency < 0 | opt$minFrequency > 1)
 suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(dplyr))
 
+# Function to compare list of target sequences to match against a longer sequence. 
+# Return first match or 0 for no match.
+matchSeq <- function(seq, seqList) {
+  match = regmatches(seq, regexpr(paste(seqList, collapse="|"), seq)) %>% unlist()
+  # use gregexpr for all matches 
+  if (length(match) == 0) {
+    return("None") # HELP: if something doesn't match I think the sapply I use will break 
+  }
+  return(match)
+}
+
 
 getAlleleTable <- function(countsFlat, variantInfo, minFreq) {
-  countsFiltered <- merge(countsFlat, variantInfo %>% select(MappingSequence))
-
+  
+  # not sure if this is necessary, but does a similar function to the merge that was used previously
+  countsFiltered <- filter(countsFlat, grepl(paste(variantInfo$MappingSequence, collapse="|"), MappingSequence)) 
   if (nrow(countsFiltered)==0) return(NULL)
-
+  
+  # apply matchSeq function to MappingSequence column and save matches in MatchSequence column
+  countsFiltered["MatchSequence"] <- sapply(countsFiltered["MappingSequence"], matchSeq, seqList=variantInfo$MappingSequence)
+  
   desiredCountsFlat <- countsFiltered %>% 
-    select(MappingSequence,`#Reads`,`%Reads`,SampleID) %>%         
-    group_by(MappingSequence,SampleID) %>% summarise(`%Reads`=sum(`%Reads`), `#Reads`=sum(`#Reads`)) %>% ungroup() %>% ## in some cases, CRISPResso reports the same Amplicon_Sequence twice ... if it aligns differently to reference
+    select(MatchSequence,`#Reads`,`%Reads`,SampleID) %>%         
+    group_by(MatchSequence,SampleID) %>% summarise(`%Reads`=sum(`%Reads`), `#Reads`=sum(`#Reads`)) %>% ungroup() %>% ## in some cases, CRISPResso reports the same Amplicon_Sequence twice ... if it aligns differently to reference
     as.data.frame()
 
   desiredCountsTable <- desiredCountsFlat %>% select(-`#Reads`) %>% spread("SampleID","%Reads",fill=0) %>% as.data.frame()
