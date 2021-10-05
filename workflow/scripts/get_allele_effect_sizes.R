@@ -349,12 +349,12 @@ loadSortParams_Influx <- function(filename, bin.names, total.binname="Total", fu
     bin.means <- log10(as.numeric(as.character(sort.params$Mean)[bin.indices]))  
     bin.mins <- log10(as.numeric(as.character(sort.params$Min)[bin.indices]))
     bin.maxs <- log10(as.numeric(as.character(sort.params$Max)[bin.indices]))
-    seed <- log10(1+(as.numeric(as.character(sort.params$Mean)[bin.indices])))-1 ## For influx, missing this data — make a guess
+    seed <- log10(1+median(as.numeric(as.character(sort.params$Mean)[bin.indices])))-1 ## For influx, missing this data — make a guess
   } else {
     bin.means <- log10(sort.params$Mean[bin.indices])
     bin.mins <- log10(sort.params$Min[bin.indices])
     bin.maxs <- log10(sort.params$Max[bin.indices])
-    seed <- log10(1+(as.numeric(as.character(sort.params$Mean)[bin.indices])))-1 ## For influx, imssing this data - make a guess
+    seed <- log10(1+median(as.numeric(as.character(sort.params$Mean)[bin.indices])))-1 ## For influx, imssing this data - make a guess
   }
   
   bin.counts <- sort.params$Count[bin.indices]

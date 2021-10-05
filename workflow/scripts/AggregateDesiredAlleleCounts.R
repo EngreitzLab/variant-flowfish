@@ -52,9 +52,7 @@ matchSeq <- function(seq, seqList) {
 
 getAlleleTable <- function(countsFlat, variantInfo, minFreq) {
   
-  # not sure if this is necessary, but does a similar function to the merge that was used previously
-  countsFiltered <- filter(countsFlat, grepl(paste(variantInfo$MappingSequence, collapse="|"), MappingSequence)) 
-  if (nrow(countsFiltered)==0) return(NULL)
+  countsFiltered <- countsFlat
   
   # apply matchSeq function to MappingSequence column and save matches in MatchSequence column
   countsFiltered["MatchSequence"] <- sapply(countsFiltered["MappingSequence"], matchSeq, seqList=variantInfo$MappingSequence)
