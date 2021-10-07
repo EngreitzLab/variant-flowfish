@@ -6,26 +6,51 @@ import warnings
 
 
 def getAlleleTable(countsFlat, variantInfo, minFreq):
-    countsFiltered = df.copy(countsFlat)
 
-    # find all instances of VariantInfo mapping sequences in each Aligned_Sequence
-    countsFiltered['Matches'] = countsFiltered['Aligned_Sequence'].str.findall('|'.join(variantInfo.MappingSequence))
+    # iterate through variants from variantInfo and add matches from countsFlat to dataframe list
+    variantSearchList = []
+    count = 0
+    for variant in variantInfo.MappingSequence:
+        count += 1
+        if count % 100 == 0:
+            print(count, "variants processed")
+        variant_df = countsFlat[countsFlat['Aligned_Sequence'].str.contains(variant)]
+        variant_df['MatchSequence'] = variant
+        variantSearchList.append(variant_df)
 
-    # check if there is one match for each or not
-    if not all(countsFiltered['Matches'].str.len() == 1):
-        warnings.warn('AggregateAlleleCounts: Sequence exists with either none or multiple matches.')
-    # countsFlat[countsFlat['MatchSequence'].str.len() != 1] # if you want to get the entries with none/multiple matches
+    variantMatches = pd.concat(variantSearchList)
+    import pdb; pdb.set_trace()
+    # group matches by consistent columns and list #Reads, %Reads, MatchSequence to see if there are multiple matches
+    variantsGrouped = variantMatches.groupby(['Aligned_Sequence', 'Reference_Sequence', 'Reference_Name',
+       'Read_Status', 'n_deleted', 'n_inserted', 'n_mutated', 'SampleID'], as_index=False, observed=True)['#Reads',
+       '%Reads', 'MatchSequence'].agg(lambda x: list(x))
 
-    # keep first result from Matches
-    countsFlat['MatchSequence'] = countsFlat['Matches'].str[0]
+    print('number of variant matches:')
+    print(variantsGrouped['MatchSequence'].map(len).value_counts())
 
-    # group by Sample ID and MatchSequence, sum up the # and % reads, reset DataFrame index
-    desired_counts_flat = countsFiltered.groupby(['SampleID', 'MatchSequence'])[['#Reads', '%Reads']].sum().reset_index()
+    # collect multiple matches
+    variantsGroupedMultiple = variantsGrouped[variantsGrouped['MatchSequence'].map(len) > 1]
+    variantsGroupedMultiple['num_matches'] = variantsGroupedMultiple['MatchSequence'].apply(lambda x: len(x))
 
-    # create table with SampleIDs and #Reads
-    desired_counts_table = desired_counts_flat.pivot(index='MatchSequence',columns='SampleID',values='#Reads').reset_index()
-    desired_counts_table = desired_counts_table.rename_axis(None, axis=1).reset_index(drop=True) # the index needs to be reset because pivot names the index "SampleID"
 
+    # keep single variant matches
+    variantsGroupedSingle = variantsGrouped[variantsGrouped['MatchSequence'].map(len) == 1 ]
+    variantsGroupedSingle['#Reads'] = variantsGroupedSingle['#Reads'].apply(lambda x: x[0])
+    variantsGroupedSingle['%Reads'] = variantsGroupedSingle['%Reads'].apply(lambda x: x[0])
+    variantsGroupedSingle['MatchSequence'] = variantsGroupedSingle['MatchSequence'].apply(lambda x: x[0])
+
+    # group by Sample ID and MatchSequence, sum up the # and % reads, reset DataFrame index, merge with all variants
+    desired_counts_flat = variantsGroupedSingle.groupby(['SampleID', 'MatchSequence'])[['#Reads', '%Reads']].sum().reset_index()
+    desired_counts_flat = desired_counts_flat.merge(variantInfo, left_on='MatchSequence', right_on='MappingSequence', how='outer').fillna(0)
+    desired_counts_flat = desired_counts_flat[['MappingSequence', 'MatchSequence', 'AmpliconID', 'VariantID', 'RefAllele', 'SampleID', '%Reads', '#Reads']]
+
+    desired_counts_table = desired_counts_flat.pivot(index=['MatchSequence', 'AmpliconID', 'VariantID', 'RefAllele'], columns='SampleID', values='#Reads').reset_index()
+    desired_counts_table = desired_counts_table.rename_axis(None, axis=1).reset_index(drop=True).fillna(0) # the index needs to be reset because pivot names the index "SampleID"
+
+    # filter on minFrequency
+    desired_counts_table = desired_counts_table[desired_counts_table.max(axis=1) > minFreq]
+
+    return(desired_counts_flat, desired_counts_table, variantsGroupedMultiple)
 
 def main():
     parser = argparse.ArgumentParser(description='Aggregate allele frequency information across CRISPResso runs into a table for plotting and analysis.')
@@ -50,6 +75,10 @@ def main():
     variantInfo = pd.read_csv(args.variantInfo, sep='\t')
 
     desiredCounts = getAlleleTable(countsFlat, variantInfo, minFreq=args.minFrequency)
+
+    desiredCounts[0].to_csv(args.outbase + '.flat.tsv', sep='\t', index=False)
+    desiredCounts[1].to_csv(args.outbase + '.matrix.tsv', sep='\t', index=False)
+    desiredCounts[2].to_csv(args.outbase + '.multiples.tsv', sep='\t', index=False)
 
 if __name__=="__main__":
     main()
