@@ -19,7 +19,7 @@ def getAlleleTable(countsFlat, variantInfo, minFreq):
         variantSearchList.append(variant_df)
 
     variantMatches = pd.concat(variantSearchList)
-    import pdb; pdb.set_trace()
+
     # group matches by consistent columns and list #Reads, %Reads, MatchSequence to see if there are multiple matches
     variantsGrouped = variantMatches.groupby(['Aligned_Sequence', 'Reference_Sequence', 'Reference_Name',
        'Read_Status', 'n_deleted', 'n_inserted', 'n_mutated', 'SampleID'], as_index=False, observed=True)['#Reads',
