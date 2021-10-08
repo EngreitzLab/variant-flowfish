@@ -7,14 +7,12 @@ rule run_crispresso:
 		read2=lambda wildcards: samplesheet.at[wildcards.SampleID,'fastqR2']
 	output:
 		directory('results/crispresso/CRISPResso_on_{SampleID}/')
-		#'crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'
+		#'crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table.txt'
 	params:
 		amplicon_id=lambda wildcards: samplesheet.at[wildcards.SampleID,'AmpliconID'],
 		amplicon_seq=lambda wildcards: samplesheet.at[wildcards.SampleID,'AmpliconSeq'],
-		guide=lambda wildcards: samplesheet.at[wildcards.SampleID,'GuideSpacer'],
 		q=config['crispresso_min_average_read_quality'],
 		s=config['crispresso_min_single_bp_quality'],
-		sample_cleavage=lambda wildcards: samplesheet.at[wildcards.SampleID, 'EditFromGuide']
 	#conda:
 	#    "envs/CRISPResso.yml"  
 	## 4/14/21 JE - Specifying the conda environment here is not working, and I am not sure why. Snakemake builds the conda environment, but then the conda environment doesn't work properly (CRISPResso not on the path)
@@ -33,9 +31,6 @@ rule run_crispresso:
 				--amplicon_seq {params.amplicon_seq} \
 				--amplicon_name {params.amplicon_id} \
 				--name {wildcards.SampleID} \
-				--guide_seq {params.guide} \
-				--cleavage_offset {params.sample_cleavage} \
-				--offset_around_cut_to_plot 7 \
 				-q {params.q} -s {params.s} || true'
 		"""
 

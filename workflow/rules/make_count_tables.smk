@@ -5,7 +5,6 @@ import os
 import pandas as pd
 import numpy as np
 
-
 def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, samplesToExclude=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
     ## To do: Move the python code for these rules into separate python scripts so they can be run independently of the snakemake pipeline (at least, this makes it easier to test and debug the code)
@@ -19,13 +18,11 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
     allele_tbls = []
 
     for idx, row in currSamples.iterrows():
-        file = "results/crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt".format(
-            SampleID=row['SampleID'], 
-            AmpliconID=row['AmpliconID'], 
-            GuideSpacer=row['GuideSpacer'])
+        file = "results/crispresso/CRISPResso_on_{SampleID}/Alleles_frequency_table.zip".format(
+            SampleID=row['SampleID'])
 
         if (os.path.exists(file)):
-            allele_tbl = pd.read_table(file)
+            allele_tbl = pd.read_csv(file)
             allele_tbl['#Reads'] = allele_tbl['#Reads'].astype(np.int32)
             ref_seq = allele_tbl.loc[allele_tbl['Aligned_Sequence'] == allele_tbl['Reference_Sequence'], 'Reference_Sequence'].values[0]
             allele_tbl = allele_tbl.loc[allele_tbl['Reference_Sequence'] == ref_seq] # necessary?
@@ -72,13 +69,11 @@ def make_flat_table(samplesheet, outfile):
 
     allele_tbls = []
     for idx, row in samplesheet.iterrows():
-        file = "{CRISPRessoDir}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt".format(
-            CRISPRessoDir=row['CRISPRessoDir'],
-            AmpliconID=row['AmpliconID'],
-            GuideSpacer=row['GuideSpacer'])
+        file = "{CRISPRessoDir}/Alleles_frequency_table.zip".format(
+            CRISPRessoDir=row['CRISPRessoDir'])
 
         if (os.path.exists(file)):
-            allele_tbl = pd.read_table(file)
+            allele_tbl = pd.read_csv(file, sep='\t')
             allele_tbl['SampleID'] = row['SampleID']
             allele_tbls.append(allele_tbl)
 
