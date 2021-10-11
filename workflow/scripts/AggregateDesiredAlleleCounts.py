@@ -27,6 +27,8 @@ def getAlleleTable(countsFlat, variantInfo, minFreq):
 
     print('number of variant matches:')
     print(variantsGrouped['MatchSequence'].map(len).value_counts())
+    matchCounts = pd.DataFrame(variantsGrouped['MatchSequence'].map(len).value_counts()).reset_index()
+    matchCounts.columns = ['num_matches', 'count']
 
     # collect multiple matches
     variantsGroupedMultiple = variantsGrouped[variantsGrouped['MatchSequence'].map(len) > 1]
@@ -50,7 +52,7 @@ def getAlleleTable(countsFlat, variantInfo, minFreq):
     # filter on minFrequency
     desired_counts_table = desired_counts_table[desired_counts_table.max(axis=1) > minFreq]
 
-    return(desired_counts_flat, desired_counts_table, variantsGroupedMultiple)
+    return(desired_counts_flat, desired_counts_table, variantsGroupedMultiple, matchCounts)
 
 def main():
     parser = argparse.ArgumentParser(description='Aggregate allele frequency information across CRISPResso runs into a table for plotting and analysis.')
@@ -79,6 +81,7 @@ def main():
     desiredCounts[0].to_csv(args.outbase + '.flat.tsv', sep='\t', index=False)
     desiredCounts[1].to_csv(args.outbase + '.matrix.tsv', sep='\t', index=False)
     desiredCounts[2].to_csv(args.outbase + '.multiples.tsv', sep='\t', index=False)
+    desiredCounts[3].to_csv(args.outbase + '.match_counts.tsv', sep='\t', index=False)
 
 if __name__=="__main__":
     main()
