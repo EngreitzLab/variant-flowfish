@@ -169,4 +169,4 @@ rule make_desired_variant_tables:
     params:
         codedir=config['codedir']
     shell:
-        "python {params.codedir}/workflow/scripts/AggregateDesiredAlleleCounts.py--variantCounts {input.variantCounts} --variantInfo {input.variantInfo} --outbase results/summary/VariantCounts.DesiredVariants"
+        "python {params.codedir}/workflow/scripts/AggregateDesiredAlleleCounts.py --variantCounts {input.variantCounts} --variantInfo {input.variantInfo} --outbase results/summary/VariantCounts.DesiredVariants"

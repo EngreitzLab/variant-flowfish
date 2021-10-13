@@ -34,8 +34,6 @@ def getAlleleTable(countsFlat, variantInfo, minFreq):
         [
             'Aligned_Sequence',
             'Reference_Sequence',
-            'Reference_Name',
-            'Read_Status',
             'n_deleted',
             'n_inserted',
             'n_mutated',
