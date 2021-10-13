@@ -1,5 +1,5 @@
 # Jesse Engreitz
-# 5/30/21
+# 5/30/21 -- Katherine Guo updated 9/29/21
 # Rscript to aggregate allele frequency information across CRISPResso runs into a table for plotting and analysis
 
 
@@ -84,9 +84,9 @@ getAlleleTable <- function(countsFlat, variantInfo, minFreq) {
 }
 
 
-countsFlat <- read.delim(gzfile(opt$variantCounts), check.names=F, stringsAsFactors=T) %>%
-            rename(MappingSequence=Aligned_Sequence) %>%
-            as.data.frame()
+countsFlat <- read.delim(gzfile(opt$variantCounts), check.names=F, stringsAsFactors=T)
+colnames(countsFlat)[1] <- "MappingSequence" 
+countsFlat <- as.data.frame(countsFlat)
 variantInfo <- read.delim(opt$variantInfo, check.names=F, stringsAsFactors=F)
 
 desiredCounts <- getAlleleTable(countsFlat, variantInfo, minFreq=opt$minFreq)
