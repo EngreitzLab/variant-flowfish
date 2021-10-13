@@ -46,7 +46,7 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
             samples = currSamples.loc[currSamples['Bin'] == uniqBin]
             if len(samples) > 0:
                 count_tbl[uniqBin] = count_tbl[samples['SampleID']].sum(axis=1).values
-                
+
             else:
                 count_tbl[uniqBin] = 0
         count_tbl = count_tbl[bin_list]
@@ -82,8 +82,8 @@ def make_flat_table(samplesheet, outfile):
 
 
 rule make_count_table_per_PCRrep:
-    input: 
-        lambda wildcards: 
+    input:
+        lambda wildcards:
             samplesheet.loc[samplesheet['ExperimentIDPCRRep']==wildcards.ExperimentIDPCRRep]['CRISPRessoDir']
     output:
         counts='results/byPCRRep/{ExperimentIDPCRRep}.bin_counts.txt',
@@ -93,8 +93,8 @@ rule make_count_table_per_PCRrep:
 
 
 rule make_count_table_per_experimentalRep:
-    input: 
-        lambda wildcards: 
+    input:
+        lambda wildcards:
             samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['CRISPRessoDir']
     output:
         counts='results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt',
@@ -118,7 +118,7 @@ rule write_pcr_replicate_correlation:
     input:
         variantCounts="results/summary/VariantCounts.DesiredVariants.flat.tsv",
         samplesheet="SampleList.snakemake.tsv"
-    output: 
+    output:
         corfile="results/summary/PCRReplicateCorrelations.tsv",
         cvfile="results/summary/VariationVsAlleleFrequency.tsv",
         lowcorfile="results/summary/PCRReplicateCorrelations.LowQualSamples.tsv"
@@ -134,9 +134,9 @@ rule write_pcr_replicate_correlation:
 
 
 rule make_count_table_per_experimentalRep_withCorFilter:
-    input: 
+    input:
         samplesToExclude='results/summary/PCRReplicateCorrelations.LowQualSamples.tsv',
-        samples = lambda wildcards: 
+        samples = lambda wildcards:
             samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['CRISPRessoDir']
     output:
         counts='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_counts.txt',
@@ -146,7 +146,7 @@ rule make_count_table_per_experimentalRep_withCorFilter:
 
 
 rule make_flat_count_table_PCRrep:
-    input: 
+    input:
         lambda wildcards: samplesheet['CRISPRessoDir']
     output:
         'results/summary/VariantCounts.flat.tsv.gz',
@@ -158,12 +158,10 @@ rule make_desired_variant_tables:
     input:
         variantCounts='results/summary/VariantCounts.flat.tsv.gz',
         variantInfo=config['variant_info']
-    output: 
+    output:
         flat="results/summary/VariantCounts.DesiredVariants.flat.tsv",
         matrix="results/summary/VariantCounts.DesiredVariants.matrix.tsv"
     params:
         codedir=config['codedir']
     shell:
-        "Rscript {params.codedir}/workflow/scripts/AggregateDesiredAlleleCounts.R --variantCounts {input.variantCounts} --variantInfo {input.variantInfo} --outbase results/summary/VariantCounts.DesiredVariants"
-
-
+        "python {params.codedir}/workflow/scripts/AggregateDesiredAlleleCounts.py --variantCounts {input.variantCounts} --variantInfo {input.variantInfo} --outbase results/summary/VariantCounts.DesiredVariants"
