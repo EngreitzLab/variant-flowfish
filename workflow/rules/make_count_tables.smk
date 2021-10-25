@@ -22,7 +22,7 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
             SampleID=row['SampleID'])
 
         if (os.path.exists(file)):
-            allele_tbl = pd.read_csv(file)
+            allele_tbl = pd.read_csv(file, sep='\t')
             allele_tbl['#Reads'] = allele_tbl['#Reads'].astype(np.int32)
             ref_seq = allele_tbl.loc[allele_tbl['Aligned_Sequence'] == allele_tbl['Reference_Sequence'], 'Reference_Sequence'].values[0]
             allele_tbl = allele_tbl.loc[allele_tbl['Reference_Sequence'] == ref_seq] # necessary?
@@ -129,8 +129,8 @@ rule write_pcr_replicate_correlation:
           --variantCounts {input.variantCounts} \
           --samplesheet {input.samplesheet} \
           --correlationFile {output.corfile} \
-          --cvFile {output.cvfile} \
-          --lowCorSamplesFile {output.lowcorfile}"
+          --lowCorSamplesFile {output.lowcorfile} \
+          --cvFile {output.cvfile}"
 
 
 rule make_count_table_per_experimentalRep_withCorFilter:

@@ -13,11 +13,10 @@ def normalize_effects(raw_effects_file, outfile, variantInfo=None, index="Mappin
     if variantInfo is not None:
         variants = pd.read_table(variantInfo).set_index(index)
         raw = raw.join(variants, how='left', on=index)
-    
+
     # add mean column, using formula for mean of a log-normal distribution
     raw['mean'] = np.power(10, raw['logMean']+.5*(raw['logSD']**2))
-    raw['freq'] = raw['sum1'] / raw['sum1'].sum() 
-    
+    raw['freq'] = raw['sum1'] / raw['sum1'].sum()
     if variantInfo is None:
         # get reference allele expressions, assuming the most frequent allele is the reference allele
         refMean = raw.sort_values('sum1', axis=1, ascending=False)['mean'].values[0]
@@ -39,6 +38,3 @@ parser.add_argument("-v", dest="variantInfo", type=str, required=False, default=
 args = parser.parse_args()
 
 normalize_effects(args.input, args.output, args.variantInfo)
-
-
-
