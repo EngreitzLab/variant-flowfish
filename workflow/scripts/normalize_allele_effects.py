@@ -8,21 +8,36 @@ def normalize_effects(raw_effects_file, outfile, variantInfo=None, index="Mappin
     ## Normalize effects to the most common (assumed to be wild-type) allele
 
     # read in files
-    raw = pd.read_table(raw_effects_file).set_index(index)
-
-    if variantInfo is not None:
-        variants = pd.read_table(variantInfo).set_index(index)
-        raw = raw.join(variants, how='left', on=index)
+    raw = pd.read_table(raw_effects_file)
 
     # add mean column, using formula for mean of a log-normal distribution
     raw['mean'] = np.power(10, raw['logMean']+.5*(raw['logSD']**2))
     raw['freq'] = raw['sum1'] / raw['sum1'].sum()
+
     if variantInfo is None:
         # get reference allele expressions, assuming the most frequent allele is the reference allele
         refMean = raw.sort_values('sum1', axis=1, ascending=False)['mean'].values[0]
     else:
+        # merge in variant info to raw effects table 
+        variants = pd.read_table(variantInfo).set_index(index)
+        RefAllele_variants = variants[variants['RefAllele'] == True].reset_index()
+
+       # search for variants as substrings of raw effects MappingSequence
+        variantSearchList = []
+        count = 0
+        for index, row in RefAllele_variants.iterrows():
+            count += 1
+            if count % 100 == 0:
+                print(count, "variants processed")
+            variant_df = raw[raw['MappingSequence'].str.contains(row.MappingSequence)]
+            variant_df['MatchSequence'] = row.MappingSequence
+            variant_df['VariantID'] = row.VariantID
+            variantSearchList.append(variant_df)
+        variantMatches = pd.concat(variantSearchList)
+        
         # normalize to most abundant annotated reference allele
-        refMean = raw.loc[raw['RefAllele'].values == True,].sort_values('sum1', axis=0, ascending=False)['mean'].values[0]
+        refMean = variantMatches.sort_values('sum1', axis=0, ascending=False)['mean'].values[0]
+        raw = variantMatches # not sure but seems like need to keep only variant matches
 
     # normalize to reference allele
     raw['effect_size'] = raw['mean'] / refMean
