@@ -10,6 +10,8 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 
 * Ben Doughty (@bdoughty)
 * Jesse Engreitz (@engreitz)
+* Hank Jones
+* Katherine Guo
 
 ## Description
 
@@ -40,24 +42,26 @@ Required columns:
     
     SampleID          Unique name for each amplicon library. (e.g., BATCH-CellLine-Sample-FFRep-PCRRep-Bin)
     AmpliconID        Name of genomic amplicon contained in the library - must match corresponding AmpliconID column in the Amplicon Table (see below)
+                        Currently, this parameter (together with the Amplicon Table) controls which variants the pipeline quantifies for each sample
     Bin               Name of a FACS-sorted bin (e.g.: A B C D E F). 'All' for FlowFISH-input edited samples. 'Neg' or blank if not applicable
     PCRRep            PCR replicate number or name
+    ControlForAmplicon TRUE or FALSE. Set to TRUE for unedited samples that will be used to evaluate background sequencing/PCR error rate
+    EditFromGuide     [currently required, but soon not to be]: Distance of edit from guide spacer, used to control where CRISPResso looks for edits
     VFFSpikeIn        [required, but not currently used] Integer from 0 to 100 representing the percentage of unedited cells spiked into this sample
 
-Optional columns:
-
-    AmpliconSeq       Sequence of the genomic amplicon to align to. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
-    GuideSpacer       Spacer of the gRNA used. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
-    [Experiment Keys] Provide any number of additional columns (e.g., CellLine, Stimulation) that distinguish different samples.
+    [Experiment Keys] Provide any number of additional columns (e.g., CellLine, Guides, TestProbe) that distinguish different samples.
                         Key columns are defined as such by the 'experiment_keycols' parameter in the config file.
                         These columns will be combined to form a unique experiment key.
                         Replicates for a given unique experiment key will be combined.
+                       
     [Replicate Keys]  Provide any number of additional columns (e.g., FlowFISHRep) that distinguish different experimental replicates (not including PCR replicates)
                         Replicate columns are defined as such by the 'replicate_keycols' parameter in the config file.
                         These columns will be combined to form a unique replicate id.
                         PCR replicate counts for each unique replicate key will be summed at the level of this replicate ID.
                         MLE estimates and VFF spike-in calculations will also be performed at the level of this replicate ID, 
                         then compared according to grouping of the experiment key.
+                        
+Optional columns:
                         
     fastqR1           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R1_*fastq.gz)
     fastqR2           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R2_*fastq.gz)
@@ -66,6 +70,15 @@ Optional columns:
     SampleNumber      FlowFISH sample number - used to identify the appropriate FACS sort params file (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
     sortParamsFile    If provided in the Sample Sheet, overwrites the default value (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
     
+    Parameters that overwrite values in the Amplicon Table below:
+    AmpliconSeq       Sequence of the genomic amplicon to align to. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
+    GuideSpacer       Spacer of the gRNA used. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
+    
+    Parameters that overwrite values in the Variant Table below:
+    VariantID         Unique readable name of the variant / allele
+    MappingSequence   Genomic sequence of this variant / allele + genomic context; must match the output of CRISPResso2.    
+    RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
+
     Other columns can be present but are ignored.
 
 
