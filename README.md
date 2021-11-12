@@ -31,23 +31,24 @@ For installation details, see the [instructions in the Snakemake documentation](
 
 ### Step 3: Set up the Sample Sheet
 
-(Updated 5/7/21)
+(Updated 11/12/21 JME)
 
 The Sample Sheet lists all of the sequencing libraries that will be included in the analysis, and describes their relationships and groupings.
+Example: https://drive.google.com/file/d/15dn5mh1MdgDYSD-yzLuXAkrItvfvt0k9/view?usp=sharing
 
 Required columns:
     
-    SampleID          Unique name for each amplicon library.
+    SampleID          Unique name for each amplicon library. (e.g., BATCH-CellLine-Sample-FFRep-PCRRep-Bin)
     AmpliconID        Name of genomic amplicon contained in the library - must match corresponding AmpliconID column in the Amplicon Table (see below)
-    Bin               Name of a FACS-sorted bin (e.g.: A B C D E F). 'All' for input samples. 'Neg' or blank if not applicable
+    Bin               Name of a FACS-sorted bin (e.g.: A B C D E F). 'All' for FlowFISH-input edited samples. 'Neg' or blank if not applicable
     PCRRep            PCR replicate number or name
-    VFFSpikeIn        Integer from 0 to 100 representing the percentage of unedited cells spiked into this sample
+    VFFSpikeIn        [required, but not currently used] Integer from 0 to 100 representing the percentage of unedited cells spiked into this sample
 
 Optional columns:
 
     AmpliconSeq       Sequence of the genomic amplicon to align to. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
     GuideSpacer       Spacer of the gRNA used. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
-    [Experiment Keys] Provide any number of additional columns (e.g., CellLine) that distinguish different samples.
+    [Experiment Keys] Provide any number of additional columns (e.g., CellLine, Stimulation) that distinguish different samples.
                         Key columns are defined as such by the 'experiment_keycols' parameter in the config file.
                         These columns will be combined to form a unique experiment key.
                         Replicates for a given unique experiment key will be combined.
@@ -57,9 +58,16 @@ Optional columns:
                         PCR replicate counts for each unique replicate key will be summed at the level of this replicate ID.
                         MLE estimates and VFF spike-in calculations will also be performed at the level of this replicate ID, 
                         then compared according to grouping of the experiment key.
+                        
     fastqR1           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R1_*fastq.gz)
     fastqR2           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R2_*fastq.gz)
+    
+    Batch             Batch ID used to identify the appropriate FACS sort params file (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
+    SampleNumber      FlowFISH sample number - used to identify the appropriate FACS sort params file (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
     sortParamsFile    If provided in the Sample Sheet, overwrites the default value (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
+    
+    Other columns can be present but are ignored.
+
 
 ### Step 4: Set up the Amplicon Table
 
