@@ -25,10 +25,10 @@ opt <- parse_args(OptionParser(option_list=option.list))
 
 ## Set up variables
 # designDocLocation <- opt$designDocLocation
-countsLocation <- opt$countsLocation
+countsLocation <- opt$countsLocation 
 sortParamsloc <- opt$sortParamsloc
 outputmle <- opt$outputmle
-log <- opt$log
+log <- opt$log 
 
 MAXMEAN <- 10000 # in FACS space, max value a guide can take
 MINMEAN <- 1  # in FACS space, max value a guide can take
@@ -91,7 +91,7 @@ estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=M
 # per bin (which is of length nbins+1, to account for missed cells)
 # returns the negative of the log likelihood of observing those counts with the given parameters
 ll <- function(mu, std, observations, bins) {
-  # write("Invoked NLL",file=log,append=TRUE)
+  write("Invoked NLL",file=log,append=TRUE)
   # write(dim(bins),file=log,append=TRUE)
   #writeLines("Invoked NLL", log)
   if (std < 0) {
@@ -131,7 +131,6 @@ getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total
   ## bin.counts = vector of counts per bin (observed)
   ## bins = matrix of bin boundaries (nrows = nbins, ncols = 2)
   ## returns mean and standard deviation in log-space
-
   if (idx %% 1000 == 0) cat(paste0("get_allele_effect_sizes.R: Processed ", idx, " alleles.\n"))
 
   # cast to numeric vector

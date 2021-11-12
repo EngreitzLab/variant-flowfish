@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import numpy as np
 
-def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, samplesToExclude=None):
+def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, samplesToExclude=None, edit_regions=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
     ## To do: Move the python code for these rules into separate python scripts so they can be run independently of the snakemake pipeline (at least, this makes it easier to test and debug the code)
 
@@ -22,10 +22,26 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
             SampleID=row['SampleID'])
 
         if (os.path.exists(file)):
+            # import pdb; pdb.set_trace()
             allele_tbl = pd.read_csv(file, sep='\t')
             allele_tbl['#Reads'] = allele_tbl['#Reads'].astype(np.int32)
-            ref_seq = allele_tbl.loc[allele_tbl['Aligned_Sequence'] == allele_tbl['Reference_Sequence'], 'Reference_Sequence'].values[0]
-            allele_tbl = allele_tbl.loc[allele_tbl['Reference_Sequence'] == ref_seq] # necessary?
+            # check only edit region for matching? 
+            if edit_regions:
+                sample_id = row['SampleID']
+                amplicon = sample_id.split('-')[4] # this is not robust but will do for now
+                amplicon = amplicon.lstrip('Amplicon')
+                if amplicon not in edit_regions.keys():
+                    print('Invalid amplicon name.')
+                    exit(1)
+                start, end = edit_regions[amplicon].split('-')
+                start = int(start)
+                end = int(end)
+                allele_tbl['Aligned_Sequence_edit_region'] = allele_tbl['Aligned_Sequence'].apply(lambda x: x[start:end+1])
+                allele_tbl['Reference_Sequence_edit_region'] = allele_tbl['Reference_Sequence'].apply(lambda x: x[start:end+1])
+                ref_seq = allele_tbl[allele_tbl['Aligned_Sequence_edit_region'] == allele_tbl['Reference_Sequence_edit_region']]['Reference_Sequence'].mode()
+            else:
+                ref_seq = allele_tbl[allele_tbl['Aligned_Sequence'] == allele_tbl['Reference_Sequence']]['Reference_Sequence'].mode()
+            allele_tbl = allele_tbl[[allele_tbl['Reference_Sequence'] == ref_seq]] # necessary?
             allele_tbl = allele_tbl[['Aligned_Sequence', '#Reads']]
             allele_tbl.columns = ['Aligned_Sequence', row['SampleID']]
             allele_tbls.append(allele_tbl)
@@ -89,7 +105,7 @@ rule make_count_table_per_PCRrep:
         counts='results/byPCRRep/{ExperimentIDPCRRep}.bin_counts.txt',
         freq='results/byPCRRep/{ExperimentIDPCRRep}.bin_freq.txt'
     run:
-        make_count_table(samplesheet, 'ExperimentIDPCRRep', wildcards.ExperimentIDPCRRep, get_bin_list(), output.counts, output.freq)
+        make_count_table(samplesheet, 'ExperimentIDPCRRep', wildcards.ExperimentIDPCRRep, get_bin_list(), output.counts, output.freq, edit_regions=config['edit_regions'])
 
 
 rule make_count_table_per_experimentalRep:
@@ -100,7 +116,7 @@ rule make_count_table_per_experimentalRep:
         counts='results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt',
         freq='results/byExperimentRep/{ExperimentIDReplicates}.bin_freq.txt'
     run:
-        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq)
+        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, edit_regions=config['edit_regions'])
 
 
 rule trim_count_table:
@@ -142,7 +158,7 @@ rule make_count_table_per_experimentalRep_withCorFilter:
         counts='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_counts.txt',
         freq='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_freq.txt'
     run:
-        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, input.samplesToExclude)
+        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, input.samplesToExclude, edit_regions=config['edit_regions'])
 
 
 rule make_flat_count_table_PCRrep:

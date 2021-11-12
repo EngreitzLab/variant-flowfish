@@ -1,4 +1,5 @@
 ## Align all FASTQs to all amplicons to check that they're the correct samples
+## Also check how may FASTQs align to PhiX
 import io
 
 rule create_fasta:
@@ -78,3 +79,53 @@ rule count_bowtie2_alignments:
     result = pd.read_csv(io.StringIO(resultString), sep='\t')
     result = result.merge(samplesheet.reset_index(drop=True))
     result.to_csv(output.table, sep='\t', header=True, index=False)
+
+rule create_bowtie2_index_for_PhiX:
+  input:
+    fasta='variant-flowfish/resources/PhiX_sequence.fasta'
+  output:
+    index='variant-flowfish/resources/PhiX_sequence.fasta.1.bt2'
+  shell:
+    """
+    bash -c '
+      . $HOME/.bashrc 
+      conda activate crispresso2_210104
+      bowtie2-build {input.fasta} {input.fasta}
+    '
+    """
+    
+rule run_bowtie2_PhiX:
+  input:
+    read1=lambda wildcards: samplesheet.at[wildcards.SampleID,'fastqR1'],
+    read2=lambda wildcards: samplesheet.at[wildcards.SampleID,'fastqR2'],
+    fasta='variant-flowfish/resources/PhiX_sequence.fasta',
+    index='variant-flowfish/resources/PhiX_sequence.fasta.1.bt2'
+  output:
+    bam='results/aligned/{SampleID}/{SampleID}.PhiX.bam',
+    bai='results/aligned/{SampleID}/{SampleID}.PhiX.bam.bai',
+    unaligned_R1='results/aligned/{SampleID}/{SampleID}_unaligned.PhiX.fastq.1.gz',
+    unaligned_R2='results/aligned/{SampleID}/{SampleID}_unaligned.PhiX.fastq.2.gz'
+  params:
+    amplicon_seq=lambda wildcards: samplesheet.at[wildcards.SampleID,'AmpliconSeq'],
+    guide=lambda wildcards: samplesheet.at[wildcards.SampleID,'GuideSpacer'],
+    q=config['crispresso_min_average_read_quality'],
+    s=config['crispresso_min_single_bp_quality'],
+    unaligned='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.gz',
+    codedir=codedir
+  #conda:
+  #    "envs/CRISPResso.yml"  
+  ## 4/14/21 JE - Specifying the conda environment here is not working, and I am not sure why. Snakemake builds the conda environment, but then the conda environment doesn't work properly (CRISPResso not on the path)
+  #   (This was on Sherlock, running snakemake from EngreitzLab conda envrionment).
+  #  So, instead used the syntax below to activate the already installed conda env
+  shell:
+    """
+    bash -c '
+      . $HOME/.bashrc 
+      conda activate EngreitzLab
+      mkdir -p tmp
+      bowtie2 -x {input.fasta} \
+          -1 {input.read1} \
+          --un-conc-gz {params.unaligned} \
+          --very-sensitive-local \
+          | samtools sort -T tmp/sort.{wildcards.SampleID} -O bam -o {output.bam} - && samtools index {output.bam}'
+    """
