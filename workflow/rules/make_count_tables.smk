@@ -38,10 +38,10 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
                 end = int(end)
                 allele_tbl['Aligned_Sequence_edit_region'] = allele_tbl['Aligned_Sequence'].apply(lambda x: x[start:end+1])
                 allele_tbl['Reference_Sequence_edit_region'] = allele_tbl['Reference_Sequence'].apply(lambda x: x[start:end+1])
-                ref_seq = allele_tbl[allele_tbl['Aligned_Sequence_edit_region'] == allele_tbl['Reference_Sequence_edit_region']]['Reference_Sequence'].mode()
+                ref_seq = allele_tbl[allele_tbl['Aligned_Sequence_edit_region'] == allele_tbl['Reference_Sequence_edit_region']]['Reference_Sequence'].mode().item()
             else:
-                ref_seq = allele_tbl[allele_tbl['Aligned_Sequence'] == allele_tbl['Reference_Sequence']]['Reference_Sequence'].mode()
-            allele_tbl = allele_tbl[[allele_tbl['Reference_Sequence'] == ref_seq]] # necessary?
+                ref_seq = allele_tbl[allele_tbl['Aligned_Sequence'] == allele_tbl['Reference_Sequence']]['Reference_Sequence'].mode().item()
+            allele_tbl = allele_tbl[allele_tbl['Reference_Sequence'] == ref_seq] # necessary?
             allele_tbl = allele_tbl[['Aligned_Sequence', '#Reads']]
             allele_tbl.columns = ['Aligned_Sequence', row['SampleID']]
             allele_tbls.append(allele_tbl)
