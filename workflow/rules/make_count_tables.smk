@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import numpy as np
 
-def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, samplesToExclude=None, edit_regions=None):
+def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, variantInfo=None, samplesToExclude=None, edit_regions=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
     ## To do: Move the python code for these rules into separate python scripts so they can be run independently of the snakemake pipeline (at least, this makes it easier to test and debug the code)
 
@@ -71,11 +71,27 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
         count_tbl = pd.DataFrame({'Aligned_Sequence':[]})
         for uniqBin in bins:
             count_tbl[uniqBin] = []
-        count_tbl = count_tbl.set_index('Aligned_Sequence')
+        # count_tbl = count_tbl.set_index('Aligned_Sequence')
+    
+    # merge with variants table (maybe make separate function?)
+    count_tbl = count_tbl.reset_index() # resetting index to use Aligned_Sequence column
+    variants = pd.read_table(variantInfo)
+    variantSearchList = []
+    for index, row in variants.iterrows():
+        variant_df = count_tbl[count_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)]
+        variant_df['MatchSequence'] = row.MappingSequence
+        variant_df['VariantID'] = row.VariantID
+        variantSearchList.append(variant_df)
 
-    count_tbl.index.name = "MappingSequence"
-    count_tbl.to_csv(outfile, sep='\t')
+    # make count_tbl the variant matches list and group by unique variant 
+    count_tbl = pd.concat(variantSearchList)
+    count_tbl = count_tbl.groupby(['MatchSequence', 'VariantID']).sum()
+    count_tbl = count_tbl.reset_index()
+    count_tbl.rename(columns={'MatchSequence':'MappingSequence'}, inplace=True)
 
+    count_tbl.to_csv(outfile, sep='\t', index=False)
+    
+    count_tbl = count_tbl.set_index(['MappingSequence', 'VariantID']) # needed for freq operation
     freq_tbl = count_tbl.div(count_tbl.sum(axis=0), axis=1)
     freq_tbl.to_csv(outfile_frequencies, sep='\t', float_format='%.6f')
 
@@ -104,9 +120,26 @@ rule make_count_table_per_PCRrep:
     output:
         counts='results/byPCRRep/{ExperimentIDPCRRep}.bin_counts.txt',
         freq='results/byPCRRep/{ExperimentIDPCRRep}.bin_freq.txt'
-    run:
-        make_count_table(samplesheet, 'ExperimentIDPCRRep', wildcards.ExperimentIDPCRRep, get_bin_list(), output.counts, output.freq, edit_regions=config['edit_regions'])
-
+    params:
+        samplesheet=samplesheet,
+        group_col='ExperimentIDPCRRep',
+        bins=get_bin_list(),
+        variantInfo=config['variant_info'],
+        edit_regions=config['edit_regions'],
+        codedir=config['codedir']
+    shell:
+        """
+		python {params.codedir}/workflow/scripts/make_count_table.py \
+            --samplesheet {params.samplesheet} \
+            --group_col {params.group_col} \
+            --group_id {input.wildcards.ExperimentIDPCRRep} \
+            --bins {params.bins} \
+            --outfile {output.counts} \
+            --outfile_frequencies {output.freq} \
+            --edit_regions {params.edit_regions}
+		"""
+    # run:
+        # make_count_table(samplesheet, 'ExperimentIDPCRRep', wildcards.ExperimentIDPCRRep, get_bin_list(), output.counts, output.freq, edit_regions=config['edit_regions'])
 
 rule make_count_table_per_experimentalRep:
     input:
@@ -115,8 +148,26 @@ rule make_count_table_per_experimentalRep:
     output:
         counts='results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt',
         freq='results/byExperimentRep/{ExperimentIDReplicates}.bin_freq.txt'
+    # params:
+    #     samplesheet=samplesheet,
+    #     group_col='ExperimentIDReplicates',
+    #     bins=get_bin_list(),
+    #     variantInfo=config['variant_info'],
+    #     edit_regions=config['edit_regions'],
+    #     codedir=config['codedir']
+    # shell:
+    #     """
+    #     python {params.codedir}/workflow/scripts/make_count_table.py \
+    #         --samplesheet {params.samplesheet} \
+    #         --group_col {params.group_col} \
+    #         --group_id {input.wildcards.ExperimentIDReplicates} \
+    #         --bins {params.bins} \
+    #         --outfile {output.counts} \
+    #         --outfile_frequencies {output.freq} \
+    #         --edit_regions {params.edit_regions}
+    #     """
     run:
-        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, edit_regions=config['edit_regions'])
+        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, variantInfo=config['variant_info'], edit_regions=config['edit_regions'])
 
 
 rule trim_count_table:
