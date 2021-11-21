@@ -3,11 +3,8 @@ import pandas as pd
 import numpy as np
 import argparse
 
-from pandas.core.base import PandasObject
-
 def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, variantInfo=None, samplesToExclude=None, edit_regions=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
-    ## To do: Move the python code for these rules into separate python scripts so they can be run independently of the snakemake pipeline (at least, this makes it easier to test and debug the code)
 
     currSamples = samplesheet.loc[samplesheet[group_col]==group_id]
 
@@ -95,15 +92,21 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
     freq_tbl = count_tbl.div(count_tbl.sum(axis=0), axis=1)
     freq_tbl.to_csv(outfile_frequencies, sep='\t', float_format='%.6f')
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--samplesheet", required=True)
-parser.add_argument("--group_col", type=str, required=True)
-parser.add_argument("--group_id", type=str, required=True) 
-parser.add_argument("--bins", required=True) 
-parser.add_argument("--outfile", type=str, required=True) 
-parser.add_argument("--outfile_frequencies", type=str, required=True) 
-parser.add_argument("--samplesToExclude", required=False, default=None)
-parser.add_argument("--edit_regions", required=False, default=None)
 
-args = parser.parse_args()
-make_count_table(args.samplesheet, args.group_col, args.group_id, args.bins, args.outfile, args.outfile_frequencies, args.samplesToExclude, args.edit_regions)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--samplesheet", required=True)
+    parser.add_argument("--group_col", type=str, required=True)
+    parser.add_argument("--group_id", type=str, required=True) 
+    parser.add_argument("--bins", required=True) 
+    parser.add_argument("--outfile", type=str, required=True) 
+    parser.add_argument("--outfile_frequencies", type=str, required=True) 
+    parser.add_argument("--samplesToExclude", required=False, default=None)
+    parser.add_argument("--edit_regions", required=False, default=None)
+
+    args = parser.parse_args()
+    make_count_table(args.samplesheet, args.group_col, args.group_id, args.bins, args.outfile, args.outfile_frequencies, args.samplesToExclude, args.edit_regions)
+
+if __name__ == "__main__":
+    main()
