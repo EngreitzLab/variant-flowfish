@@ -22,25 +22,36 @@ def make_flat_table(samplesheet, outfile):
     flat.to_csv(outfile, sep='\t', index=False, compression='gzip')
 
 
+rule aggregate_variant_counts:
+    input:
+        lambda wildcards:
+            samplesheet.at[wildcards.SampleID,'CRISPRessoDir']
+    output:
+        counts='results/variantCounts/{SampleID}.variantCounts.txt'
+    run:
+        aggregate_variant_counts(samplesheet, wildcards.SampleID, output.counts, config['variant_info'])
+
+
 rule make_count_table_per_PCRrep:
     input:
         lambda wildcards:
-            samplesheet.loc[samplesheet['ExperimentIDPCRRep']==wildcards.ExperimentIDPCRRep]['CRISPRessoDir']
+            samplesheet.loc[samplesheet['ExperimentIDPCRRep']==wildcards.ExperimentIDPCRRep]['variantCountFile']
     output:
         counts='results/byPCRRep/{ExperimentIDPCRRep}.bin_counts.txt',
         freq='results/byPCRRep/{ExperimentIDPCRRep}.bin_freq.txt'
     run:
-        make_count_table(samplesheet, 'ExperimentIDPCRRep', wildcards.ExperimentIDPCRRep, get_bin_list(), output.counts, output.freq, edit_regions=config['edit_regions'])
+        make_count_table(samplesheet, 'ExperimentIDPCRRep', wildcards.ExperimentIDPCRRep, get_bin_list(), output.counts, output.freq)
+
 
 rule make_count_table_per_experimentalRep:
     input:
         lambda wildcards:
-            samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['CRISPRessoDir']
+            samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['variantCountFile']
     output:
         counts='results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt',
         freq='results/byExperimentRep/{ExperimentIDReplicates}.bin_freq.txt'
     run:
-        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, variantInfo=config['variant_info'], edit_regions=config['edit_regions'])
+        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, variantInfo=config['variant_info'])
 
 
 rule trim_count_table:
@@ -77,21 +88,21 @@ rule make_count_table_per_experimentalRep_withCorFilter:
     input:
         samplesToExclude='results/summary/PCRReplicateCorrelations.LowQualSamples.tsv',
         samples = lambda wildcards:
-            samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['CRISPRessoDir']
+            samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['variantCountFile']
     output:
         counts='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_counts.txt',
         freq='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_freq.txt'
     run:
-        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, input.samplesToExclude, edit_regions=config['edit_regions'])
+        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, input.samplesToExclude)
 
 
 rule make_flat_count_table_PCRrep:
     input:
-        lambda wildcards: samplesheet['CRISPRessoDir']
+        lambda wildcards: samplesheet['variantCountFile']
     output:
         'results/summary/VariantCounts.flat.tsv.gz',
     run:
-        make_flat_table(samplesheet, output[0])
+        make_flat_table(samplesheet, output[0]) ## To do: rewrite this function to take in this new variant count file format
 
 
 rule make_desired_variant_tables:
