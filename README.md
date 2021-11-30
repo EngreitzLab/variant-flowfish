@@ -84,7 +84,7 @@ Optional columns:
 
 ### Step 4: Set up the Amplicon Table
 
-(Updated 5/7/21)
+(Updated 11/30/21 JME)
 
 The Amplicon Table lists details for the genomic PCR amplicons used in the experiment.  It is optional; the information could be instead provided in the Sample Sheet.
 Information from the Amplicon Table is pulled into the Sample Sheet by the 'AmpliconID' column.
@@ -94,8 +94,8 @@ Required columns:
     AmpliconID                  Arbitrary name of the amplicon
     AmpliconSeq                 Full genomic sequence to align to
     GuideSpacer                 Spacer sequence of the gRNA around which to quantify edits (no PAM)
-    QuantificationWindowStart   Zero-based coordinate [) with respect to the start of the amplicon
-    QuantificationWindowEnd     Zero-based coordinate [) with respect to the start of the amplicon
+    QuantificationWindowStart   Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele
+    QuantificationWindowEnd     Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele 
 
 To do:  Add additional parameters here to control the crispresso2 quantification window.
 
