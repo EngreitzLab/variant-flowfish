@@ -90,9 +90,12 @@ The Amplicon Table lists details for the genomic PCR amplicons used in the exper
 Information from the Amplicon Table is pulled into the Sample Sheet by the 'AmpliconID' column.
 
 Required columns:
-    AmpliconID        Arbitrary name of the amplicon
-    AmpliconSeq       Full genomic sequence to align to
-    GuideSpacer       Spacer sequence of the gRNA around which to quantify edits (no PAM)
+
+    AmpliconID                  Arbitrary name of the amplicon
+    AmpliconSeq                 Full genomic sequence to align to
+    GuideSpacer                 Spacer sequence of the gRNA around which to quantify edits (no PAM)
+    QuantificationWindowStart   Zero-based coordinate [) with respect to the start of the amplicon
+    QuantificationWindowEnd     Zero-based coordinate [) with respect to the start of the amplicon
 
 To do:  Add additional parameters here to control the crispresso2 quantification window.
 
@@ -109,6 +112,7 @@ The Variant Table lists details for specific variants/alleles in the experiment.
 tables in which certain variants + alleles are named for plotting and downstream analysis.
 
 Required columns:
+
     AmpliconID        Arbitrary name of the amplicon
     VariantID         Unique readable name of the variant / allele
     MappingSequence   Genomic sequence of this variant / allele + genomic context; must match the output of CRISPResso2.    
