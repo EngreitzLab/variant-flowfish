@@ -102,7 +102,7 @@ rule make_flat_count_table_PCRrep:
     output:
         'results/summary/VariantCounts.flat.tsv.gz',
     run:
-        make_flat_table(samplesheet, output[0]) ## To do: rewrite this function to take in this new variant count file format
+        make_flat_table(samplesheet, output) ## To do: rewrite this function to take in this new variant count file format
 
 
 rule make_desired_variant_tables:

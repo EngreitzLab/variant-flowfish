@@ -193,7 +193,7 @@ loadReadCounts <- function(countsfile) {
 
 getBinNames <- function(counts) {
   col.names <- colnames(counts)
-  bin.names <- col.names [! col.names %in% c('MappingSequence','All')]
+  bin.names <- col.names [! col.names %in% c('MappingSequence','All', 'Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele')]
   return(bin.names)
 }
 

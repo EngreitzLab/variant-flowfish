@@ -76,6 +76,7 @@ def add_experiment_names(samplesheet):
 
 def add_outputs(samplesheet):
 	samplesheet['CRISPRessoDir'] = ['results/crispresso/CRISPResso_on_{SampleID}/'.format(SampleID=row['SampleID']) for index, row in samplesheet.iterrows()]
+	samplesheet['variantCountFile'] = ['results/variantCounts/{SampleID}.variantCounts.txt'.format(SampleID=row['SampleID']) for index, row in samplesheet.iterrows()]
 	if not genotyping_only:
 		samplesheet['ExperimentIDPCRRep_BinCounts'] = ['results/byPCRRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDPCRRep']]
 		samplesheet['ExperimentIDReplicates_BinCounts'] = ['results/byExperimentRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDReplicates']]
@@ -152,7 +153,7 @@ if genotyping_only:
 else:
 	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
 
-ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer']  ## To do:  Allow specifying crispresso quantification window for different amplicons
+ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer','QuantificationWindowStart','QuantificationWindowEnd']  ## To do:  Allow specifying crispresso quantification window for different amplicons
 variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
 keyCols = config['experiment_keycols'].split(',')
 repCols = config['replicate_keycols'].split(',')
@@ -200,15 +201,22 @@ def all_input(wildcards):
 		['results/aligned/{s}/{s}.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
 	)
 	wanted_input.append("results/summary/alignment.counts.tsv")
+	# PhiX alignment: 
+	# wanted_input.extend(
+	# 	['results/aligned/{s}/{s}.PhiX.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
+	# )
+
+	# ## Variant counts:
+	wanted_input.extend(list(samplesheet['variantCountFile'].unique()))
 
 	## At what point do we merge in the spike-in data? 
 
 	if not genotyping_only:
 		## Output files for PCR replicates (before merging spike-in data)
 		wanted_input.extend(list(samplesheet['ExperimentIDPCRRep_BinCounts'].unique()))
-		#wanted_input.extend([
-		#	'results/byPcrRep/{}.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDPCRRep'].unique()
-		#])
+		wanted_input.extend([
+			'results/byPCRRep/{}.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDPCRRep'].unique()
+		])
 
 		## Output files for PCR replicates (after merging spike-in data) (?)
 		wanted_input.extend([])

@@ -24,7 +24,7 @@ def write_design_file(counts_file, design):
 
 
 def get_sortparams_file(wildcards):
-	if wildcards.directory == "byExperimentRep" or "byExperimentRepCorFilter":
+	if wildcards.directory == "byExperimentRep" or wildcards.directory == "byExperimentRepCorFilter":
 		currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "")]
 	else:
 		currSamples = samplesheet.loc[(samplesheet['ExperimentIDPCRRep'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "")]
@@ -33,13 +33,18 @@ def get_sortparams_file(wildcards):
 		print(sortParams)
 		print(wildcards)
 		raise ValueError("Found more than one possible sort params file path. Correct the samplesheet and rerun.")
-	return sortParams
+	elif (len(sortParams) == 0):
+		print(sortParams)
+		print(wildcards)
+		raise ValueError("Found no possible sort params file path. Correct the samplesheet and rerun.")
+	else:
+		return sortParams[0]
 
 
 # run mle to calculate the effect sizes
 rule calculate_allelic_effect_sizes:
 	input:
-		counts='results/{directory}/{ExperimentID}.bin_counts.topN.txt',
+		counts='results/{directory}/{ExperimentID}.bin_counts.txt',
 		sortparams=get_sortparams_file 
 	output:
 		'results/{directory}/{ExperimentID}.raw_effects.txt'
