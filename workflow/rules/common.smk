@@ -31,8 +31,11 @@ def find_fastq_files(samplesheet, fastqdir):
 					file = glob.glob("{}-read-{}.fastq.gz".format(os.path.join(fastqdir, currSample), read))
 				if len(file) > 1:
 					raise ValueError("Found more than one FASTQ file for sample :" + currSample)
-				if len(file) == 1:
+				elif len(file) == 0:
+					print("Warning: Could not find FASTQ file for sample: " + currSample)
+				elif len(file) == 1:
 					samplesheet.at[i,colName] = file[0]
+
 	
 	return samplesheet
 
