@@ -19,7 +19,12 @@ import glob
 def find_fastq_files(samplesheet, fastqdir):
 	## Adds columns 'fastqR1' and 'fastqR2' to the sample sheet, only if they do not already exist
 
-	for read in ["1","2"]:
+	if single_end:
+		reads = ["1"]
+	else:
+		reads = ["1","2"]
+
+	for read in reads:
 		colName = 'fastqR' + read
 		if not colName in samplesheet.columns:
 			samplesheet[colName] = ""
@@ -32,7 +37,7 @@ def find_fastq_files(samplesheet, fastqdir):
 				if len(file) > 1:
 					raise ValueError("Found more than one FASTQ file for sample :" + currSample)
 				elif len(file) == 0:
-					print("Warning: Could not find FASTQ file for sample: " + currSample)
+					print("Warning: Could not find FASTQ file for read " + read + " and sample: " + currSample)
 				elif len(file) == 1:
 					samplesheet.at[i,colName] = file[0]
 
@@ -158,6 +163,8 @@ if genotyping_only:
 	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep']
 else:
 	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
+
+single_end = ('single_end' in config) and (bool(config['single_end']))
 
 ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer']  ## To do:  Allow specifying crispresso quantification window for different amplicons
 variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
