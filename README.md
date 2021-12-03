@@ -102,8 +102,15 @@ To do:  Add additional parameters here to control the crispresso2 quantification
 
 ### Step 5: Provide sort params files
 
-To do.
+This file lists statistics and values derived from the FACS sort for each sample. The file names need to be named {Batch}_{SampleNumber}.csv and located in the config['sortParams'] directory, or alternatively the filename listed explicitly in the Sample Sheet in a column called 'sortParamsFile'
 
+Required columns:
+
+    Bin                Name of the sorted bin, needs to match "Bin" column in the Sample Sheet
+    Count              Number of cells sorted into this bin
+    Mean               Mean fluorescence values of cells sorted into this bin     
+    Min                Minimum fluorescence value sorted into this bin (e.g., edge of the gate)
+    Max                Maximum fluorescence value sorted into this bin (e.g., edge of the gate)
 
 
 ### Step 6: Set up the Variant Table (optional)
