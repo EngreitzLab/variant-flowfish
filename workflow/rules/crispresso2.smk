@@ -24,6 +24,7 @@ if single_end:
 					--amplicon_seq {params.amplicon_seq} \
 					--amplicon_name {params.amplicon_id} \
 					--name {wildcards.SampleID} \
+					--amplicon_min_alignment_score 40 \
 					-q {params.q} -s {params.s} || true'
 			"""
 
