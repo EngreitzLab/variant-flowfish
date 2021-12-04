@@ -73,7 +73,7 @@ else:
     output:
       bam='results/aligned/{SampleID}/{SampleID}.bam',
       bai='results/aligned/{SampleID}/{SampleID}.bam.bai',
-      unaligned_R1='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.1.gz'
+      unaligned_R1='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.gz'
     params:
       amplicon_seq=lambda wildcards: samplesheet.at[wildcards.SampleID,'AmpliconSeq'],
       guide=lambda wildcards: samplesheet.at[wildcards.SampleID,'GuideSpacer'],
@@ -90,7 +90,7 @@ else:
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
             -U {input.read1} \
-            --un-conc-gz {params.unaligned} \
+            --un-gz {params.unaligned} \
             --very-sensitive-local \
             | samtools sort -T tmp/sort.{wildcards.SampleID} -O bam -o {output.bam} - && samtools index {output.bam}'
       """

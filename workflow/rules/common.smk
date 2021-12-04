@@ -165,9 +165,9 @@ if genotyping_only:
 else:
 	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
 
-ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer','QuantificationWindowStart','QuantificationWindowEnd']  ## To do:  Allow specifying crispresso quantification window for different amplicons
 single_end = ('single_end' in config) and (bool(config['single_end']))
 
+ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer','QuantificationWindowStart','QuantificationWindowEnd']  ## To do:  Allow specifying crispresso quantification window for different amplicons
 variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
 keyCols = config['experiment_keycols'].split(',')
 repCols = config['replicate_keycols'].split(',')
@@ -195,6 +195,7 @@ def all_input(wildcards):
 
 	## CRISPResso output:
 	wanted_input.extend(list(samplesheet['CRISPRessoDir'].unique()))
+	wanted_input.append("results/crispresso/CRISPRessoAggregate_on_Aggregate/")
 	wanted_input.append("results/summary/VariantCounts.flat.tsv.gz")
 	wanted_input.append("results/summary/VariantCounts.DesiredVariants.flat.tsv")
 	wanted_input.append("results/summary/VariantCounts.DesiredVariants.matrix.tsv")
