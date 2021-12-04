@@ -10,6 +10,8 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 
 * Ben Doughty (@bdoughty)
 * Jesse Engreitz (@engreitz)
+* Hank Jones
+* Katherine Guo
 
 ## Description
 
@@ -31,55 +33,84 @@ For installation details, see the [instructions in the Snakemake documentation](
 
 ### Step 3: Set up the Sample Sheet
 
-(Updated 5/7/21)
+(Updated 11/12/21 JME)
 
 The Sample Sheet lists all of the sequencing libraries that will be included in the analysis, and describes their relationships and groupings.
+Example: https://drive.google.com/file/d/15dn5mh1MdgDYSD-yzLuXAkrItvfvt0k9/view?usp=sharing
 
 Required columns:
     
-    SampleID          Unique name for each amplicon library.
+    SampleID          Unique name for each amplicon library. (e.g., BATCH-CellLine-Sample-FFRep-PCRRep-Bin)
     AmpliconID        Name of genomic amplicon contained in the library - must match corresponding AmpliconID column in the Amplicon Table (see below)
-    Bin               Name of a FACS-sorted bin (e.g.: A B C D E F). 'All' for input samples. 'Neg' or blank if not applicable
+                        Currently, this parameter (together with the Amplicon Table) controls which variants the pipeline quantifies for each sample
+    Bin               Name of a FACS-sorted bin (e.g.: A B C D E F). 'All' for FlowFISH-input edited samples. 'Neg' or blank if not applicable
     PCRRep            PCR replicate number or name
-    VFFSpikeIn        Integer from 0 to 100 representing the percentage of unedited cells spiked into this sample
+    ControlForAmplicon TRUE or FALSE. Set to TRUE for unedited samples that will be used to evaluate background sequencing/PCR error rate
+    EditFromGuide     [currently required, but soon not to be]: Distance of edit from guide spacer, used to control where CRISPResso looks for edits
+    VFFSpikeIn        [required, but not currently used] Integer from 0 to 100 representing the percentage of unedited cells spiked into this sample
 
-Optional columns:
-
-    AmpliconSeq       Sequence of the genomic amplicon to align to. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
-    GuideSpacer       Spacer of the gRNA used. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
-    [Experiment Keys] Provide any number of additional columns (e.g., CellLine) that distinguish different samples.
+    [Experiment Keys] Provide any number of additional columns (e.g., CellLine, Guides, TestProbe) that distinguish different samples.
                         Key columns are defined as such by the 'experiment_keycols' parameter in the config file.
                         These columns will be combined to form a unique experiment key.
                         Replicates for a given unique experiment key will be combined.
+                       
     [Replicate Keys]  Provide any number of additional columns (e.g., FlowFISHRep) that distinguish different experimental replicates (not including PCR replicates)
                         Replicate columns are defined as such by the 'replicate_keycols' parameter in the config file.
                         These columns will be combined to form a unique replicate id.
                         PCR replicate counts for each unique replicate key will be summed at the level of this replicate ID.
                         MLE estimates and VFF spike-in calculations will also be performed at the level of this replicate ID, 
                         then compared according to grouping of the experiment key.
+                        
+Optional columns:
+                        
     fastqR1           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R1_*fastq.gz)
     fastqR2           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R2_*fastq.gz)
+    
+    Batch             Batch ID used to identify the appropriate FACS sort params file (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
+    SampleNumber      FlowFISH sample number - used to identify the appropriate FACS sort params file (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
     sortParamsFile    If provided in the Sample Sheet, overwrites the default value (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
+    
+    Parameters that overwrite values in the Amplicon Table below:
+    AmpliconSeq       Sequence of the genomic amplicon to align to. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
+    GuideSpacer       Spacer of the gRNA used. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
+    
+    Parameters that overwrite values in the Variant Table below:
+    VariantID         Unique readable name of the variant / allele
+    MappingSequence   Genomic sequence of this variant / allele + genomic context; must match the output of CRISPResso2.    
+    RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
+
+    Other columns can be present but are ignored.
+
 
 ### Step 4: Set up the Amplicon Table
 
-(Updated 5/7/21)
+(Updated 11/30/21 JME)
 
 The Amplicon Table lists details for the genomic PCR amplicons used in the experiment.  It is optional; the information could be instead provided in the Sample Sheet.
 Information from the Amplicon Table is pulled into the Sample Sheet by the 'AmpliconID' column.
 
 Required columns:
-    AmpliconID        Arbitrary name of the amplicon
-    AmpliconSeq       Full genomic sequence to align to
-    GuideSpacer       Spacer sequence of the gRNA around which to quantify edits (no PAM)
+
+    AmpliconID                  Arbitrary name of the amplicon
+    AmpliconSeq                 Full genomic sequence to align to
+    GuideSpacer                 Spacer sequence of the gRNA around which to quantify edits (no PAM)
+    QuantificationWindowStart   Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele
+    QuantificationWindowEnd     Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele 
 
 To do:  Add additional parameters here to control the crispresso2 quantification window.
 
 
 ### Step 5: Provide sort params files
 
-To do.
+This file lists statistics and values derived from the FACS sort for each sample. The file names need to be named {Batch}_{SampleNumber}.csv and located in the config['sortParams'] directory, or alternatively the filename listed explicitly in the Sample Sheet in a column called 'sortParamsFile'
 
+Required columns:
+
+    Bin                Name of the sorted bin, needs to match "Bin" column in the Sample Sheet
+    Count              Number of cells sorted into this bin
+    Mean               Mean fluorescence values of cells sorted into this bin     
+    Min                Minimum fluorescence value sorted into this bin (e.g., edge of the gate)
+    Max                Maximum fluorescence value sorted into this bin (e.g., edge of the gate)
 
 
 ### Step 6: Set up the Variant Table (optional)
@@ -88,6 +119,7 @@ The Variant Table lists details for specific variants/alleles in the experiment.
 tables in which certain variants + alleles are named for plotting and downstream analysis.
 
 Required columns:
+
     AmpliconID        Arbitrary name of the amplicon
     VariantID         Unique readable name of the variant / allele
     MappingSequence   Genomic sequence of this variant / allele + genomic context; must match the output of CRISPResso2.    

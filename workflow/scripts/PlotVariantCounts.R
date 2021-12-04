@@ -51,11 +51,21 @@ suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(cowplot))
 
 
-countsFlat <- read.delim(opt$variantCounts, check.names=F, stringsAsFactors=F)
+fixPythonLogicalFields <- function(df) {
+  for (i in 1:ncol(df)) {
+    if (all(df[,i] %in% c("True","False",""))) {
+      df[,i] <- as.logical(as.character(as.matrix(df[,i])))
+    }
+  }
+  return(df)
+}
+
+countsFlat <- read.delim(opt$variantCounts, check.names=F, stringsAsFactors=F) %>% fixPythonLogicalFields()
 samplesheet <- read.delim(opt$samplesheet, check.names=F, stringsAsFactors=F)
 
 binList <- unique(samplesheet$Bin)
 binList <- binList[!(binList %in% c("All","Neg",""))]
+
 
 
 ############################################
