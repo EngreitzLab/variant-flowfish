@@ -16,7 +16,7 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         
         # select rows which Aligned_Sequence contains a variant 
         for index, row in variantInfo.iterrows():
-            variant_df = allele_tbl[allele_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)]
+            variant_df = allele_tbl[allele_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)].copy()
             variant_df['Match_Sequence'] = row.MappingSequence
             variant_df['VariantID'] = row.VariantID
             variantSearchList.append(variant_df)
@@ -56,7 +56,9 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         variant_counts = variant_counts.append(inferred_reference, ignore_index=True)
         variant_counts['RefAllele'] = variant_counts['VariantID'].str.contains('Reference') # odd way to get RefAllele boolean after grouping
 
+    variant_counts.rename(columns={"Reference_Name":"AmpliconID", "Match_Sequence":"MappingSequence"}, inplace=True)
     variant_counts.to_csv(outfile, sep='\t', index=False)
+
 
 def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, variantInfo=None, samplesToExclude=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
@@ -74,12 +76,12 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
             allele_tbl['#Reads'] = allele_tbl['#Reads'].astype(np.int32)
 
             # pare down allele_tbl columns for counts
-            allele_tbl = allele_tbl[['Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele', '#Reads']]
+            allele_tbl = allele_tbl[['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele', '#Reads']]
             allele_tbl.rename(columns={"#Reads":row['SampleID']}, inplace=True)
             allele_tbls.append(allele_tbl)
 
     # combine allele_tbls into one and sum on unique variants to get count table    
-    count_tbl = pd.concat(allele_tbls).groupby(['Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele']).sum()
+    count_tbl = pd.concat(allele_tbls).groupby(['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele']).sum()
     
     # rename bins and combine duplicates 
     bin_list = bins + list(set(currSamples['Bin'].unique())-set(bins))
@@ -98,7 +100,6 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
 
     # other outputs:
     # updated count_tbl with our inferred nMismatches nDeletions nInsertions columns added so we can debug
-
     count_tbl.to_csv(outfile, sep='\t')
     
     freq_tbl = count_tbl.div(count_tbl.sum(axis=0), axis=1)
