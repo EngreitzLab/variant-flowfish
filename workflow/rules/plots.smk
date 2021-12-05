@@ -2,7 +2,7 @@
 
 rule plot_genotyping_stats:
     input:
-        variantCounts="results/summary/VariantCounts.DesiredVariants.flat.tsv",
+        variantCounts="results/summary/VariantCounts.flat.tsv.gz",
         samplesheet="SampleList.snakemake.tsv"
     ## To do:  Adjust this script to use the correlation files now created in GetPCRReplicateCorrelation.R
     output: 

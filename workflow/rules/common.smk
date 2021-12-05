@@ -197,8 +197,7 @@ def all_input(wildcards):
 	wanted_input.extend(list(samplesheet['CRISPRessoDir'].unique()))
 	wanted_input.append("results/crispresso/CRISPRessoAggregate_on_Aggregate/")
 	wanted_input.append("results/summary/VariantCounts.flat.tsv.gz")
-	wanted_input.append("results/summary/VariantCounts.DesiredVariants.flat.tsv")
-	wanted_input.append("results/summary/VariantCounts.DesiredVariants.matrix.tsv")
+	wanted_input.append("results/summary/VariantCounts.matrix.tsv.gz")
 
 	## Genotyping plots:
 	wanted_input.append("results/summary/DesiredVariants.RData")
