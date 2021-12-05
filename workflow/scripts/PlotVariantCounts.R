@@ -62,17 +62,20 @@ binList <- binList[!(binList %in% c("All","Neg",""))]
 ############################################
 ## Plot overall edited rate in a stacked barplot
 
-getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", fill="VariantID", includeRef=FALSE) {
+getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", fill="VariantID", includeRef=FALSE, plotNReads=FALSE) {
   counts <- countsFlat %>%
             filter(SampleID %in% samples$SampleID) %>%
             filter(includeRef | RefAllele == "False") %>%
             merge(samples %>% select("SampleID", group, "ControlForAmplicon","CellLine")) %>%
-            dplyr:::rename(Frequency="%Reads") %>%
+            dplyr:::rename(Frequency="%Reads", nReads="#Reads") %>%
             mutate(Edited=ordered(ControlForAmplicon, levels=c(FALSE,TRUE), labels=c("Edited","Unedited"))) %>%
             as.data.frame()
-  p <- ggplot(counts, aes_string(x=group, y="Frequency", fill=fill)) + geom_col()
-  p <- p + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6)) +
-        ylab("Ref Allele Frequency (%)")
+
+  y <- ifelse(plotNReads, "nReads", "Frequency")
+  ylab <- ifelse(plotNReads, "Variant Read Count (#)", "Variant Frequency (%)")
+  p <- ggplot(counts, aes_string(x=group, y=y, fill=fill)) + geom_col()
+  p <- p + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6)) + ylab(ylab)
+  if (plotNReads) p <- p + scale_y_continuous(trans='log10')
   p <- p + theme(legend.key.size = unit(0.5, 'cm'), #change legend key size
                  legend.title = element_text(size=9), #change legend title font size
                  legend.text = element_text(size=8)) #change legend text font size
@@ -86,6 +89,8 @@ samplesInput <- samplesheet %>% filter(Bin == "All" | ControlForAmplicon)
 for (amplicon in unique(samplesheet$AmpliconID)) {
   currSamples <- samplesheet %>% filter(AmpliconID == amplicon)
   p <- getStackedBarplot(countsFlat, currSamples) + ggtitle(paste0("AmpliconID==",amplicon))
+  print(p)
+  p <- getStackedBarplot(countsFlat, currSamples, plotNReads=TRUE) + ggtitle(paste0("AmpliconID==",amplicon))
   print(p)
 }
 invisible(dev.off())
@@ -104,7 +109,7 @@ getRefStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep"
             as.data.frame()
   p <- ggplot(counts, aes_string(x=group, y="Frequency", fill=fill)) + geom_col(position=position_dodge())
   p <- p + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6)) +
-        ylab("Variant Frequency (%)")
+        ylab("Ref Allele Frequency (%)")
   p <- p + theme(legend.key.size = unit(0.5, 'cm'), #change legend key size
                  legend.title = element_text(size=9), #change legend title font size
                  legend.text = element_text(size=8)) #change legend text font size
