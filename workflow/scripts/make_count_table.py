@@ -48,6 +48,8 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         references['nInsertions'] = nInsertions_column
         references.to_csv('results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=sample_info['SampleID']), sep='\t', index=False)
 
+        ## TO DO: Missing a step where we filter the references based on nMismatches + nDeletions + nInsertions
+
         # group/sum all references together and get dict representation
         inferred_reference = references.groupby('Reference_Name')['#Reads', '%Reads'].sum().reset_index().to_dict(orient='records')[0]
         inferred_reference['VariantID'] = sample_info['AmpliconID'] + ':InferredReference'
