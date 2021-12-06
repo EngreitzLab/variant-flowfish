@@ -52,17 +52,6 @@ rule make_count_table_per_experimentalRep:
         make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, variantInfo=config['variant_info'])
 
 
-rule trim_count_table:
-    input:
-        '{path}.bin_counts.txt'
-    output:
-        '{path}.bin_counts.topN.txt'
-    params:
-        n=config['max_mle_variants']
-    shell:
-        'head -{params.n} {input} > {output}'
-
-
 rule write_pcr_replicate_correlation:
     input:
         variantCounts="results/summary/VariantCounts.DesiredVariants.flat.tsv",
