@@ -54,7 +54,7 @@ rule make_count_table_per_experimentalRep:
 
 rule write_pcr_replicate_correlation:
     input:
-        variantCounts="results/summary/VariantCounts.DesiredVariants.flat.tsv",
+        variantCounts="results/summary/VariantCounts.flat.tsv.gz",
         samplesheet="SampleList.snakemake.tsv"
     output:
         corfile="results/summary/PCRReplicateCorrelations.tsv",
