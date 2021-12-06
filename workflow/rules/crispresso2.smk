@@ -66,6 +66,10 @@ else:
 					-q {params.q} -s {params.s} || true'
 			"""
 
+	## TO do — add in quantification window for this command, as in single-end section
+	#				--quantification_window_coordinates {params.qws}-{params.qwe} \
+	#				--exclude_bp_from_left 0 --exclude_bp_from_right 0 \
+	#				--plot_window_size 0 --min_frequency_alleles_around_cut_to_plot 0.05 \
 
 ## Run CRISPRessoAggregate to collect mapping statistics across all runs
 rule run_crispresso_aggregate:
