@@ -137,18 +137,23 @@ Options to control behavior of the workflow at a high level:
 
     genotyping_only     Set "true" to mark the workflow to process up to the point of aligning and quantifying variants, without attempting to calculate effect sizes via the maximum likelihood estimator
     single_end          Set "true" if the data is single-end as opposed to paired-end reads
+    replicate_keycols   Comma-separated list of columns in the sample sheet used mark replicates (see Replicate Keys above)
+    experiment_keycols  Comma-separated list of columns in the sample sheet used to mark different experiments (see Experiment Keys above)
 
-Key file paths (can specify relative or absolute paths):
+File paths (can specify relative or absolute paths):
 
     sample_sheet        Path to Sample Sheet
     amplicon_info       Path to Amplicon Info table
     variant_info        Path to Variant Info table
     fastqdir            Path to directory containing FASTQ files
+    sortparamsdir       Path to directory containing FACS sort parameters files [not required for genotyping_only="true"]
     codedir             Path to the variant-flowfish code (e.g. "variant-flowfish/")
-    replicate_keycols   Comma-separated list of columns in the sample sheet used mark replicates (see Replicate Keys above)
-    experiment_keycols  Comma-separated list of columns in the sample sheet used to mark different experiments (see Experiment Keys above)
-    crispresso_min_average_read_quality Parameter passed to CRISPResso2 regarding minimum read quality score (e.g., 20)
-    crispresso_min_single_bp_quality Parameter passed to CRISPResso2 regarding minimum single bp quality score (e.g., 0)
+
+Other parameters:
+
+    crispresso_min_average_read_quality     Parameter passed to CRISPResso2 regarding minimum read quality score (e.g., 20)
+    crispresso_min_single_bp_quality        Parameter passed to CRISPResso2 regarding minimum single bp quality score (e.g., 0)
+    
     
 ### Step 7: Execute workflow
 
