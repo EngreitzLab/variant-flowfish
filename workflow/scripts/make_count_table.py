@@ -23,12 +23,12 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         
         # combine variants and group by unique variant 
         variants = pd.concat(variantSearchList) 
-        reference_sequence = variants['Reference_Sequence'].mode().item()
+        #reference_sequence = variants['Reference_Sequence'].mode().item()
         variants_grouped = variants.groupby(['Reference_Name', 'Match_Sequence', 'VariantID'])
         variant_counts = variants_grouped.sum()
         variant_counts.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
         variant_counts['Counts'] = variants_grouped.size()
-        variant_counts['Reference_Sequence'] = reference_sequence
+        #variant_counts['Reference_Sequence'] = reference_sequence
         variant_counts = variant_counts.reset_index()
 
         # get rows of allele_tbl that do not contain one of the variants
@@ -54,7 +54,7 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         inferred_reference = references.groupby('Reference_Name')['#Reads', '%Reads'].sum().reset_index().to_dict(orient='records')[0]
         inferred_reference['VariantID'] = sample_info['AmpliconID'] + ':InferredReference'
         inferred_reference['Counts'] = len(references)
-        inferred_reference['Reference_Sequence'] = references['Reference_Sequence'].mode().item()
+        #inferred_reference['Reference_Sequence'] = references['Reference_Sequence'].mode().item()
         variant_counts = variant_counts.append(inferred_reference, ignore_index=True)
         variant_counts['RefAllele'] = variant_counts['VariantID'].str.contains('Reference') # odd way to get RefAllele boolean after grouping
 
