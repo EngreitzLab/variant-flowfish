@@ -25,9 +25,10 @@ To do
 
 ### Step 2: Install conda environment
 
-Install Snakemake and conda environment using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
+Install conda environments using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
 
-    conda env create --file envs/CRISPResso.yaml  [TODO: replace with crispresso2_env]
+    conda env create --file envs/EngreitzLab.yml
+    conda env create --file envs/crispresso2_v2.2.6.yml
 
 For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
 
@@ -84,16 +85,19 @@ Optional columns:
 
 ### Step 4: Set up the Amplicon Table
 
-(Updated 11/30/21 JME)
+(Updated 12/6/21 JME)
 
 The Amplicon Table lists details for the genomic PCR amplicons used in the experiment.  It is optional; the information could be instead provided in the Sample Sheet.
+
 Information from the Amplicon Table is pulled into the Sample Sheet by the 'AmpliconID' column.
+
+Note: The AmpliconSeq should be completely spanned by the reads in the experiment — otherwise CRISPResso2 will fail.  If the sequencing reads do not entirely cover the amplicon, then adjust AmpliconSeq to match the reads.
 
 Required columns:
 
     AmpliconID                  Arbitrary name of the amplicon
     AmpliconSeq                 Full genomic sequence to align to
-    GuideSpacer                 Spacer sequence of the gRNA around which to quantify edits (no PAM)
+    GuideSpacer                 Spacer sequence of the gRNA around which to quantify edits (no PAM) [not currently used]
     QuantificationWindowStart   Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele
     QuantificationWindowEnd     Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele 
 
@@ -128,15 +132,35 @@ Required columns:
 
 ### Step 6: Configure workflow
 
-[TODO]:  For now, edit `workflow/config.json` to point to the right files
+Edit `workflow/config.json` to point to the right files and define certain variables.
 
+Options to control behavior of the workflow at a high level:
 
+    genotyping_only     Set "true" to mark the workflow to process up to the point of aligning and quantifying variants, without attempting to calculate effect sizes via the maximum likelihood estimator
+    single_end          Set "true" if the data is single-end as opposed to paired-end reads
+    replicate_keycols   Comma-separated list of columns in the sample sheet used mark replicates (see Replicate Keys above)
+    experiment_keycols  Comma-separated list of columns in the sample sheet used to mark different experiments (see Experiment Keys above)
+
+File paths (can specify relative or absolute paths):
+
+    sample_sheet        Path to Sample Sheet
+    amplicon_info       Path to Amplicon Info table
+    variant_info        Path to Variant Info table
+    fastqdir            Path to directory containing FASTQ files
+    sortparamsdir       Path to directory containing FACS sort parameters files [not required for genotyping_only="true"]
+    codedir             Path to the variant-flowfish code (e.g. "variant-flowfish/")
+
+Other parameters:
+
+    crispresso_min_average_read_quality     Parameter passed to CRISPResso2 regarding minimum read quality score (e.g., 20)
+    crispresso_min_single_bp_quality        Parameter passed to CRISPResso2 regarding minimum single bp quality score (e.g., 0)
+    
+    
 ### Step 7: Execute workflow
 
 Activate the conda environment:
 
     conda activate EngreitzLab 
-    ## TODO: Create specific environment for thie pipeline and check in yml file to workflows/envs/
 
 Test your configuration by performing a dry-run via
 
