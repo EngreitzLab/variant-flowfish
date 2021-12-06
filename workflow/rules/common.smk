@@ -142,10 +142,11 @@ def load_sample_sheet(samplesheetFile, ampliconInfoFile, idcol='AmpliconID'):
 
 def get_bin_list():
 	binList = samplesheet['Bin'].drop_duplicates()
-	if  "All" not in binList.tolist():
-		print("\nWARNING: Did not find any entries with Bin == 'All' (unsorted edited cells input into FlowFISH). Was this intended, or was 'All' mispelled?\n\n")
-	if "Neg" not in binList.tolist():
-		print("\nWARNING: Did not find any entries with Bin == 'Neg' (unedited cells used to assess sequencing error rate). Was this intended, or was 'Neg' mispelled?\n\n")		
+	if not genotyping_only:
+		if  "All" not in binList.tolist():
+			print("\nWARNING: Did not find any entries with Bin == 'All' (unsorted edited cells input into FlowFISH). Was this intended, or was 'All' mispelled?\n\n")
+		if "Neg" not in binList.tolist():
+			print("\nWARNING: Did not find any entries with Bin == 'Neg' (unedited cells used to assess sequencing error rate). Was this intended, or was 'Neg' mispelled?\n\n")		
 	binList = binList[(binList != "All") & (binList != "Neg") & (binList.notnull())]
 	binList = [str(b) for b in list(binList)]
 	print("Processing unique bins: " + ' '.join(binList))
