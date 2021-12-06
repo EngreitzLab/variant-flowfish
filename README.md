@@ -25,9 +25,10 @@ To do
 
 ### Step 2: Install conda environment
 
-Install Snakemake and conda environment using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
+Install conda environments using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
 
-    conda env create --file envs/CRISPResso.yaml  [TODO: replace with crispresso2_env]
+    conda env create --file envs/EngreitzLab.yml
+    conda env create --file envs/crispresso2_v2.2.6.yml
 
 For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
 
@@ -160,7 +161,6 @@ Other parameters:
 Activate the conda environment:
 
     conda activate EngreitzLab 
-    ## TODO: Create specific environment for thie pipeline and check in yml file to workflows/envs/
 
 Test your configuration by performing a dry-run via
 
