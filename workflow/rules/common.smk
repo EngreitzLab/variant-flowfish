@@ -162,9 +162,9 @@ def load_variant_Table(variant_table, requiredCols):
 # global variables
 genotyping_only = ('genotyping_only' in config) and (bool(config['genotyping_only']))
 if genotyping_only:
-	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep']
+	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon']
 else:
-	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
+	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon','VFFSpikeIn']
 
 single_end = ('single_end' in config) and (bool(config['single_end']))
 
