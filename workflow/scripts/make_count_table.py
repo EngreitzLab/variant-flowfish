@@ -64,6 +64,8 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
 
 def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, variantInfo=None, samplesToExclude=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
+
+
     currSamples = samplesheet.loc[samplesheet[group_col]==group_id]
     currSamples['Bin'] = currSamples['Bin'].fillna('NA')
     if samplesToExclude is not None:
@@ -89,9 +91,12 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
     bin_list = bins + list(set(currSamples['Bin'].unique())-set(bins))
     combined_count_tbl = pd.DataFrame(index=count_tbl.index)
     for b in bin_list:
-        regex_bin = '.*Bin{}$'.format(b) # make regex to select column ending in BinA, BinB, etc.
-        rep_columns = count_tbl.filter(regex=regex_bin).columns
-        combined_count_tbl[b] = count_tbl[rep_columns].sum(axis=1) # sum replicate columns
+        rep_columns = currSamples.loc[currSamples['Bin']==b,'SampleID'].tolist()
+        if (len(rep_columns) > 0):
+            combined_count_tbl[b] = count_tbl[rep_columns].sum(axis=1).astype(np.int32) # sum replicate columns
+        else:
+            combined_count_tbl[b] = 0
+
     count_tbl = combined_count_tbl
 
     ## OUTPUT OF THIS FUNCTION:
@@ -106,6 +111,7 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
     
     freq_tbl = count_tbl.div(count_tbl.sum(axis=0), axis=1)
     freq_tbl.to_csv(outfile_frequencies, sep='\t', float_format='%.6f')
+
 
 def count_mismatches(Aligned_Sequence, Reference_Sequence, RefQuantificationWindowStart, RefQuantificationWindowEnd):
     ## this function is a bit tricky, has to account for gaps/indels in the alignment marked by '-'
