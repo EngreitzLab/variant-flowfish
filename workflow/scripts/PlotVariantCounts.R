@@ -75,7 +75,6 @@ getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", f
   ylab <- ifelse(plotNReads, "Variant Read Count (#)", "Variant Frequency (%)")
   p <- ggplot(counts, aes_string(x=group, y=y, fill=fill)) + geom_col()
   p <- p + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6)) + ylab(ylab)
-  if (plotNReads) p <- p + scale_y_continuous(trans='log10')
   p <- p + theme(legend.key.size = unit(0.5, 'cm'), #change legend key size
                  legend.title = element_text(size=9), #change legend title font size
                  legend.text = element_text(size=8)) #change legend text font size
@@ -88,10 +87,12 @@ pdf(file=paste0(opt$outbase, ".totalEditing.stackedBarplots.pdf"), width=9, heig
 samplesInput <- samplesheet %>% filter(Bin == "All" | ControlForAmplicon)
 for (amplicon in unique(samplesheet$AmpliconID)) {
   currSamples <- samplesheet %>% filter(AmpliconID == amplicon)
-  p <- getStackedBarplot(countsFlat, currSamples) + ggtitle(paste0("AmpliconID==",amplicon))
-  print(p)
-  p <- getStackedBarplot(countsFlat, currSamples, plotNReads=TRUE) + ggtitle(paste0("AmpliconID==",amplicon))
-  print(p)
+  tryCatch({
+    p <- getStackedBarplot(countsFlat, currSamples, group="SampleID") + ggtitle(paste0("AmpliconID==",amplicon))
+    print(p)
+    p <- getStackedBarplot(countsFlat, currSamples, , group="SampleID", plotNReads=TRUE) + ggtitle(paste0("AmpliconID==",amplicon))
+    print(p)
+  }, error = function(e) print(paste0("Warning: Failed stacked barplot on ", amplicon)))
 }
 invisible(dev.off())
 
@@ -184,7 +185,8 @@ getPCRReplicateVariantCV <- function(countsFlat, samplesheet, includeRef=FALSE) 
         as.matrix()
 
       cv <- t(apply(currCounts, 1, function(row) return(c(mean(row), sd(row), sd(row)/mean(row)*100))))
-      results[[group]] <- cv
+      if (ncol(cv) == 3)
+        results[[group]] <- cv
     }
   }
   flat <- data.frame(do.call(rbind, results))
