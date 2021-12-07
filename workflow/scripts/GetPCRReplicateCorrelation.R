@@ -102,18 +102,20 @@ getPCRReplicateVariantCV <- function(countsFlat, samplesheet, includeRef=FALSE) 
   samplesheet <- samplesheet %>% mutate(Grouping=paste0(ExperimentIDReplicates,Bin))
   for (group in unique(samplesheet$Grouping)) {
     currSamples <- samplesheet %>% filter(Grouping == group)
-
     if (nrow(currSamples) >= 2) {
-      currCounts <- countsFlat %>%
-        filter(SampleID %in% currSamples$SampleID) %>%
-        filter(includeRef | RefAllele == "False") %>%
-        select(SampleID,VariantID,`%Reads`) %>%
-        spread(SampleID,`%Reads`,fill=0) %>%
-        select(-VariantID) %>%
-        as.matrix()
+      tryCatch({
+        currCounts <- countsFlat %>%
+          filter(SampleID %in% currSamples$SampleID) %>%
+          filter(includeRef | RefAllele == "False") %>%
+          select(SampleID,VariantID,`%Reads`) %>%
+          spread(SampleID,`%Reads`,fill=0) %>%
+          select(-VariantID) %>%
+          as.matrix()
 
-      cv <- t(apply(currCounts, 1, function(row) return(c(mean(row), sd(row), sd(row)/mean(row)*100))))
-      results[[group]] <- cv
+        cv <- t(apply(currCounts, 1, function(row) return(c(mean(row), sd(row), sd(row)/mean(row)*100))))
+        if (ncol(cv) == 3)
+          results[[group]] <- cv
+      }, error = function(e) print("Failed on group = ", group))
     }
   }
   flat <- data.frame(do.call(rbind, results))
