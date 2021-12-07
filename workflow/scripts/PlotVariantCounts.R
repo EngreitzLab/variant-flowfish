@@ -82,7 +82,7 @@ getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", f
 
   ## Skip the legend if there is a very large number of variants (e.g. in tiling experiments)
   if (length(unique(counts[,fill])) > 20)
-    p <- p + theme(legend.title = element_blank())
+    p <- p + theme(legend.position = "none")
 
   return(p)
 }
