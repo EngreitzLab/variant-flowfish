@@ -79,6 +79,10 @@ getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", f
                  legend.title = element_text(size=9), #change legend title font size
                  legend.text = element_text(size=8)) #change legend text font size
   p <- p + facet_grid(cols=vars(Edited), scales = "free", space = "free")
+
+  ## Skip the legend if there is a very large number of variants (e.g. in tiling experiments)
+  if (length(unique(counts[,fill])) > 20)
+    p <- p + theme(legend. title = element_blank())
   return(p)
 }
 
