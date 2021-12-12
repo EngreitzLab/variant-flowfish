@@ -64,7 +64,6 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, re
         inferred_reference = references.groupby('Reference_Name')['#Reads', '%Reads'].sum().reset_index().to_dict(orient='records')[0]
         inferred_reference['VariantID'] = sample_info['AmpliconID'] + ':InferredReference'
         inferred_reference['Counts'] = len(references)
-        #inferred_reference['Reference_Sequence'] = references['Reference_Sequence'].mode().item()
         variant_counts = variant_counts.append(inferred_reference, ignore_index=True)
         variant_counts['RefAllele'] = variant_counts['VariantID'].str.contains('Reference') # odd way to get RefAllele boolean after grouping
 

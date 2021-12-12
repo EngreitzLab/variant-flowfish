@@ -25,7 +25,8 @@ rule aggregate_variant_counts:
         lambda wildcards:
             samplesheet.at[wildcards.SampleID,'CRISPRessoDir']
     output:
-        counts='results/variantCounts/{SampleID}.variantCounts.txt'
+        counts='results/variantCounts/{SampleID}.variantCounts.txt',
+        references='results/variantCounts/{SampleID}.referenceAlleles.txt'
     run:
         aggregate_variant_counts(samplesheet, wildcards.SampleID, output.counts, config['variant_info'])
 
