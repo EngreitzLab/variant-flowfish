@@ -77,6 +77,7 @@ def add_experiment_names(samplesheet):
 def add_outputs(samplesheet):
 	samplesheet['CRISPRessoDir'] = ['results/crispresso/CRISPResso_on_{SampleID}/'.format(SampleID=row['SampleID']) for index, row in samplesheet.iterrows()]
 	samplesheet['variantCountFile'] = ['results/variantCounts/{SampleID}.variantCounts.txt'.format(SampleID=row['SampleID']) for index, row in samplesheet.iterrows()]
+	samplesheet['referenceAlleleFile'] = ['results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=row['SampleID']) for index, row in samplesheet.iterrows()]
 	if not genotyping_only:
 		samplesheet['ExperimentIDPCRRep_BinCounts'] = ['results/byPCRRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDPCRRep']]
 		samplesheet['ExperimentIDReplicates_BinCounts'] = ['results/byExperimentRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDReplicates']]
@@ -185,23 +186,26 @@ def all_input(wildcards):
 	wanted_input.append("results/summary/VariantCounts.DesiredVariants.flat.tsv")
 	wanted_input.append("results/summary/VariantCounts.DesiredVariants.matrix.tsv")
 
-	## Genotyping plots:
+	# Genotyping plots:
 	wanted_input.append("results/summary/DesiredVariants.RData")
+	wanted_input.extend([
+			'results/variantCounts/{}.reference_plots.pdf'.format(e) for e in samplesheet['AmpliconID'].unique()
+		])
 
-	#wanted_input.extend(
-	#	['crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'.format(
-	#		SampleID=row['SampleID'], 
-	#		AmpliconID=row['AmpliconID'], 
-	#		GuideSpacer=row['GuideSpacer']) 
-	#	for index, row in samplesheet.iterrows()]
-	#)
+	# wanted_input.extend(
+	# 	['crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'.format(
+	# 		SampleID=row['SampleID'], 
+	# 		AmpliconID=row['AmpliconID'], 
+	# 		GuideSpacer=row['GuideSpacer']) 
+	# 	for index, row in samplesheet.iterrows()]
+	# )
 
 	## Bowtie2 alignments:
 	wanted_input.extend(
 		['results/aligned/{s}/{s}.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
 	)
 	wanted_input.append("results/summary/alignment.counts.tsv")
-	# PhiX alignment: 
+	## PhiX alignment: 
 	# wanted_input.extend(
 	# 	['results/aligned/{s}/{s}.PhiX.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
 	# )

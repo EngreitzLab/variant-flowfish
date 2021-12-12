@@ -5,7 +5,7 @@ import numpy as np
 import argparse
 import regex as re
 
-def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
+def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, reference_threshold=None):
     sample_info = samplesheet.loc[samplesheet['SampleID'] == SampleID].to_dict('records')[0] 
     file = "results/crispresso/CRISPResso_on_{SampleID}/Alleles_frequency_table.zip".format(SampleID=SampleID)
     if (os.path.exists(file)):
@@ -33,21 +33,33 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
 
         # get rows of allele_tbl that do not contain one of the variants
         references = allele_tbl[~allele_tbl['Aligned_Sequence'].str.contains('|'.join(variantInfo[variantInfo['RefAllele'] == False]['MappingSequence']))]
-        
-        # get mismatch info for references
-        nMismatches_column = []
-        nDeletions_column = []
-        nInsertions_column = []
-        for index, rrow in references.iterrows():
-            nMismatches, nDeletions, nInsertions = count_mismatches(rrow['Aligned_Sequence'], rrow['Reference_Sequence'], sample_info['QuantificationWindowStart'], sample_info['QuantificationWindowEnd'])
-            nMismatches_column.append(nMismatches)
-            nDeletions_column.append(nDeletions)
-            nInsertions_column.append(nInsertions)
-        references['nMismatches'] = nMismatches_column
-        references['nDeletions'] = nDeletions_column
-        references['nInsertions'] = nInsertions_column
-        references.to_csv('results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=sample_info['SampleID']), sep='\t', index=False)
+        references.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
 
+        # get mismatch info for references
+        mismatches_column = []
+        deletions_column = []
+        insertions_column = []
+        aligned_windows = []
+        reference_windows = []
+        for index, rrow in references.iterrows():
+            mismatches, deletions, insertions, Aligned_Window, Reference_Window = count_mismatches(rrow['Aligned_Sequence'], rrow['Reference_Sequence'], sample_info['QuantificationWindowStart'], sample_info['QuantificationWindowEnd'])
+            mismatches_column.append(mismatches)
+            deletions_column.append(deletions)
+            insertions_column.append(insertions)
+            aligned_windows.append(Aligned_Window)
+            reference_windows.append(Reference_Window)
+        references['Mismatches'] = mismatches_column
+        references['Deletions'] = deletions_column
+        references['Insertions'] = insertions_column
+        references['Aligned_Window'] = aligned_windows
+        references['Reference_Window'] = reference_windows
+        references.to_csv('results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=sample_info['SampleID']), sep='\t', index=False)
+        
+        # filter out references with mismatch/insertion/deletion threshold 
+        references['Errors'] = references.apply(lambda x: len(x.Mismatches)+len(x.Insertions)+len(x.Deletions), axis=1)
+        if reference_threshold:
+            references = references[references['Errors'] <= reference_threshold]
+        
         # group/sum all references together and get dict representation
         inferred_reference = references.groupby('Reference_Name')['#Reads', '%Reads'].sum().reset_index().to_dict(orient='records')[0]
         inferred_reference['VariantID'] = sample_info['AmpliconID'] + ':InferredReference'
@@ -97,7 +109,7 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
     # encode the reference allele as:  HEK3 HEK3:InferredReference  [MappingSequence?]  True    [count] [nCrispressoAlleles]
 
     # other outputs:
-    # updated count_tbl with our inferred nMismatches nDeletions nInsertions columns added so we can debug
+    # updated count_tbl with our inferred Mismatches Deletions Insertions columns added so we can debug
 
     count_tbl.to_csv(outfile, sep='\t')
     
@@ -115,24 +127,60 @@ def count_mismatches(Aligned_Sequence, Reference_Sequence, RefQuantificationWind
     while Reference_Sequence[refStart:(refStart+1)] == '-':
         refStart = refStart + 1
 
-    refEnd = refStart + (RefQuantificationWindowEnd-RefQuantificationWindowStart)
+    # extend end of current quantification window so length of window without '-' is same as reference window
+    bases = RefQuantificationWindowEnd - RefQuantificationWindowStart 
+    extend = 0
+    i = refStart
+    while bases > 0 and i < len(Reference_Sequence):
+        if Reference_Sequence[i:(i+1)] != '-':
+            bases -= 1
+        else: 
+            extend += 1
+        i += 1
+    refEnd = refStart + (RefQuantificationWindowEnd-RefQuantificationWindowStart) + extend
 
-    while Reference_Sequence[refEnd:(refEnd+1)] == '-':
+    # extend reference end if it ends in a gap
+    while Reference_Sequence[refEnd-1:(refEnd)] == '-':
         refEnd = refEnd + 1
     
+    start_shift = refStart - RefQuantificationWindowStart
+    # end_shift = refEnd - RefQuantificationWindowEnd
+        
     ## Count mismatches, deletions, and insertions in this window
-    nMismatches=0
-    nDeletions=0
-    nInsertions=0
+    mismatches = []
+    deletions = [] 
+    insertions = [] 
+    gap = False
+    gap_spaces = 0
+
     for i in range(refStart,refEnd):
         if Reference_Sequence[i:(i+1)] == '-':
-            nInsertions = nInsertions + 1
+            if gap:
+                pass
+            else:
+                insertions.append(i-(start_shift+gap_spaces))
+                gap = True
+            gap_spaces += 1 # to maintain "true" position of quantification window
+
         elif Aligned_Sequence[i:(i+1)] == '-':
-            nDeletions = nDeletions + 1
+            if gap:
+                pass
+            else:
+                deletions.append(i-(start_shift+gap_spaces))
+                gap = True
+                # gap_spaces += 1
+
         elif Reference_Sequence[i:(i+1)] != Aligned_Sequence[i:(i+1)]:
-            nMismatches = nMismatches + 1
+            mismatches.append(i-(start_shift+gap_spaces))
+            gap = False
+
+        else:
+            gap = False
+
+    Aligned_Window = Aligned_Sequence[refStart:refEnd]
+    Reference_Window = Reference_Sequence[refStart:refEnd]
     
-    return (nMismatches, nDeletions, nInsertions)
+    return (mismatches, deletions, insertions, Aligned_Window, Reference_Window)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -145,11 +193,12 @@ def main():
     parser.add_argument("--outfile_frequencies", type=str, required=True) 
     parser.add_argument("--variantInfoFile", type=str, required=True)
     parser.add_argument("--samplesToExclude", required=False, default=None)
+    parser.add_argument("--reference_threshold", required=False, default=None)
     parser.add_argument("--edit_regions", required=False, default=None)
 
     args = parser.parse_args()
-    aggregate_variant_counts(args.samplesheet, args.sample_id, args.outfile, args.variantInfoFile)
+    aggregate_variant_counts(args.samplesheet, args.sample_id, args.outfile, args.variantInfoFile, args.reference_threshold)
     make_count_table(args.samplesheet, args.group_col, args.group_id, args.bins, args.outfile, args.outfile_frequencies, args.samplesToExclude, args.edit_regions)
-
+    
 if __name__ == "__main__":
     main()
