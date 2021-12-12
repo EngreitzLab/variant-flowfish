@@ -58,24 +58,32 @@ binList <- unique(samplesheet$Bin)
 binList <- binList[!(binList %in% c("All","Neg",""))]
 
 
+
 ############################################
 ## Plot overall edited rate in a stacked barplot
 
-getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", fill="VariantID", includeRef=FALSE) {
+getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", fill="VariantID", includeRef=FALSE, plotNReads=FALSE) {
   counts <- countsFlat %>%
             filter(SampleID %in% samples$SampleID) %>%
             filter(includeRef | RefAllele == "False") %>%
             merge(samples %>% select("SampleID", group, "ControlForAmplicon","CellLine")) %>%
-            dplyr:::rename(Frequency="%Reads") %>%
+            dplyr:::rename(Frequency="%Reads", nReads="#Reads") %>%
             mutate(Edited=ordered(ControlForAmplicon, levels=c(FALSE,TRUE), labels=c("Edited","Unedited"))) %>%
             as.data.frame()
-  p <- ggplot(counts, aes_string(x=group, y="Frequency", fill=fill)) + geom_col()
-  p <- p + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6)) +
-        ylab("Variant Frequency (%)")
+
+  y <- ifelse(plotNReads, "nReads", "Frequency")
+  ylab <- ifelse(plotNReads, "Variant Read Count (#)", "Variant Frequency (%)")
+  p <- ggplot(counts, aes_string(x=group, y=y, fill=fill)) + geom_col()
+  p <- p + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6)) + ylab(ylab)
   p <- p + theme(legend.key.size = unit(0.5, 'cm'), #change legend key size
                  legend.title = element_text(size=9), #change legend title font size
                  legend.text = element_text(size=8)) #change legend text font size
   p <- p + facet_grid(cols=vars(Edited), scales = "free", space = "free")
+
+  ## Skip the legend if there is a very large number of variants (e.g. in tiling experiments)
+  if (length(unique(counts[,fill])) > 20)
+    p <- p + theme(legend.position = "none")
+
   return(p)
 }
 
@@ -84,7 +92,43 @@ pdf(file=paste0(opt$outbase, ".totalEditing.stackedBarplots.pdf"), width=9, heig
 samplesInput <- samplesheet %>% filter(Bin == "All" | ControlForAmplicon)
 for (amplicon in unique(samplesheet$AmpliconID)) {
   currSamples <- samplesheet %>% filter(AmpliconID == amplicon)
-  p <- getStackedBarplot(countsFlat, currSamples) + ggtitle(paste0("AmpliconID==",amplicon))
+  tryCatch({
+    p <- getStackedBarplot(countsFlat, currSamples, group="SampleID") + ggtitle(paste0("AmpliconID==",amplicon))
+    print(p)
+    p <- getStackedBarplot(countsFlat, currSamples, , group="SampleID", plotNReads=TRUE) + ggtitle(paste0("AmpliconID==",amplicon))
+    print(p)
+  }, error = function(e) print(paste0("Warning: Failed stacked barplot on ", amplicon)))
+}
+invisible(dev.off())
+
+
+############################################
+## Plot overall reference allele rate in a side-by-side barplot
+
+getRefStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", fill="VariantID") {
+  counts <- countsFlat %>%
+            filter(SampleID %in% samples$SampleID) %>%
+            filter(RefAllele == "True") %>%
+            merge(samples %>% select("SampleID", group, "ControlForAmplicon","CellLine")) %>%
+            dplyr:::rename(Frequency="%Reads") %>%
+            mutate(Edited=ordered(ControlForAmplicon, levels=c(FALSE,TRUE), labels=c("Edited","Unedited"))) %>%
+            as.data.frame()
+  p <- ggplot(counts, aes_string(x=group, y="Frequency", fill=fill)) + geom_col(position=position_dodge())
+  p <- p + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6)) +
+        ylab("Ref Allele Frequency (%)")
+  p <- p + theme(legend.key.size = unit(0.5, 'cm'), #change legend key size
+                 legend.title = element_text(size=9), #change legend title font size
+                 legend.text = element_text(size=8)) #change legend text font size
+  p <- p + facet_grid(cols=vars(Edited), scales = "free", space = "free")
+  return(p)
+}
+
+
+pdf(file=paste0(opt$outbase, ".refAllele.barplots.pdf"), width=9, height=8)
+samplesInput <- samplesheet %>% filter(Bin == "All" | ControlForAmplicon)
+for (amplicon in unique(samplesheet$AmpliconID)) {
+  currSamples <- samplesheet %>% filter(AmpliconID == amplicon)
+  p <- getRefStackedBarplot(countsFlat, currSamples) + ggtitle(paste0("AmpliconID==",amplicon))
   print(p)
 }
 invisible(dev.off())
@@ -94,7 +138,6 @@ invisible(dev.off())
 ############################################
 ## Plot replicate concordance
 
-
 flattenCorrMatrix <- function(cormat) {
   ut <- upper.tri(cormat)
   data.frame(
@@ -103,7 +146,6 @@ flattenCorrMatrix <- function(cormat) {
     cor  =(cormat)[ut]
     )
 }
-
 
 getPCRReplicateCorrelations <- function(countsFlat, samplesheet, includeRef=FALSE) {
   ## Return correlations among all pairs of PCR replicates, considering editing rates of non-reference desired alleles
@@ -148,7 +190,8 @@ getPCRReplicateVariantCV <- function(countsFlat, samplesheet, includeRef=FALSE) 
         as.matrix()
 
       cv <- t(apply(currCounts, 1, function(row) return(c(mean(row), sd(row), sd(row)/mean(row)*100))))
-      results[[group]] <- cv
+      if (ncol(cv) == 3)
+        results[[group]] <- cv
     }
   }
   flat <- data.frame(do.call(rbind, results))

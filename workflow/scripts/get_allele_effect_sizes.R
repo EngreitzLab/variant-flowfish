@@ -191,11 +191,52 @@ loadReadCounts <- function(countsfile) {
   return(counts)
 }
 
+
 getBinNames <- function(counts) {
   col.names <- colnames(counts)
-  bin.names <- col.names [! col.names %in% c('MappingSequence','All', 'Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele')]
+  bin.names <- col.names [! col.names %in% c('AmpliconID', 'MappingSequence','All', 'Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele')]
   return(bin.names)
 }
+
+
+
+loadSortParams <- function(filename, counts, binNames, totalBinName="Total") {
+  ## Function to read in sort params files, including detecting among
+  ## several possible formats from different sorting instruments
+  ##
+  ## To do: Consider moving this into a separate script
+  ## To do: Consolidate so that we need either counts or binNames but not both.  
+
+  sort.params <- read.csv(filename, sep=',')
+
+  print("Detecting sort params file format...")
+
+  required.cols.astrios <- c("Mean","Bounds","Barcode","Count")
+  required.cols.bigfoot <- c("Mean","Min","Max","Barcode","Count","StdDev")
+  required.cols.influx <- c("Mean","Min","Max","Barcode","Count")
+
+  if (all(required.cols.astrios %in% colnames(sort.params))) {
+    print("  Attempting to load sort parameters using Astrios file format...")
+    result <- loadSortParams_Astrios(filename, counts, total.binname=totalBinName)
+    print("  Sort params:")
+    print(result)
+  } else if (all(required.cols.bigfoot %in% colnames(sort.params))) {
+    print("  Attempting to load sort parameters using Astrios file format...")
+    result <- loadSortParams_BigFoot(filename, binNames, total.binname=totalBinName)
+    print("  Sort params:")
+    print(result)
+  } else if (all(required.cols.influx %in% colnames(sort.params))) {
+    print("  Attempting to load sort parameters using Astrios file format...")
+    result <- loadSortParams_Influx(filename, binNames, total.binname=totalBinName)
+    print("  Sort params:")
+    print(result)
+  } else {
+    stop("ERROR: Did not find required columns for any of the sort params file formats.\n")
+  }
+
+  return(result)
+}
+
 
 loadSortParams_Astrios <- function(filename, mS, total.binname="Total") {
   ## Returns a list with the following items:
@@ -207,7 +248,7 @@ loadSortParams_Astrios <- function(filename, mS, total.binname="Total") {
   ##   count
   ## totalCount: Total count of cells sorted
 
-  sort.params <- read.delim(filename)
+  sort.params <- read.csv(filename)
 
   ## Check the sort params
   required.cols <- c("Mean","Bounds","Barcode","Count")
@@ -238,6 +279,7 @@ loadSortParams_Astrios <- function(filename, mS, total.binname="Total") {
       filt.names <- c(filt.names, bin.names[i])
     }
   }
+  if (length(filt.names) == 0) stop("Stopping because no bins have counts in the input count table.\n")
 
   bins <- data.frame(name=bin.names, mean=bin.means, lowerBound=log10(bin.bounds[,1]), upperBound=log10(bin.bounds[,2]), count=sort.params$Count[bin.indices], stringsAsFactors=F)
   rownames(bins) <- bin.names
@@ -390,7 +432,7 @@ addWeightedAverage <- function(mS, sort.params, bin.names) {
 ## Set up read count table and sort params
 counts <- loadReadCounts(countsLocation)
 bin.names <- getBinNames(counts)
-sort.params <- loadSortParams_Influx(sortParamsloc, bin.names); print("RUNNING loadSortParams_Influx() -- may need to edit this function in get_allele_effect_sizes.R. TODO: Factor out this code to fix the sort params files")
+sort.params <- loadSortParams(sortParamsloc, counts, bin.names)
 counts <- rescaleReadCounts(counts, sort.params, bin.names)
 counts <- addWeightedAverage(counts, sort.params, bin.names)
 

@@ -16,19 +16,19 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, re
         
         # select rows which Aligned_Sequence contains a variant 
         for index, row in variantInfo.iterrows():
-            variant_df = allele_tbl[allele_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)]
+            variant_df = allele_tbl[allele_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)].copy()
             variant_df['Match_Sequence'] = row.MappingSequence
             variant_df['VariantID'] = row.VariantID
             variantSearchList.append(variant_df)
         
         # combine variants and group by unique variant 
         variants = pd.concat(variantSearchList) 
-        reference_sequence = variants['Reference_Sequence'].mode().item()
+        #reference_sequence = variants['Reference_Sequence'].mode().item()
         variants_grouped = variants.groupby(['Reference_Name', 'Match_Sequence', 'VariantID'])
         variant_counts = variants_grouped.sum()
         variant_counts.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
         variant_counts['Counts'] = variants_grouped.size()
-        variant_counts['Reference_Sequence'] = reference_sequence
+        #variant_counts['Reference_Sequence'] = reference_sequence
         variant_counts = variant_counts.reset_index()
 
         # get rows of allele_tbl that do not contain one of the variants
@@ -64,14 +64,18 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, re
         inferred_reference = references.groupby('Reference_Name')['#Reads', '%Reads'].sum().reset_index().to_dict(orient='records')[0]
         inferred_reference['VariantID'] = sample_info['AmpliconID'] + ':InferredReference'
         inferred_reference['Counts'] = len(references)
-        inferred_reference['Reference_Sequence'] = references['Reference_Sequence'].mode().item()
+        #inferred_reference['Reference_Sequence'] = references['Reference_Sequence'].mode().item()
         variant_counts = variant_counts.append(inferred_reference, ignore_index=True)
         variant_counts['RefAllele'] = variant_counts['VariantID'].str.contains('Reference') # odd way to get RefAllele boolean after grouping
 
+    variant_counts.rename(columns={"Reference_Name":"AmpliconID", "Match_Sequence":"MappingSequence"}, inplace=True)
     variant_counts.to_csv(outfile, sep='\t', index=False)
+
 
 def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, variantInfo=None, samplesToExclude=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
+
+
     currSamples = samplesheet.loc[samplesheet[group_col]==group_id]
     currSamples['Bin'] = currSamples['Bin'].fillna('NA')
     if samplesToExclude is not None:
@@ -86,20 +90,23 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
             allele_tbl['#Reads'] = allele_tbl['#Reads'].astype(np.int32)
 
             # pare down allele_tbl columns for counts
-            allele_tbl = allele_tbl[['Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele', '#Reads']]
+            allele_tbl = allele_tbl[['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele', '#Reads']]
             allele_tbl.rename(columns={"#Reads":row['SampleID']}, inplace=True)
             allele_tbls.append(allele_tbl)
 
     # combine allele_tbls into one and sum on unique variants to get count table    
-    count_tbl = pd.concat(allele_tbls).groupby(['Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele']).sum()
+    count_tbl = pd.concat(allele_tbls).groupby(['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele']).sum()
     
     # rename bins and combine duplicates 
     bin_list = bins + list(set(currSamples['Bin'].unique())-set(bins))
     combined_count_tbl = pd.DataFrame(index=count_tbl.index)
     for b in bin_list:
-        regex_bin = '.*Bin{}$'.format(b) # make regex to select column ending in BinA, BinB, etc.
-        rep_columns = count_tbl.filter(regex=regex_bin).columns
-        combined_count_tbl[b] = count_tbl[rep_columns].sum(axis=1) # sum replicate columns
+        rep_columns = currSamples.loc[currSamples['Bin']==b,'SampleID'].tolist()
+        if (len(rep_columns) > 0):
+            combined_count_tbl[b] = count_tbl[rep_columns].sum(axis=1).astype(np.int32) # sum replicate columns
+        else:
+            combined_count_tbl[b] = 0
+
     count_tbl = combined_count_tbl
 
     ## OUTPUT OF THIS FUNCTION:
@@ -115,6 +122,7 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
     
     freq_tbl = count_tbl.div(count_tbl.sum(axis=0), axis=1)
     freq_tbl.to_csv(outfile_frequencies, sep='\t', float_format='%.6f')
+
 
 def count_mismatches(Aligned_Sequence, Reference_Sequence, RefQuantificationWindowStart, RefQuantificationWindowEnd):
     ## this function is a bit tricky, has to account for gaps/indels in the alignment marked by '-'

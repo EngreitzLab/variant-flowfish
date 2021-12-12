@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 import pandas as pd
-
+import numpy as np
 
 def getAlleleTable(countsFlat, variantInfo, minFreq):
     '''
@@ -12,11 +12,15 @@ def getAlleleTable(countsFlat, variantInfo, minFreq):
     Returns flat and matrix versions of desired counts tables with combined read
     info, as well as data for the aligned sequences that matched multiple variants.
     '''
+
+    if variantInfo['MappingSequence'].isnull().values.any():
+        raise ValueError("Found empty 'MappingSequence' in the Variant Info table. Check for empty rows.")
     
     # iterate through variants from variantInfo and add matches from
     # countsFlat to dataframe list
     variantSearchList = []
     count = 0
+
     for variant in variantInfo.MappingSequence:
         count += 1
         if count % 100 == 0:

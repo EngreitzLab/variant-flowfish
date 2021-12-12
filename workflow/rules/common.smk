@@ -19,7 +19,12 @@ import glob
 def find_fastq_files(samplesheet, fastqdir):
 	## Adds columns 'fastqR1' and 'fastqR2' to the sample sheet, only if they do not already exist
 
-	for read in ["1","2"]:
+	if single_end:
+		reads = ["1"]
+	else:
+		reads = ["1","2"]
+
+	for read in reads:
 		colName = 'fastqR' + read
 		if not colName in samplesheet.columns:
 			samplesheet[colName] = ""
@@ -31,8 +36,11 @@ def find_fastq_files(samplesheet, fastqdir):
 					file = glob.glob("{}-read-{}.fastq.gz".format(os.path.join(fastqdir, currSample), read))
 				if len(file) > 1:
 					raise ValueError("Found more than one FASTQ file for sample :" + currSample)
-				if len(file) == 1:
+				elif len(file) == 0:
+					print("Warning: Could not find FASTQ file for read " + read + " and sample: " + currSample)
+				elif len(file) == 1:
 					samplesheet.at[i,colName] = file[0]
+
 	
 	return samplesheet
 
@@ -135,6 +143,11 @@ def load_sample_sheet(samplesheetFile, ampliconInfoFile, idcol='AmpliconID'):
 
 def get_bin_list():
 	binList = samplesheet['Bin'].drop_duplicates()
+	if not genotyping_only:
+		if  "All" not in binList.tolist():
+			print("\nWARNING: Did not find any entries with Bin == 'All' (unsorted edited cells input into FlowFISH). Was this intended, or was 'All' mispelled?\n\n")
+		if "Neg" not in binList.tolist():
+			print("\nWARNING: Did not find any entries with Bin == 'Neg' (unedited cells used to assess sequencing error rate). Was this intended, or was 'Neg' mispelled?\n\n")		
 	binList = binList[(binList != "All") & (binList != "Neg") & (binList.notnull())]
 	binList = [str(b) for b in list(binList)]
 	print("Processing unique bins: " + ' '.join(binList))
@@ -150,9 +163,11 @@ def load_variant_Table(variant_table, requiredCols):
 # global variables
 genotyping_only = ('genotyping_only' in config) and (bool(config['genotyping_only']))
 if genotyping_only:
-	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep']
+	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon']
 else:
-	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
+	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon','VFFSpikeIn']
+
+single_end = ('single_end' in config) and (bool(config['single_end']))
 
 ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer','QuantificationWindowStart','QuantificationWindowEnd']  ## To do:  Allow specifying crispresso quantification window for different amplicons
 variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
@@ -182,9 +197,9 @@ def all_input(wildcards):
 
 	## CRISPResso output:
 	wanted_input.extend(list(samplesheet['CRISPRessoDir'].unique()))
+	wanted_input.append("results/crispresso/CRISPRessoAggregate_on_Aggregate/")
 	wanted_input.append("results/summary/VariantCounts.flat.tsv.gz")
-	wanted_input.append("results/summary/VariantCounts.DesiredVariants.flat.tsv")
-	wanted_input.append("results/summary/VariantCounts.DesiredVariants.matrix.tsv")
+	wanted_input.append("results/summary/VariantCounts.matrix.tsv.gz")
 
 	# Genotyping plots:
 	wanted_input.append("results/summary/DesiredVariants.RData")

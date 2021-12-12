@@ -92,7 +92,7 @@ rule plot_allelic_effect_sizes:
 # run mle to calculate the effect sizes
 rule calculate_allelic_effect_sizes_ignoreInputBin:
 	input:
-		counts='results/{directory}/{ExperimentID}.bin_counts.topN.txt',
+		counts='results/{directory}/{ExperimentID}.bin_counts.txt',
 		sortparams=get_sortparams_file 
 	output:
 		'results/{directory}/{ExperimentID}.raw_effects_ignoreInputBin.txt'

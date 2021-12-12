@@ -7,11 +7,9 @@ import numpy as np
 from scripts.make_count_table import *
 
 def make_flat_table(samplesheet, outfile):
-
     allele_tbls = []
     for idx, row in samplesheet.iterrows():
-        file = "{CRISPRessoDir}/Alleles_frequency_table.zip".format(
-            CRISPRessoDir=row['CRISPRessoDir'])
+        file = row['variantCountFile']
 
         if (os.path.exists(file)):
             allele_tbl = pd.read_csv(file, sep='\t')
@@ -54,20 +52,9 @@ rule make_count_table_per_experimentalRep:
         make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, variantInfo=config['variant_info'])
 
 
-rule trim_count_table:
-    input:
-        '{path}.bin_counts.txt'
-    output:
-        '{path}.bin_counts.topN.txt'
-    params:
-        n=config['max_mle_variants']
-    shell:
-        'head -{params.n} {input} > {output}'
-
-
 rule write_pcr_replicate_correlation:
     input:
-        variantCounts="results/summary/VariantCounts.DesiredVariants.flat.tsv",
+        variantCounts="results/summary/VariantCounts.flat.tsv.gz",
         samplesheet="SampleList.snakemake.tsv"
     output:
         corfile="results/summary/PCRReplicateCorrelations.tsv",
@@ -96,23 +83,30 @@ rule make_count_table_per_experimentalRep_withCorFilter:
         make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, input.samplesToExclude)
 
 
-rule make_flat_count_table_PCRrep:
+rule make_flat_count_table:
     input:
         lambda wildcards: samplesheet['variantCountFile']
     output:
-        'results/summary/VariantCounts.flat.tsv.gz',
+        flat='results/summary/VariantCounts.flat.tsv.gz'
     run:
-        make_flat_table(samplesheet, output) ## To do: rewrite this function to take in this new variant count file format
+        make_flat_table(samplesheet, output.flat) 
 
 
-rule make_desired_variant_tables:
+rule make_variant_matrix:
     input:
-        variantCounts='results/summary/VariantCounts.flat.tsv.gz',
-        variantInfo=config['variant_info']
+        variantCounts='results/summary/VariantCounts.flat.tsv.gz'
     output:
-        flat="results/summary/VariantCounts.DesiredVariants.flat.tsv",
-        matrix="results/summary/VariantCounts.DesiredVariants.matrix.tsv"
-    params:
-        codedir=config['codedir']
-    shell:
-        "python {params.codedir}/workflow/scripts/AggregateDesiredAlleleCounts.py --variantCounts {input.variantCounts} --variantInfo {input.variantInfo} --outbase results/summary/VariantCounts.DesiredVariants"
+        matrix="results/summary/VariantCounts.matrix.tsv.gz"
+    run:
+        countsFlat = pd.read_csv(input.variantCounts, sep='\t')
+        countsMatrix = countsFlat.pivot(
+            index=[
+                'MappingSequence',
+                'AmpliconID',
+                'VariantID',
+                'RefAllele'],
+            columns='SampleID',
+            values='#Reads').reset_index()
+        countsMatrix = countsMatrix.rename_axis(None, axis=1).reset_index(drop=True).fillna(0)  
+        # the index needs to be reset because pivot names the index "SampleID"
+        countsMatrix.to_csv(output.matrix, sep='\t', index=False)
