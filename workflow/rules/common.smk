@@ -204,7 +204,7 @@ def all_input(wildcards):
 	# Genotyping plots:
 	wanted_input.append("results/summary/DesiredVariants.RData")
 	wanted_input.extend([
-			'results/variantCounts/{}.reference_plots.pdf'.format(e) for e in samplesheet['AmpliconID'].unique()
+			'results/summary/{}.reference_plots.pdf'.format(e) for e in samplesheet['AmpliconID'].unique()
 		])
 
 	# wanted_input.extend(
