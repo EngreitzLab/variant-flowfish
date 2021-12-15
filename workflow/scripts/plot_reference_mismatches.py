@@ -49,91 +49,69 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
 
     deletion_grouped = ref_data.groupby('#Deletions')['#Reads'].sum().reset_index()
     deletion_grouped['Read_freq'] = deletion_grouped['#Reads']/(ref_data['#Reads'].sum())
-    
-    # import pdb; pdb.set_trace()
-    mg = plt.figure()
-    plt.bar(mismatch_grouped['#Mismatches'][1:], mismatch_grouped['Read_freq'][1:])
-    plt.title('%s Aligned/Reference Mismatch Frequency' % amplicon)
-    plt.xlabel('#Mismatches')
-    plt.ylabel('Read Frequency')
-    locator = matplotlib.ticker.MultipleLocator(1)
-    plt.gca().xaxis.set_major_locator(locator)
-
-    ig = plt.figure()    
-    plt.bar(insertion_grouped['#Insertions'][1:], insertion_grouped['Read_freq'][1:])
-    plt.title('%s Aligned/Reference Insertion Frequency' % amplicon)
-    plt.xlabel('#Insertions')
-    plt.ylabel('Read Frequency')
-    plt.gca().xaxis.set_major_locator(locator)
-
-    dg = plt.figure()
-    plt.bar(deletion_grouped['#Deletions'][1:], deletion_grouped['Read_freq'][1:])
-    plt.title('%s Aligned/Reference Deletion Frequency' % amplicon)
-    plt.xlabel('#Deletions')
-    plt.ylabel('Read Frequency')
-    plt.gca().xaxis.set_major_locator(locator)
-
+        
     # Mismatch frequency by position  
     reads_df['MismatchFreq'] = reads_df['Mismatches#Reads']/(ref_data['#Reads'].sum())
     reads_df['InsertionFreq'] = reads_df['Insertions#Reads']/(ref_data['#Reads'].sum())
     reads_df['DeletionFreq'] = reads_df['Deletions#Reads']/(ref_data['#Reads'].sum())
 
-    mfreq = plt.figure()
-    plt.bar(reads_df.index, reads_df['MismatchFreq'])
-    plt.title('%s Aligned/Reference Mismatch Frequency' % amplicon)
-    plt.xlabel('Reference Position')
-    plt.ylabel('#Mismatch Reads/Total #Reads')
-    plt.gca().xaxis.set_major_locator(locator)
+    # save plots
+    locator = matplotlib.ticker.MultipleLocator(1) # force x-axis integer step size 1
+    with PdfPages(output_file) as pdf:
+        
+        fig_mismatch, ax_mismatch = plt.subplots()
+        ax_mismatch.bar(mismatch_grouped['#Mismatches'], mismatch_grouped['Read_freq'])
+        ax_mismatch.set_title('%s Aligned/Reference Mismatch Frequency' % amplicon)
+        ax_mismatch.set_xlabel('#Mismatches')
+        ax_mismatch.set_ylabel('Read Frequency')
+        ax_mismatch.xaxis.set_major_locator(locator)
+        pdf.savefig(fig_mismatch)
+        plt.close(fig_mismatch)
 
-    ifreq = plt.figure()
-    plt.bar(reads_df.index, reads_df['InsertionFreq'])
-    plt.title('%s Aligned/Reference Insertion Frequency' % amplicon)
-    plt.xlabel('Reference Position')
-    plt.ylabel('#Insertion Reads/Total #Reads')
-    plt.gca().xaxis.set_major_locator(locator)
+        fig_insertion, ax_insertion = plt.subplots()
+        ax_insertion.bar(insertion_grouped['#Insertions'], insertion_grouped['Read_freq'])
+        ax_insertion.set_title('%s Aligned/Reference Insertion Frequency' % amplicon)
+        ax_insertion.set_xlabel('#Insertions')
+        ax_insertion.set_ylabel('Read Frequency')
+        ax_insertion.xaxis.set_major_locator(locator)
+        pdf.savefig(fig_insertion)
+        plt.close(fig_insertion)
 
-    dfreq = plt.figure()
-    plt.bar(reads_df.index, reads_df['DeletionFreq'])
-    plt.title('%s Aligned/Reference Deletion Frequency' % amplicon)
-    plt.xlabel('Reference Position')
-    plt.ylabel('#Deletion Reads/Total #Reads')
-    plt.gca().xaxis.set_major_locator(locator)
+        fig_deletion, ax_deletion = plt.subplots()
+        ax_deletion.bar(deletion_grouped['#Deletions'], deletion_grouped['Read_freq'])
+        ax_deletion.set_title('%s Aligned/Reference Deletion Frequency' % amplicon)
+        ax_deletion.set_xlabel('#Deletions')
+        ax_deletion.set_ylabel('Read Frequency')
+        ax_deletion.xaxis.set_major_locator(locator)
+        pdf.savefig(fig_deletion)
+        plt.close(fig_deletion)
 
-    pp = PdfPages(output_file)
-    pp.savefig(mg)
-    pp.savefig(ig)
-    pp.savefig(dg)
-    pp.savefig(mfreq)
-    pp.savefig(ifreq)
-    pp.savefig(dfreq)
-    pp.close()
+        fig_mfreq, ax_mfreq = plt.subplots()
+        ax_mfreq.bar(reads_df.index, reads_df['MismatchFreq'])
+        ax_mfreq.set_title('%s Aligned/Reference Mismatch Frequency by Position' % amplicon)
+        ax_mfreq.set_xlabel('Reference Position')
+        ax_mfreq.set_ylabel('#Mismatch Reads/Total #Reads')
+        ax_mfreq.xaxis.set_major_locator(locator)
+        ax_mfreq.ticklabel_format(axis='y', style='sci')
+        pdf.savefig(fig_mfreq)
+        plt.close(fig_mfreq)
 
-    # """
-    # Plot the reference insertion/deletion/mismatch stats for a given amplicon.
+        fig_ifreq, ax_ifreq = plt.subplots()
+        ax_ifreq.bar(reads_df.index, reads_df['InsertionFreq'])
+        ax_ifreq.set_title('%s Aligned/Reference Insertion Frequency by Position' % amplicon)
+        ax_ifreq.set_xlabel('Reference Position')
+        ax_ifreq.set_ylabel('#Insertion Reads/Total #Reads')
+        ax_ifreq.xaxis.set_major_locator(locator)
+        ax_ifreq.ticklabel_format(axis='y', style='sci')
+        pdf.savefig(fig_ifreq)
+        plt.close(fig_ifreq)
 
-    # Parameters
-    # ----------
-    # df : pandas.DataFrame
-    #     DataFrame containing the reference mismatches for a given sample.
-    # outdir : str
-    #     Path to the output directory.
-    # sample_name : str
-    #     Name of the sample.
-    # """
-    # # Set the figure size.
-    # plt.figure(figsize=(10, 6))
-
-    # # Plot the reference mismatches.
-    # sns.lineplot(x="position", y="reference_mismatch", data=df)
-
-    # # Set the x-axis label.
-    # plt.xlabel("Position")
-
-    # # Set the y-axis label.
-    # plt.ylabel("Reference mismatch")
-
-    # # Set the title.
-    # plt.title("Reference mismatch for sample {}".format(sample_name))
-
-    # # Save the plot.
-    # plt.savefig(os.path.join(outdir, "reference_mismatch_{}.png".format(sample_name)))
+        fig_dfreq, ax_dfreq = plt.subplots()
+        ax_dfreq.bar(reads_df.index, reads_df['DeletionFreq'])
+        ax_dfreq.set_title('%s Aligned/Reference Deletion Frequency by Position' % amplicon)
+        ax_dfreq.set_xlabel('Reference Position')
+        ax_dfreq.set_ylabel('#Deletion Reads/Total #Reads')
+        ax_dfreq.xaxis.set_major_locator(locator)
+        ax_dfreq.ticklabel_format(axis='y', style='sci')
+        pdf.savefig(fig_dfreq)
+        plt.close(fig_dfreq)
