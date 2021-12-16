@@ -13,6 +13,7 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, re
         allele_tbl = pd.read_csv(file, sep='\t')
         allele_tbl['#Reads'] = allele_tbl['#Reads'].astype(np.int32)
         variantInfo = pd.read_table(variantInfoFile)
+        variantInfo = variantInfo[variantInfo['AmpliconID'] == sample_info['AmpliconID']] # only search variants for this amplicon
         variantSearchList = []
         
         # select rows which Aligned_Sequence contains a variant 
@@ -22,8 +23,8 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, re
             variant_df['Match_Sequence'] = row.MappingSequence
             variant_df['VariantID'] = row.VariantID
             variantSearchList.append(variant_df)
-            # store unmatched variants of same AmpliconID as the sample
-            if len(variant_df) == 0 and row['AmpliconID'] == sample_info['AmpliconID']: 
+            # store unmatched variants
+            if len(variant_df) == 0: 
                 unmatched_variants.append(row)
 
         # combine variants and group by unique variant 
