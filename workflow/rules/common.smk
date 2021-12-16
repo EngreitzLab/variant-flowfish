@@ -236,6 +236,8 @@ def all_input(wildcards):
 		wanted_input.extend([
 			'results/byPCRRep/{}.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDPCRRep'].unique()
 		])
+		wanted_input.append('results/summary/AllelicEffects.byPCRRep.ExperimentIDPCRRep.flat.tsv.gz')
+		wanted_input.append('results/summary/AllelicEffects.byPCRRep.ExperimentIDPCRRep.pdf')
 
 		## Output files for PCR replicates (after merging spike-in data) (?)
 		wanted_input.extend([])
@@ -252,6 +254,8 @@ def all_input(wildcards):
 		wanted_input.extend([
 			'results/byExperimentRepCorFilter/{}.effects_vs_ref_ignoreInputBin.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
 		])
+		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz')
+		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.pdf')
 
 		## Output files for replicate experiments (after merging spike-in data)
 		wanted_input.extend([])

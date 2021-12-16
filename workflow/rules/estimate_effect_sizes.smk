@@ -86,6 +86,44 @@ rule plot_allelic_effect_sizes:
 		"""
 
 
+def aggregate_allelic_effect_tables(samplesheet, outfile, wildcards):
+    allele_tbls = []
+    for expt in samplesheet[wildcards.ExperimentID].drop_duplicates():
+        file = 'results/{dir}/{e}.effects_vs_ref.txt'.format(dir=wildcards.replicateDirectory, e=expt)
+
+        if (os.path.exists(file)):
+            allele_tbl = pd.read_csv(file, sep='\t')
+            allele_tbl[wildcards.ExperimentID] = expt
+            allele_tbls.append(allele_tbl)
+
+    flat = pd.concat(allele_tbls, axis='index', ignore_index=True)
+    flat.to_csv(outfile, sep='\t', index=False, compression='gzip')
+
+
+rule aggregate_allelic_effects:
+    input:
+        lambda wildcards: 
+        	['results/{dir}/{e}.effects_vs_ref.txt'.format(dir=wildcards.replicateDirectory, e=e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList),wildcards.ExperimentID].drop_duplicates()]
+    output:
+        flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz'
+    run:
+        aggregate_allelic_effect_tables(samplesheet, output.flat, wildcards) 
+
+
+rule plot_aggregate_allelic_effects:
+	input:
+		flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz',
+		samplesheet="SampleList.snakemake.tsv"
+	output:
+		'results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.pdf'
+	params:
+		codedir=config['codedir']
+	shell:
+		"""
+		Rscript {params.codedir}/workflow/scripts/PlotMleVariantEffectsAggregated.R --allelicEffectFile {input.flat} --outfile {output} --samplesheet {input.samplesheet} --effectColumn effect_size
+		"""
+
+
 ###################################################################################
 ## Run again, but ignore input bin counts
 

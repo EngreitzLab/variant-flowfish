@@ -1,6 +1,6 @@
 # Jesse Engreitz
 # 5/30/21
-# Rscript to aggregate allele frequency information across CRISPResso runs into a table for plotting and analysis
+# Rscript to plot MLE effect size estimates
 
 
 suppressPackageStartupMessages(library("optparse"))
