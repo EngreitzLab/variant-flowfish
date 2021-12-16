@@ -144,7 +144,6 @@ if not single_end:
         bowtie2 -x {input.fasta} \
             -1 {input.read1} \
             -2 {input.read2} \
-            --very-sensitive-local \
             | samtools sort -T tmp/sort.{wildcards.SampleID} -O bam -o {output.bam} - && samtools index {output.bam}'
       """
 else:  ## single_end
@@ -164,6 +163,5 @@ else:  ## single_end
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
             -U {input.read1} \
-            --very-sensitive-local \
             | samtools sort -T tmp/sort.{wildcards.SampleID} -O bam -o {output.bam} - && samtools index {output.bam}'
       """

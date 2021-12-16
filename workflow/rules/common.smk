@@ -221,11 +221,11 @@ def all_input(wildcards):
 	)
 	wanted_input.append("results/summary/alignment.counts.tsv")
 	## PhiX alignment: 
-	# wanted_input.extend(
-	# 	['results/aligned/{s}/{s}.PhiX.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
-	# )
+	wanted_input.extend(
+		['results/aligned/{s}/{s}.PhiX.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
+	)
 
-	# ## Variant counts:
+	## Variant counts:
 	wanted_input.extend(list(samplesheet['variantCountFile'].unique()))
 
 	## At what point do we merge in the spike-in data? 
