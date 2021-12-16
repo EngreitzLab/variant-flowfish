@@ -20,7 +20,7 @@ rule plot_reference_mismatches:
             samplesheet.loc[samplesheet['AmpliconID']==wildcards.AmpliconID]['referenceAlleleFile']
             
     output:
-        reference_plots = "results/variantCounts/{AmpliconID}.reference_plots.pdf"
+        reference_plots = "results/summary/{AmpliconID}.reference_plots.pdf"
     run:
         plot_reference_mismatches(input.samples, wildcards.AmpliconID, output.reference_plots)
         

@@ -1,5 +1,6 @@
 import os
 from random import sample
+from re import L
 import pandas as pd
 import numpy as np
 import argparse
@@ -15,12 +16,16 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, re
         variantSearchList = []
         
         # select rows which Aligned_Sequence contains a variant 
+        unmatched_variants = []
         for index, row in variantInfo.iterrows():
             variant_df = allele_tbl[allele_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)].copy()
             variant_df['Match_Sequence'] = row.MappingSequence
             variant_df['VariantID'] = row.VariantID
             variantSearchList.append(variant_df)
-        
+            # store unmatched variants of same AmpliconID as the sample
+            if len(variant_df) == 0 and row['AmpliconID'] == sample_info['AmpliconID']: 
+                unmatched_variants.append(row)
+
         # combine variants and group by unique variant 
         variants = pd.concat(variantSearchList) 
         #reference_sequence = variants['Reference_Sequence'].mode().item()
@@ -53,12 +58,14 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, re
         references['Insertions'] = insertions_column
         references['Aligned_Window'] = aligned_windows
         references['Reference_Window'] = reference_windows
-        references.to_csv('results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=sample_info['SampleID']), sep='\t', index=False)
         
         # filter out references with mismatch/insertion/deletion threshold 
         references['Errors'] = references.apply(lambda x: len(x.Mismatches)+len(x.Insertions)+len(x.Deletions), axis=1)
         if reference_threshold:
+            print('Using reference error threshold of %d' % reference_threshold)
             references = references[references['Errors'] <= reference_threshold]
+                
+        references.to_csv('results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=sample_info['SampleID']), sep='\t', index=False)
         
         # group/sum all references together and get dict representation
         inferred_reference = references.groupby('Reference_Name')['#Reads', '%Reads'].sum().reset_index().to_dict(orient='records')[0]
@@ -66,8 +73,14 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, re
         inferred_reference['Counts'] = len(references)
         variant_counts = variant_counts.append(inferred_reference, ignore_index=True)
         variant_counts['RefAllele'] = variant_counts['VariantID'].str.contains('Reference') # odd way to get RefAllele boolean after grouping
+        
+        variant_counts.rename(columns={"Reference_Name":"AmpliconID", "Match_Sequence":"MappingSequence"}, inplace=True)
 
-    variant_counts.rename(columns={"Reference_Name":"AmpliconID", "Match_Sequence":"MappingSequence"}, inplace=True)
+        # if there are unmatched variants for this sample, add them to the variant_counts table as 0 reads
+        if len(unmatched_variants) > 0:
+            variant_counts = variant_counts.append(pd.DataFrame(unmatched_variants))
+            variant_counts.fillna(0, inplace=True)
+
     variant_counts.to_csv(outfile, sep='\t', index=False)
 
 
