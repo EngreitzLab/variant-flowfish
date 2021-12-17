@@ -128,13 +128,13 @@ rule create_bowtie2_index_for_PhiX:
 if not single_end:
   rule run_bowtie2_PhiX:
     input:
-      read1=lambda wildcards: samplesheet.at[wildcards.SampleID,'fastqR1'],
-      read2=lambda wildcards: samplesheet.at[wildcards.SampleID,'fastqR2'],
+      read1='fastq/Undetermined_S0_R1_001.fastq.gz', 
+      read2='fastq/Undetermined_S0_R2_001.fastq.gz',
       fasta='variant-flowfish/resources/PhiX_sequence.fasta',
       index='variant-flowfish/resources/PhiX_sequence.fasta.1.bt2'
     output:
-      bam='results/aligned/{SampleID}/{SampleID}.PhiX.bam',
-      bai='results/aligned/{SampleID}/{SampleID}.PhiX.bam.bai'
+      bam='results/aligned/Undetermined/Undetermined.PhiX.bam', 
+      bai='results/aligned/Undetermined/Undetermined.PhiX.bam.bai'
     shell:
       """
       bash -c '
@@ -144,17 +144,17 @@ if not single_end:
         bowtie2 -x {input.fasta} \
             -1 {input.read1} \
             -2 {input.read2} \
-            | samtools sort -T tmp/sort.{wildcards.SampleID} -O bam -o {output.bam} - && samtools index {output.bam}'
+            | samtools sort -T tmp/sort.Undetermined -O bam -o {output.bam} - && samtools index {output.bam}'
       """
 else:  ## single_end
   rule run_bowtie2_PhiX:
     input:
-      read1=lambda wildcards: samplesheet.at[wildcards.SampleID,'fastqR1'],
+      read1='fastq/Undetermined_S0_R1_001.fastq.gz',
       fasta='variant-flowfish/resources/PhiX_sequence.fasta',
       index='variant-flowfish/resources/PhiX_sequence.fasta.1.bt2'
     output:
-      bam='results/aligned/{SampleID}/{SampleID}.PhiX.bam',
-      bai='results/aligned/{SampleID}/{SampleID}.PhiX.bam.bai'
+      bam='results/aligned/Undetermined/Undetermined.PhiX.bam',
+      bai='results/aligned/Undetermined/Undetermined.PhiX.bam.bai'
     shell:
       """
       bash -c '
@@ -163,5 +163,5 @@ else:  ## single_end
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
             -U {input.read1} \
-            | samtools sort -T tmp/sort.{wildcards.SampleID} -O bam -o {output.bam} - && samtools index {output.bam}'
+            | samtools sort -T tmp/sort.Undetermined -O bam -o {output.bam} - && samtools index {output.bam}'
       """
