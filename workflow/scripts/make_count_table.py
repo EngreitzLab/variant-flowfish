@@ -6,7 +6,7 @@ import numpy as np
 import argparse
 import regex as re
 
-def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, reference_threshold=None):
+def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
     sample_info = samplesheet.loc[samplesheet['SampleID'] == SampleID].to_dict('records')[0] 
     file = "results/crispresso/CRISPResso_on_{SampleID}/Alleles_frequency_table.zip".format(SampleID=SampleID)
     if (os.path.exists(file)):
@@ -62,9 +62,9 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile, re
         
         # filter out references with mismatch/insertion/deletion threshold 
         references['Errors'] = references.apply(lambda x: len(x.Mismatches)+len(x.Insertions)+len(x.Deletions), axis=1)
-        if reference_threshold:
-            print('Using reference error threshold of %d' % reference_threshold)
-            references = references[references['Errors'] <= reference_threshold]
+        reference_threshold = sample_info['ReferenceErrorThreshold']
+        print('Using reference error threshold of %d' % reference_threshold)
+        references = references[references['Errors'] <= reference_threshold]
                 
         references.to_csv('results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=sample_info['SampleID']), sep='\t', index=False)
         
