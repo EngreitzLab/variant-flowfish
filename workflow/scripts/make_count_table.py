@@ -82,12 +82,17 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
             variant_counts = variant_counts.append(pd.DataFrame(unmatched_variants))
             variant_counts.fillna(0, inplace=True)
 
-    variant_counts.to_csv(outfile, sep='\t', index=False)
+        variant_counts.to_csv(outfile, sep='\t', index=False)
+        return
+
+    else:  
+        print('File \'%s\' not found.' % file)
+        exit(1)
+
 
 
 def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, variantInfo=None, samplesToExclude=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
-
 
     currSamples = samplesheet.loc[samplesheet[group_col]==group_id]
     currSamples['Bin'] = currSamples['Bin'].fillna('NA')
