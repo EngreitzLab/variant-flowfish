@@ -14,8 +14,8 @@ def normalize_effects(raw_effects_file, outfile, variantInfo=None, index="Mappin
     raw['mean'] = np.power(10, raw['logMean']+.5*(raw['logSD']**2))
     raw['freq'] = raw['sum1'] / raw['sum1'].sum()
 
-    # get reference allele expressions, assuming the most frequent allele is the reference allele
-    refMean = raw.sort_values('sum1', axis=0, ascending=False)['mean'].values[0] 
+    # find Reference means use smaller Reference mean (assuming there is both Reference and Inferred Reference) 
+    refMean = raw[raw['VariantID'].str.contains('Reference')]['mean'].min()
 
     # normalize to reference allele
     raw['effect_size'] = raw['mean'] / refMean
