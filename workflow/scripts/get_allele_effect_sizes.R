@@ -30,6 +30,9 @@ sortParamsloc <- opt$sortParamsloc
 outputmle <- opt$outputmle
 log <- opt$log 
 
+print(paste("Counts Location: ", countsLocation))
+print(paste("Sort Params Location: ", sortParamsloc))
+
 MAXMEAN <- 10000 # in FACS space, max value a guide can take
 MINMEAN <- 1  # in FACS space, max value a guide can take
 
@@ -59,7 +62,7 @@ estimateSeventhBinInput <- function(bin.counts, input.fraction, total.count) {
 # essentially performing one step of EM procedure
 ### TODO ###
 # iterate EM until convergence
-estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=1) {
+estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=2) {
     o <- c(bin.counts, 0) # have to artificially pad with a 0 so the likelihood function doesn't complain
 
     est <- mle(minuslog=ll,
@@ -125,7 +128,7 @@ ll <- function(mu, std, observations, bins) {
 # Wrap the maximum likelihood estimator
 # getNormalMLE <- function(mu.i, sd.i, bin.counts, total.count, bins, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=1) {
 # getNormalMLE <- function(mu.i, sd.i, bin.counts, seventh.bin.count, bins, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=1) {
-getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total.count, mS, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=1) {
+getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total.count, mS, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=2) {
   ## mu.i = initial guess of the mean
   ## si.i = initial guess of the standard deviation
   ## bin.counts = vector of counts per bin (observed)
@@ -221,12 +224,12 @@ loadSortParams <- function(filename, counts, binNames, totalBinName="Total") {
     print("  Sort params:")
     print(result)
   } else if (all(required.cols.bigfoot %in% colnames(sort.params))) {
-    print("  Attempting to load sort parameters using Astrios file format...")
+    print("  Attempting to load sort parameters using BigFoot file format...")
     result <- loadSortParams_BigFoot(filename, binNames, total.binname=totalBinName)
     print("  Sort params:")
     print(result)
   } else if (all(required.cols.influx %in% colnames(sort.params))) {
-    print("  Attempting to load sort parameters using Astrios file format...")
+    print("  Attempting to load sort parameters using Influx file format...")
     result <- loadSortParams_Influx(filename, binNames, total.binname=totalBinName)
     print("  Sort params:")
     print(result)
