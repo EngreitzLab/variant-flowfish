@@ -5,7 +5,7 @@
 ##
 ## Based on previous script from Tejal Patwardhan, with a critical fix to the log likelihood function
 ## July 7, 2017
-## 
+##
 ## Input: count data, sort params, design file
 ## Black box: computes weighted average, mle mean, standard deviation for each guides
 ## Output: .bed and .bedgraph for each guide that passes filters
@@ -25,10 +25,13 @@ opt <- parse_args(OptionParser(option_list=option.list))
 
 ## Set up variables
 # designDocLocation <- opt$designDocLocation
-countsLocation <- opt$countsLocation
+countsLocation <- opt$countsLocation 
 sortParamsloc <- opt$sortParamsloc
 outputmle <- opt$outputmle
-log <- opt$log
+log <- opt$log 
+
+print(paste("Counts Location: ", countsLocation))
+print(paste("Sort Params Location: ", sortParamsloc))
 
 MAXMEAN <- 10000 # in FACS space, max value a guide can take
 MINMEAN <- 1  # in FACS space, max value a guide can take
@@ -59,27 +62,27 @@ estimateSeventhBinInput <- function(bin.counts, input.fraction, total.count) {
 # essentially performing one step of EM procedure
 ### TODO ###
 # iterate EM until convergence
-estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=1) {
+estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=2) {
     o <- c(bin.counts, 0) # have to artificially pad with a 0 so the likelihood function doesn't complain
 
-    est <- mle(minuslog=ll, 
-             start=list(mu=mu.guess,std=sd.guess), 
-             fixed=list(observations=o, bins=bins), 
+    est <- mle(minuslog=ll,
+             start=list(mu=mu.guess,std=sd.guess),
+             fixed=list(observations=o, bins=bins),
              method="L-BFGS-B",
              lower=c(log10(minmean), minvar),
-             # lower=c(0, 0), since we are in log space, I think there are no constraints on the mean 
-             upper=c(log10(maxmean), maxvar))#, 
+             # lower=c(0, 0), since we are in log space, I think there are no constraints on the mean
+             upper=c(log10(maxmean), maxvar))#,
              #control=list(ndeps = c(0.05,0.05)))
 
     MU <- est@coef[[1]]
     SI <- est@coef[[2]]
-    
+
     ps <- vector()
-    
+
     for (i in c(1:dim(bins)[1])) {
       ps <- c(ps, pnorm(bins[i,2], mean=MU, sd=SI, log.p=FALSE) - pnorm(bins[i,1], mean=MU, sd=SI, log.p=FALSE))
     }
-    
+
     # use this to guess how many cells are in last bin
     seventh.bin.count <- sum(bin.counts) / sum(ps) * (1 - sum(ps))
 
@@ -91,19 +94,19 @@ estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=M
 # per bin (which is of length nbins+1, to account for missed cells)
 # returns the negative of the log likelihood of observing those counts with the given parameters
 ll <- function(mu, std, observations, bins) {
-  # write("Invoked NLL",file=log,append=TRUE)
+  write("Invoked NLL",file=log,append=TRUE)
   # write(dim(bins),file=log,append=TRUE)
   #writeLines("Invoked NLL", log)
   if (std < 0) {
     return(10^10) ## make the sum really high if it picks a negative standard deviation
   }
-  
+
   # initialize vector of probabilities of falling in bins 1..N
   pe <- vector()
-  
+
   for (i in c(1:dim(bins)[1])) {
     pe <- c(pe, pnorm(bins[i,2], mean=mu, sd=std, log.p=FALSE) - pnorm(bins[i,1], mean=mu, sd=std, log.p=FALSE))
-  }  
+  }
 
   # add n+1th bin = p(fall outside bin)
   pe <- c(pe, 1-sum(pe)) # add a "bin" for the remaining cells
@@ -125,13 +128,12 @@ ll <- function(mu, std, observations, bins) {
 # Wrap the maximum likelihood estimator
 # getNormalMLE <- function(mu.i, sd.i, bin.counts, total.count, bins, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=1) {
 # getNormalMLE <- function(mu.i, sd.i, bin.counts, seventh.bin.count, bins, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=1) {
-getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total.count, mS, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=1) {
+getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total.count, mS, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=2) {
   ## mu.i = initial guess of the mean
   ## si.i = initial guess of the standard deviation
   ## bin.counts = vector of counts per bin (observed)
   ## bins = matrix of bin boundaries (nrows = nbins, ncols = 2)
   ## returns mean and standard deviation in log-space
-
   if (idx %% 1000 == 0) cat(paste0("get_allele_effect_sizes.R: Processed ", idx, " alleles.\n"))
 
   # cast to numeric vector
@@ -146,22 +148,22 @@ getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total
   if (seventh.bin.count <= 0 || !input.present) {
     seventh.bin.count <- estimateSeventhBinEM(mu.i, sd.i, bin.counts, bins)
   }
-  
+
   # add on "seventh" bin counts
   # o <- c(bin.counts, total.count - sum(bin.counts))
   o <- c(bin.counts, seventh.bin.count)
 
   ## Observation vector now has one entry for each bin, plus one entry for the estimated number of counts falling outside any of the bins (n+1 = "7")
-  ## bins still has only n (=6) entries, for the observed bins, but the log-likelihood function `ll` adds in the n+1th bin (7th bin = 1-sum(p_i)) 
+  ## bins still has only n (=6) entries, for the observed bins, but the log-likelihood function `ll` adds in the n+1th bin (7th bin = 1-sum(p_i))
 
-  est <- mle(minuslog=ll, 
+  est <- mle(minuslog=ll,
            start=list(mu=mu.i,std=sd.i),
-           # start=list(mu=MU,std=SI), 
-           fixed=list(observations=o, bins=bins), 
+           # start=list(mu=MU,std=SI),
+           fixed=list(observations=o, bins=bins),
            method="L-BFGS-B",
            lower=c(log10(minmean), minvar),
-           # lower=c(0, 0), since we are in log space, I think there are no constraints on the mean and variance 
-           upper=c(log10(maxmean), maxvar))#, 
+           # lower=c(0, 0), since we are in log space, I think there are no constraints on the mean and variance
+           upper=c(log10(maxmean), maxvar))#,
            #control=list(ndeps = c(0.05,0.05)))
   MU <- est@coef[[1]]
   SI <- est@coef[[2]]
@@ -171,12 +173,12 @@ getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total
   return(result)
 }
 
-## LOAD DATA 
+## LOAD DATA
 # loadReadCounts <- function(designfile, countsfile) {
 loadReadCounts <- function(countsfile) {
   # designDoc <- read.delim(designfile)
   counts <- read.delim(countsfile)
-  
+
   # create a merged sheet
   # mS <- merge(designDoc, counts)
 
@@ -192,11 +194,52 @@ loadReadCounts <- function(countsfile) {
   return(counts)
 }
 
+
 getBinNames <- function(counts) {
   col.names <- colnames(counts)
-  bin.names <- col.names [! col.names %in% c('MappingSequence','All')]
+  bin.names <- col.names [! col.names %in% c('AmpliconID', 'MappingSequence','All', 'Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele')]
   return(bin.names)
 }
+
+
+
+loadSortParams <- function(filename, counts, binNames, totalBinName="Total") {
+  ## Function to read in sort params files, including detecting among
+  ## several possible formats from different sorting instruments
+  ##
+  ## To do: Consider moving this into a separate script
+  ## To do: Consolidate so that we need either counts or binNames but not both.  
+
+  sort.params <- read.csv(filename, sep=',')
+
+  print("Detecting sort params file format...")
+
+  required.cols.astrios <- c("Mean","Bounds","Barcode","Count")
+  required.cols.bigfoot <- c("Mean","Min","Max","Barcode","Count","StdDev")
+  required.cols.influx <- c("Mean","Min","Max","Barcode","Count")
+
+  if (all(required.cols.astrios %in% colnames(sort.params))) {
+    print("  Attempting to load sort parameters using Astrios file format...")
+    result <- loadSortParams_Astrios(filename, counts, total.binname=totalBinName)
+    print("  Sort params:")
+    print(result)
+  } else if (all(required.cols.bigfoot %in% colnames(sort.params))) {
+    print("  Attempting to load sort parameters using BigFoot file format...")
+    result <- loadSortParams_BigFoot(filename, binNames, total.binname=totalBinName)
+    print("  Sort params:")
+    print(result)
+  } else if (all(required.cols.influx %in% colnames(sort.params))) {
+    print("  Attempting to load sort parameters using Influx file format...")
+    result <- loadSortParams_Influx(filename, binNames, total.binname=totalBinName)
+    print("  Sort params:")
+    print(result)
+  } else {
+    stop("ERROR: Did not find required columns for any of the sort params file formats.\n")
+  }
+
+  return(result)
+}
+
 
 loadSortParams_Astrios <- function(filename, mS, total.binname="Total") {
   ## Returns a list with the following items:
@@ -208,7 +251,7 @@ loadSortParams_Astrios <- function(filename, mS, total.binname="Total") {
   ##   count
   ## totalCount: Total count of cells sorted
 
-  sort.params <- read.delim(filename)
+  sort.params <- read.csv(filename)
 
   ## Check the sort params
   required.cols <- c("Mean","Bounds","Barcode","Count")
@@ -230,7 +273,7 @@ loadSortParams_Astrios <- function(filename, mS, total.binname="Total") {
   if (! all(colnames(mS)[colnames(mS) %in% sort.params$bins$name] == sort.params$bins$name) ) {
     stop("Did not find columns matching bin names in the merged count table or did not find them in the same order")
   }
-  
+
   filt.names <- vector()
 
   for (i in c(1:length(bin.names))) {
@@ -238,7 +281,8 @@ loadSortParams_Astrios <- function(filename, mS, total.binname="Total") {
     if (sum(mS[,name]) > 0) {
       filt.names <- c(filt.names, bin.names[i])
     }
-  } 
+  }
+  if (length(filt.names) == 0) stop("Stopping because no bins have counts in the input count table.\n")
 
   bins <- data.frame(name=bin.names, mean=bin.means, lowerBound=log10(bin.bounds[,1]), upperBound=log10(bin.bounds[,2]), count=sort.params$Count[bin.indices], stringsAsFactors=F)
   rownames(bins) <- bin.names
@@ -293,7 +337,7 @@ loadSortParams_BigFoot <- function(filename, bin.names, total.binname="Total", f
     bin.maxs <- log10(sort.params$Max[bin.indices])
     seed <- log10(1+(sort.params$StdDev[sort.params$Barcode == total.binname] / sort.params$Mean[sort.params$Barcode == total.binname])^2)
   }
-  
+
   bin.counts <- sort.params$Count[bin.indices]
 
   mu.seed <- median(bin.mins)
@@ -346,7 +390,7 @@ loadSortParams_Influx <- function(filename, bin.names, total.binname="Total", fu
 
   if (full.file) {
     # need to treat the rows differently and cast them away from "Factors"
-    bin.means <- log10(as.numeric(as.character(sort.params$Mean)[bin.indices]))  
+    bin.means <- log10(as.numeric(as.character(sort.params$Mean)[bin.indices]))
     bin.mins <- log10(as.numeric(as.character(sort.params$Min)[bin.indices]))
     bin.maxs <- log10(as.numeric(as.character(sort.params$Max)[bin.indices]))
     seed <- log10(1+median(as.numeric(as.character(sort.params$Mean)[bin.indices])))-1 ## For influx, missing this data — make a guess
@@ -356,7 +400,7 @@ loadSortParams_Influx <- function(filename, bin.names, total.binname="Total", fu
     bin.maxs <- log10(sort.params$Max[bin.indices])
     seed <- log10(1+median(as.numeric(as.character(sort.params$Mean)[bin.indices])))-1 ## For influx, imssing this data - make a guess
   }
-  
+
   bin.counts <- sort.params$Count[bin.indices]
 
   mu.seed <- median(bin.mins)
@@ -391,7 +435,7 @@ addWeightedAverage <- function(mS, sort.params, bin.names) {
 ## Set up read count table and sort params
 counts <- loadReadCounts(countsLocation)
 bin.names <- getBinNames(counts)
-sort.params <- loadSortParams_Influx(sortParamsloc, bin.names); print("RUNNING loadSortParams_Influx() -- may need to edit this function in get_allele_effect_sizes.R. TODO: Factor out this code to fix the sort params files")
+sort.params <- loadSortParams(sortParamsloc, counts, bin.names)
 counts <- rescaleReadCounts(counts, sort.params, bin.names)
 counts <- addWeightedAverage(counts, sort.params, bin.names)
 
@@ -399,7 +443,7 @@ counts <- addWeightedAverage(counts, sort.params, bin.names)
 runMLE <- function(mS, sort.params, ignoreInputBinCounts=FALSE) {
   ## seed mean and standard deviation
   mu.seed <- sort.params$mu.seed
-  sd.seed <- sort.params$sd.seed #.5 
+  sd.seed <- sort.params$sd.seed #.5
   # print(sd.seed)
   bin.bounds <- as.matrix(sort.params$bins[,c("lowerBound","upperBound")])
   total.count <- sort.params$totalCount
@@ -413,22 +457,22 @@ runMLE <- function(mS, sort.params, ignoreInputBinCounts=FALSE) {
   }
 
   ############# MAKE SURE BIN.BOUNDS AND mS[i,bin.names] ARE SORTED IN THE SAME ORDER!!! #############
-  mleOuts <- data.frame(do.call(rbind, lapply(1:nrow(mS), function(i) 
+  mleOuts <- data.frame(do.call(rbind, lapply(1:nrow(mS), function(i)
     #tryCatch({ getNormalMLE(mS$WeightedAvg[i], sd.seed, mS[i,sort.params$bins$name], mS[i,inputCountCol], bin.bounds) }, error = function(err) { writeLines(paste0("MLE errored out at given initialization for guide: ", i, ", using weighted average instead"), log); result <- c(mS$WeightedAvg[i], sd.seed); names(result) <- c("mean", "sd"); return(result) }))))
     # tryCatch({ getNormalMLE(mS$WeightedAvg[i], sd.seed, mS[i,sort.params$bins$name], mS[i,inputCountCol], bin.bounds) }, error = function(err) { write(paste0("MLE errored out at given initialization for guide: ", i, ", using weighted average instead: ", err),file=log,append=TRUE); result <- c(mS$WeightedAvg[i], sd.seed); names(result) <- c("mean", "sd"); return(result) }))))
     # estimate the number of cells falling in n+1th bin
-    # estimated.seventh.bin <- estimateSeventhBinInput(mS[i,bin.names], mS[i,input.bin.name] / sum(mS[,input.bin.name]), total.count)    
-    tryCatch({ 
-      getNormalMLE(mu.seed, sd.seed, mS[i,bin.names], bin.bounds, input.present, i, total.count, mS) 
-    }, error = function(err) { 
+    # estimated.seventh.bin <- estimateSeventhBinInput(mS[i,bin.names], mS[i,input.bin.name] / sum(mS[,input.bin.name]), total.count)
+    tryCatch({
+      getNormalMLE(mu.seed, sd.seed, mS[i,bin.names], bin.bounds, input.present, i, total.count, mS)
+    }, error = function(err) {
       write(paste0("MLE errored out at given initialization for guide: ", i, ", using weighted average instead: ", err),file=log,append=TRUE)
       result <- c(mS$WeightedAvg[i], sd.seed); names(result) <- c("mean", "sd")
-      return(result) 
+      return(result)
     }))))
-  
+
   mS$logMean <- mleOuts$mean
   mS$logSD <- mleOuts$sd
-  
+
   return(mS)
 }
 
@@ -438,4 +482,3 @@ counts <- runMLE(counts, sort.params, opt$ignoreInputBinCounts)
 
 write.table(counts, file=outputmle, sep="\t", quote=F, row.names=F, col.names=T)
 write("Finished",file=log,append=TRUE)
-

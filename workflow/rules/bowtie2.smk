@@ -1,4 +1,5 @@
 ## Align all FASTQs to all amplicons to check that they're the correct samples
+## Also check how may FASTQs align to PhiX
 import io
 
 rule create_fasta:
@@ -21,7 +22,7 @@ rule create_bowtie2_index:
     """
     bash -c '
       . $HOME/.bashrc 
-      conda activate crispresso2_210104
+      conda activate EngreitzLab
       bowtie2-build {input.fasta} {input.fasta}
     '
     """
@@ -109,3 +110,58 @@ rule count_bowtie2_alignments:
     result = pd.read_csv(io.StringIO(resultString), sep='\t')
     result = result.merge(samplesheet.reset_index(drop=True))
     result.to_csv(output.table, sep='\t', header=True, index=False)
+
+rule create_bowtie2_index_for_PhiX:
+  input:
+    fasta='variant-flowfish/resources/PhiX_sequence.fasta'
+  output:
+    index='variant-flowfish/resources/PhiX_sequence.fasta.1.bt2'
+  shell:
+    """
+    bash -c '
+      . $HOME/.bashrc 
+      conda activate crispresso2_210104
+      bowtie2-build {input.fasta} {input.fasta}
+    '
+    """
+    
+if not single_end:
+  rule run_bowtie2_PhiX:
+    input:
+      read1='fastq/Undetermined_S0_R1_001.fastq.gz', 
+      read2='fastq/Undetermined_S0_R2_001.fastq.gz',
+      fasta='variant-flowfish/resources/PhiX_sequence.fasta',
+      index='variant-flowfish/resources/PhiX_sequence.fasta.1.bt2'
+    output:
+      bam='results/aligned/Undetermined/Undetermined.PhiX.bam', 
+      bai='results/aligned/Undetermined/Undetermined.PhiX.bam.bai'
+    shell:
+      """
+      bash -c '
+        . $HOME/.bashrc 
+        conda activate EngreitzLab
+        mkdir -p tmp
+        bowtie2 -x {input.fasta} \
+            -1 {input.read1} \
+            -2 {input.read2} \
+            | samtools sort -T tmp/sort.Undetermined -O bam -o {output.bam} - && samtools index {output.bam}'
+      """
+else:  ## single_end
+  rule run_bowtie2_PhiX:
+    input:
+      read1='fastq/Undetermined_S0_R1_001.fastq.gz',
+      fasta='variant-flowfish/resources/PhiX_sequence.fasta',
+      index='variant-flowfish/resources/PhiX_sequence.fasta.1.bt2'
+    output:
+      bam='results/aligned/Undetermined/Undetermined.PhiX.bam',
+      bai='results/aligned/Undetermined/Undetermined.PhiX.bam.bai'
+    shell:
+      """
+      bash -c '
+        . $HOME/.bashrc 
+        conda activate EngreitzLab
+        mkdir -p tmp
+        bowtie2 -x {input.fasta} \
+            -U {input.read1} \
+            | samtools sort -T tmp/sort.Undetermined -O bam -o {output.bam} - && samtools index {output.bam}'
+      """

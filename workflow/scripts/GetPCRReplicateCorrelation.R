@@ -18,7 +18,7 @@ dput(opt)
 if (is.null(opt$correlationFile) | is.null(opt$cvFile))
   stop("GetPCRReplicateCorrelation: --correlationFile and --cvFile should be specified.\n")
 
-if (is.null(opt$variantCounts) | !file.exists(opt$variantCounts)) 
+if (is.null(opt$variantCounts) | !file.exists(opt$variantCounts))
   stop("GetPCRReplicateCorrelation: --variantCounts file not found.\n")
 
 if (is.null(opt$samplesheet) | !file.exists(opt$samplesheet))
@@ -76,11 +76,11 @@ getPCRReplicateCorrelations <- function(countsFlat, samplesheet, includeRef=FALS
   for (group in unique(samplesheet$Grouping)) {
     currSamples <- samplesheet %>% filter(Grouping == group)
 
-    currCounts <- countsFlat %>% 
+    currCounts <- countsFlat %>%
       filter(SampleID %in% currSamples$SampleID) %>%
-      filter(includeRef | !RefAllele) %>% 
+      filter(includeRef | RefAllele == "False") %>%  # it's a string not a binary
       select(SampleID,VariantID,`%Reads`) %>%
-      spread(SampleID,`%Reads`,fill=0) %>% 
+      spread(SampleID,`%Reads`,fill=0) %>%
       select(-VariantID) %>%
       as.matrix()
 
@@ -102,18 +102,20 @@ getPCRReplicateVariantCV <- function(countsFlat, samplesheet, includeRef=FALSE) 
   samplesheet <- samplesheet %>% mutate(Grouping=paste0(ExperimentIDReplicates,Bin))
   for (group in unique(samplesheet$Grouping)) {
     currSamples <- samplesheet %>% filter(Grouping == group)
-
     if (nrow(currSamples) >= 2) {
-      currCounts <- countsFlat %>% 
-        filter(SampleID %in% currSamples$SampleID) %>%
-        filter(includeRef | !RefAllele) %>% 
-        select(SampleID,VariantID,`%Reads`) %>%
-        spread(SampleID,`%Reads`,fill=0) %>% 
-        select(-VariantID) %>%
-        as.matrix()
+      tryCatch({
+        currCounts <- countsFlat %>%
+          filter(SampleID %in% currSamples$SampleID) %>%
+          filter(includeRef | RefAllele == "False") %>%
+          select(SampleID,VariantID,`%Reads`) %>%
+          spread(SampleID,`%Reads`,fill=0) %>%
+          select(-VariantID) %>%
+          as.matrix()
 
-      cv <- t(apply(currCounts, 1, function(row) return(c(mean(row), sd(row), sd(row)/mean(row)*100))))
-      results[[group]] <- cv
+        cv <- t(apply(currCounts, 1, function(row) return(c(mean(row), sd(row), sd(row)/mean(row)*100))))
+        if (ncol(cv) == 3)
+          results[[group]] <- cv
+      }, error = function(e) print("Failed on group = ", group))
     }
   }
   flat <- data.frame(do.call(rbind, results))

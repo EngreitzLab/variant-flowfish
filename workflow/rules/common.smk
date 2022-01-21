@@ -84,6 +84,8 @@ def add_experiment_names(samplesheet):
 
 def add_outputs(samplesheet):
 	samplesheet['CRISPRessoDir'] = ['results/crispresso/CRISPResso_on_{SampleID}/'.format(SampleID=row['SampleID']) for index, row in samplesheet.iterrows()]
+	samplesheet['variantCountFile'] = ['results/variantCounts/{SampleID}.variantCounts.txt'.format(SampleID=row['SampleID']) for index, row in samplesheet.iterrows()]
+	samplesheet['referenceAlleleFile'] = ['results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=row['SampleID']) for index, row in samplesheet.iterrows()]
 	if not genotyping_only:
 		samplesheet['ExperimentIDPCRRep_BinCounts'] = ['results/byPCRRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDPCRRep']]
 		samplesheet['ExperimentIDReplicates_BinCounts'] = ['results/byExperimentRep/{}.bin_counts.txt'.format(e) for e in samplesheet['ExperimentIDReplicates']]
@@ -141,10 +143,11 @@ def load_sample_sheet(samplesheetFile, ampliconInfoFile, idcol='AmpliconID'):
 
 def get_bin_list():
 	binList = samplesheet['Bin'].drop_duplicates()
-	if  "All" not in binList.tolist():
-		print("\nWARNING: Did not find any entries with Bin == 'All' (unsorted edited cells input into FlowFISH). Was this intended, or was 'All' mispelled?\n\n")
-	if "Neg" not in binList.tolist():
-		print("\nWARNING: Did not find any entries with Bin == 'Neg' (unedited cells used to assess sequencing error rate). Was this intended, or was 'Neg' mispelled?\n\n")		
+	if not genotyping_only:
+		if  "All" not in binList.tolist():
+			print("\nWARNING: Did not find any entries with Bin == 'All' (unsorted edited cells input into FlowFISH). Was this intended, or was 'All' mispelled?\n\n")
+		if "Neg" not in binList.tolist():
+			print("\nWARNING: Did not find any entries with Bin == 'Neg' (unedited cells used to assess sequencing error rate). Was this intended, or was 'Neg' mispelled?\n\n")		
 	binList = binList[(binList != "All") & (binList != "Neg") & (binList.notnull())]
 	binList = [str(b) for b in list(binList)]
 	print("Processing unique bins: " + ' '.join(binList))
@@ -160,13 +163,13 @@ def load_variant_Table(variant_table, requiredCols):
 # global variables
 genotyping_only = ('genotyping_only' in config) and (bool(config['genotyping_only']))
 if genotyping_only:
-	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep']
+	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon']
 else:
-	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','VFFSpikeIn']
+	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon','VFFSpikeIn']
 
 single_end = ('single_end' in config) and (bool(config['single_end']))
 
-ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer','QuantificationWindowStart','QuantificationWindowEnd']  ## To do:  Allow specifying crispresso quantification window for different amplicons
+ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer','QuantificationWindowStart','QuantificationWindowEnd', 'ReferenceErrorThreshold']  ## To do:  Allow specifying crispresso quantification window for different amplicons
 variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
 keyCols = config['experiment_keycols'].split(',')
 repCols = config['replicate_keycols'].split(',')
@@ -196,34 +199,45 @@ def all_input(wildcards):
 	wanted_input.extend(list(samplesheet['CRISPRessoDir'].unique()))
 	wanted_input.append("results/crispresso/CRISPRessoAggregate_on_Aggregate/")
 	wanted_input.append("results/summary/VariantCounts.flat.tsv.gz")
-	wanted_input.append("results/summary/VariantCounts.DesiredVariants.flat.tsv")
-	wanted_input.append("results/summary/VariantCounts.DesiredVariants.matrix.tsv")
+	wanted_input.append("results/summary/VariantCounts.matrix.tsv.gz")
 
-	## Genotyping plots:
+	# Genotyping plots:
 	wanted_input.append("results/summary/DesiredVariants.RData")
+	wanted_input.extend([
+			'results/summary/{}.reference_plots.pdf'.format(e) for e in samplesheet['AmpliconID'].unique()
+		])
 
-	#wanted_input.extend(
-	#	['crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'.format(
-	#		SampleID=row['SampleID'], 
-	#		AmpliconID=row['AmpliconID'], 
-	#		GuideSpacer=row['GuideSpacer']) 
-	#	for index, row in samplesheet.iterrows()]
-	#)
+	# wanted_input.extend(
+	# 	['crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'.format(
+	# 		SampleID=row['SampleID'], 
+	# 		AmpliconID=row['AmpliconID'], 
+	# 		GuideSpacer=row['GuideSpacer']) 
+	# 	for index, row in samplesheet.iterrows()]
+	# )
 
 	## Bowtie2 alignments:
 	wanted_input.extend(
 		['results/aligned/{s}/{s}.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
 	)
 	wanted_input.append("results/summary/alignment.counts.tsv")
+	## PhiX alignment: 
+	wanted_input.extend(
+		['results/aligned/Undetermined/Undetermined.PhiX.bam']
+	)
+
+	## Variant counts:
+	wanted_input.extend(list(samplesheet['variantCountFile'].unique()))
 
 	## At what point do we merge in the spike-in data? 
 
 	if not genotyping_only:
 		## Output files for PCR replicates (before merging spike-in data)
 		wanted_input.extend(list(samplesheet['ExperimentIDPCRRep_BinCounts'].unique()))
-		#wanted_input.extend([
-		#	'results/byPcrRep/{}.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDPCRRep'].unique()
-		#])
+		wanted_input.extend([
+			'results/byPCRRep/{}.effects_vs_ref.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDPCRRep'].unique()
+		])
+		wanted_input.append('results/summary/AllelicEffects.byPCRRep.ExperimentIDPCRRep.flat.tsv.gz')
+		wanted_input.append('results/summary/AllelicEffects.byPCRRep.ExperimentIDPCRRep.pdf')
 
 		## Output files for PCR replicates (after merging spike-in data) (?)
 		wanted_input.extend([])
@@ -240,6 +254,8 @@ def all_input(wildcards):
 		wanted_input.extend([
 			'results/byExperimentRepCorFilter/{}.effects_vs_ref_ignoreInputBin.pdf'.format(e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList)]['ExperimentIDReplicates'].unique()
 		])
+		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz')
+		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.pdf')
 
 		## Output files for replicate experiments (after merging spike-in data)
 		wanted_input.extend([])

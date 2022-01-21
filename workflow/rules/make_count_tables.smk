@@ -4,73 +4,12 @@
 import os
 import pandas as pd
 import numpy as np
-
-def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, samplesToExclude=None):
-    ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
-    ## To do: Move the python code for these rules into separate python scripts so they can be run independently of the snakemake pipeline (at least, this makes it easier to test and debug the code)
-
-    currSamples = samplesheet.loc[samplesheet[group_col]==group_id]
-
-    if samplesToExclude is not None:
-        exclude = pd.read_table(samplesToExclude, header=None, names=['SampleID'])
-        currSamples = currSamples[~currSamples['SampleID'].isin(exclude['SampleID'].values)]
-
-    allele_tbls = []
-
-    for idx, row in currSamples.iterrows():
-        file = "results/crispresso/CRISPResso_on_{SampleID}/Alleles_frequency_table.zip".format(
-            SampleID=row['SampleID'])
-
-        if (os.path.exists(file)):
-            allele_tbl = pd.read_csv(file)
-            allele_tbl['#Reads'] = allele_tbl['#Reads'].astype(np.int32)
-            ref_seq = allele_tbl.loc[allele_tbl['Aligned_Sequence'] == allele_tbl['Reference_Sequence'], 'Reference_Sequence'].values[0]
-            allele_tbl = allele_tbl.loc[allele_tbl['Reference_Sequence'] == ref_seq] # necessary?
-            allele_tbl = allele_tbl[['Aligned_Sequence', '#Reads']]
-            allele_tbl.columns = ['Aligned_Sequence', row['SampleID']]
-            allele_tbls.append(allele_tbl)
-
-    if len(allele_tbls) > 0:
-        count_tbl = allele_tbls.pop()
-
-        for tbl in allele_tbls:
-            count_tbl = count_tbl.merge(tbl, on='Aligned_Sequence', how='outer')
-
-        count_tbl = count_tbl.set_index('Aligned_Sequence')
-        count_tbl = count_tbl.fillna(0)
-        count_tbl = count_tbl.astype(int)
-
-        ## Now, sum counts per bin
-        bin_list = bins + list(set(currSamples['Bin'].unique())-set(bins))
-        for uniqBin in bin_list:
-            samples = currSamples.loc[currSamples['Bin'] == uniqBin]
-            if len(samples) > 0:
-                count_tbl[uniqBin] = count_tbl[samples['SampleID']].sum(axis=1).values
-
-            else:
-                count_tbl[uniqBin] = 0
-        count_tbl = count_tbl[bin_list]
-
-    else:
-        count_tbl = pd.DataFrame({'Aligned_Sequence':[]})
-        for uniqBin in bins:
-            count_tbl[uniqBin] = []
-        count_tbl = count_tbl.set_index('Aligned_Sequence')
-
-    count_tbl.index.name = "MappingSequence"
-    count_tbl.to_csv(outfile, sep='\t')
-
-    freq_tbl = count_tbl.div(count_tbl.sum(axis=0), axis=1)
-    freq_tbl.to_csv(outfile_frequencies, sep='\t', float_format='%.6f')
-
-
+from scripts.make_count_table import *
 
 def make_flat_table(samplesheet, outfile):
-
     allele_tbls = []
     for idx, row in samplesheet.iterrows():
-        file = "{CRISPRessoDir}/Alleles_frequency_table.zip".format(
-            CRISPRessoDir=row['CRISPRessoDir'])
+        file = row['variantCountFile']
 
         if (os.path.exists(file)):
             allele_tbl = pd.read_csv(file, sep='\t')
@@ -81,10 +20,21 @@ def make_flat_table(samplesheet, outfile):
     flat.to_csv(outfile, sep='\t', index=False, compression='gzip')
 
 
+rule aggregate_variant_counts:
+    input:
+        lambda wildcards:
+            samplesheet.at[wildcards.SampleID,'CRISPRessoDir']
+    output:
+        counts='results/variantCounts/{SampleID}.variantCounts.txt',
+        references='results/variantCounts/{SampleID}.referenceAlleles.txt'
+    run:
+        aggregate_variant_counts(samplesheet, wildcards.SampleID, output.counts, config['variant_info'])
+
+
 rule make_count_table_per_PCRrep:
     input:
         lambda wildcards:
-            samplesheet.loc[samplesheet['ExperimentIDPCRRep']==wildcards.ExperimentIDPCRRep]['CRISPRessoDir']
+            samplesheet.loc[samplesheet['ExperimentIDPCRRep']==wildcards.ExperimentIDPCRRep]['variantCountFile']
     output:
         counts='results/byPCRRep/{ExperimentIDPCRRep}.bin_counts.txt',
         freq='results/byPCRRep/{ExperimentIDPCRRep}.bin_freq.txt'
@@ -95,28 +45,17 @@ rule make_count_table_per_PCRrep:
 rule make_count_table_per_experimentalRep:
     input:
         lambda wildcards:
-            samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['CRISPRessoDir']
+            samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['variantCountFile']
     output:
         counts='results/byExperimentRep/{ExperimentIDReplicates}.bin_counts.txt',
         freq='results/byExperimentRep/{ExperimentIDReplicates}.bin_freq.txt'
     run:
-        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq)
-
-
-rule trim_count_table:
-    input:
-        '{path}.bin_counts.txt'
-    output:
-        '{path}.bin_counts.topN.txt'
-    params:
-        n=config['max_mle_variants']
-    shell:
-        'head -{params.n} {input} > {output}'
+        make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, variantInfo=config['variant_info'])
 
 
 rule write_pcr_replicate_correlation:
     input:
-        variantCounts="results/summary/VariantCounts.DesiredVariants.flat.tsv",
+        variantCounts="results/summary/VariantCounts.flat.tsv.gz",
         samplesheet="SampleList.snakemake.tsv"
     output:
         corfile="results/summary/PCRReplicateCorrelations.tsv",
@@ -129,15 +68,15 @@ rule write_pcr_replicate_correlation:
           --variantCounts {input.variantCounts} \
           --samplesheet {input.samplesheet} \
           --correlationFile {output.corfile} \
-          --cvFile {output.cvfile} \
-          --lowCorSamplesFile {output.lowcorfile}"
+          --lowCorSamplesFile {output.lowcorfile} \
+          --cvFile {output.cvfile}"
 
 
 rule make_count_table_per_experimentalRep_withCorFilter:
     input:
         samplesToExclude='results/summary/PCRReplicateCorrelations.LowQualSamples.tsv',
         samples = lambda wildcards:
-            samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['CRISPRessoDir']
+            samplesheet.loc[samplesheet['ExperimentIDReplicates']==wildcards.ExperimentIDReplicates]['variantCountFile']
     output:
         counts='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_counts.txt',
         freq='results/byExperimentRepCorFilter/{ExperimentIDReplicates}.bin_freq.txt'
@@ -145,23 +84,30 @@ rule make_count_table_per_experimentalRep_withCorFilter:
         make_count_table(samplesheet, 'ExperimentIDReplicates', wildcards.ExperimentIDReplicates, get_bin_list(), output.counts, output.freq, input.samplesToExclude)
 
 
-rule make_flat_count_table_PCRrep:
+rule make_flat_count_table:
     input:
-        lambda wildcards: samplesheet['CRISPRessoDir']
+        lambda wildcards: samplesheet['variantCountFile']
     output:
-        'results/summary/VariantCounts.flat.tsv.gz',
+        flat='results/summary/VariantCounts.flat.tsv.gz'
     run:
-        make_flat_table(samplesheet, output[0])
+        make_flat_table(samplesheet, output.flat) 
 
 
-rule make_desired_variant_tables:
+rule make_variant_matrix:
     input:
-        variantCounts='results/summary/VariantCounts.flat.tsv.gz',
-        variantInfo=config['variant_info']
+        variantCounts='results/summary/VariantCounts.flat.tsv.gz'
     output:
-        flat="results/summary/VariantCounts.DesiredVariants.flat.tsv",
-        matrix="results/summary/VariantCounts.DesiredVariants.matrix.tsv"
-    params:
-        codedir=config['codedir']
-    shell:
-        "python {params.codedir}/workflow/scripts/AggregateDesiredAlleleCounts.py --variantCounts {input.variantCounts} --variantInfo {input.variantInfo} --outbase results/summary/VariantCounts.DesiredVariants"
+        matrix="results/summary/VariantCounts.matrix.tsv.gz"
+    run:
+        countsFlat = pd.read_csv(input.variantCounts, sep='\t')
+        countsMatrix = countsFlat.pivot(
+            index=[
+                'MappingSequence',
+                'AmpliconID',
+                'VariantID',
+                'RefAllele'],
+            columns='SampleID',
+            values='#Reads').reset_index()
+        countsMatrix = countsMatrix.rename_axis(None, axis=1).reset_index(drop=True).fillna(0)  
+        # the index needs to be reset because pivot names the index "SampleID"
+        countsMatrix.to_csv(output.matrix, sep='\t', index=False)

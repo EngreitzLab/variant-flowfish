@@ -24,7 +24,7 @@ def write_design_file(counts_file, design):
 
 
 def get_sortparams_file(wildcards):
-	if wildcards.directory == "byExperimentRep" or "byExperimentRepCorFilter":
+	if wildcards.directory == "byExperimentRep" or wildcards.directory == "byExperimentRepCorFilter":
 		currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "")]
 	else:
 		currSamples = samplesheet.loc[(samplesheet['ExperimentIDPCRRep'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "")]
@@ -33,13 +33,18 @@ def get_sortparams_file(wildcards):
 		print(sortParams)
 		print(wildcards)
 		raise ValueError("Found more than one possible sort params file path. Correct the samplesheet and rerun.")
-	return sortParams
+	elif (len(sortParams) == 0):
+		print(sortParams)
+		print(wildcards)
+		raise ValueError("Found no possible sort params file path. Correct the samplesheet and rerun.")
+	else:
+		return sortParams[0]
 
 
 # run mle to calculate the effect sizes
 rule calculate_allelic_effect_sizes:
 	input:
-		counts='results/{directory}/{ExperimentID}.bin_counts.topN.txt',
+		counts='results/{directory}/{ExperimentID}.bin_counts.txt',
 		sortparams=get_sortparams_file 
 	output:
 		'results/{directory}/{ExperimentID}.raw_effects.txt'
@@ -81,13 +86,51 @@ rule plot_allelic_effect_sizes:
 		"""
 
 
+def aggregate_allelic_effect_tables(samplesheet, outfile, wildcards):
+    allele_tbls = []
+    for expt in samplesheet[wildcards.ExperimentID].drop_duplicates():
+        file = 'results/{dir}/{e}.effects_vs_ref.txt'.format(dir=wildcards.replicateDirectory, e=expt)
+
+        if (os.path.exists(file)):
+            allele_tbl = pd.read_csv(file, sep='\t')
+            allele_tbl[wildcards.ExperimentID] = expt
+            allele_tbls.append(allele_tbl)
+
+    flat = pd.concat(allele_tbls, axis='index', ignore_index=True)
+    flat.to_csv(outfile, sep='\t', index=False, compression='gzip')
+
+
+rule aggregate_allelic_effects:
+    input:
+        lambda wildcards: 
+        	['results/{dir}/{e}.effects_vs_ref.txt'.format(dir=wildcards.replicateDirectory, e=e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList),wildcards.ExperimentID].drop_duplicates()]
+    output:
+        flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz'
+    run:
+        aggregate_allelic_effect_tables(samplesheet, output.flat, wildcards) 
+
+
+rule plot_aggregate_allelic_effects:
+	input:
+		flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz',
+		samplesheet="SampleList.snakemake.tsv"
+	output:
+		'results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.pdf'
+	params:
+		codedir=config['codedir']
+	shell:
+		"""
+		Rscript {params.codedir}/workflow/scripts/PlotMleVariantEffectsAggregated.R --allelicEffectFile {input.flat} --outfile {output} --samplesheet {input.samplesheet} --effectColumn effect_size
+		"""
+
+
 ###################################################################################
 ## Run again, but ignore input bin counts
 
 # run mle to calculate the effect sizes
 rule calculate_allelic_effect_sizes_ignoreInputBin:
 	input:
-		counts='results/{directory}/{ExperimentID}.bin_counts.topN.txt',
+		counts='results/{directory}/{ExperimentID}.bin_counts.txt',
 		sortparams=get_sortparams_file 
 	output:
 		'results/{directory}/{ExperimentID}.raw_effects_ignoreInputBin.txt'
