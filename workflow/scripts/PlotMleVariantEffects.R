@@ -21,6 +21,7 @@ suppressPackageStartupMessages(library(ggplot2))
 
 mle <- read.delim(opt$mleEffects, check.names=F, stringsAsFactors=F)
 mle <- subset(mle, VariantID != "")  ## Only plot results for desired variants
+mle <- subset(mle, sum1 >= 1000) ## Only plot the variants with at least 1000 cells
 
 stopifnot(opt$effectColumn %in% colnames(mle))
 
