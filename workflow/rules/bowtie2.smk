@@ -128,13 +128,13 @@ rule create_bowtie2_index_for_PhiX:
 if not single_end:
   rule run_bowtie2_PhiX:
     input:
-      read1='fastq/Undetermined_S0_R1_001.fastq.gz', 
-      read2='fastq/Undetermined_S0_R2_001.fastq.gz',
       fasta='variant-flowfish/resources/PhiX_sequence.fasta',
       index='variant-flowfish/resources/PhiX_sequence.fasta.1.bt2'
     output:
       bam='results/aligned/Undetermined/Undetermined.PhiX.bam', 
       bai='results/aligned/Undetermined/Undetermined.PhiX.bam.bai'
+    params: 
+      fastqdir=config['fastqdir']
     shell:
       """
       bash -c '
@@ -142,19 +142,20 @@ if not single_end:
         conda activate EngreitzLab
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
-            -1 {input.read1} \
-            -2 {input.read2} \
+            -1 {params.fastqdir}/Undetermined_S0_R1_001.fastq.gz \
+            -2 {params.fastqdir}/Undetermined_S0_R2_001.fastq.gz \
             | samtools sort -T tmp/sort.Undetermined -O bam -o {output.bam} - && samtools index {output.bam}'
       """
 else:  ## single_end
   rule run_bowtie2_PhiX:
     input:
-      read1='fastq/Undetermined_S0_R1_001.fastq.gz',
       fasta='variant-flowfish/resources/PhiX_sequence.fasta',
       index='variant-flowfish/resources/PhiX_sequence.fasta.1.bt2'
     output:
       bam='results/aligned/Undetermined/Undetermined.PhiX.bam',
       bai='results/aligned/Undetermined/Undetermined.PhiX.bam.bai'
+    params: 
+      fastqdir=config['fastqdir']
     shell:
       """
       bash -c '
@@ -162,6 +163,6 @@ else:  ## single_end
         conda activate EngreitzLab
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
-            -U {input.read1} \
+            -U {params.fastqdir}/Undetermined_S0_R1_001.fastq.gz \
             | samtools sort -T tmp/sort.Undetermined -O bam -o {output.bam} - && samtools index {output.bam}'
       """
