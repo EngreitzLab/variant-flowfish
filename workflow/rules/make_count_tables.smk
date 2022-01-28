@@ -12,11 +12,19 @@ def make_flat_table(samplesheet, outfile):
         file = row['variantCountFile']
 
         if (os.path.exists(file)):
-            allele_tbl = pd.read_csv(file, sep='\t')
-            allele_tbl['SampleID'] = row['SampleID']
-            allele_tbls.append(allele_tbl)
+            try:
+                allele_tbl = pd.read_csv(file, sep='\t')
+                allele_tbl['SampleID'] = row['SampleID']
+                allele_tbls.append(allele_tbl)
+            except:
+                print("Error reading file: " + file)
+                continue
 
-    flat = pd.concat(allele_tbls, axis='index', ignore_index=True)
+    try:
+        flat = pd.concat(allele_tbls, axis='index', ignore_index=True)
+    except:
+        # need to error handle this? 
+        flat = pd.DataFrame()
     flat.to_csv(outfile, sep='\t', index=False, compression='gzip')
 
 

@@ -6,6 +6,13 @@ import numpy as np
 import argparse
 import regex as re
 
+pd.options.mode.chained_assignment = None  # default='warn', turn off warnings bc we are doing assignments correctly
+
+# returns list of indexes where the variant sequence was found
+def find_variant_locations(variant_sequence, full_sequence):
+    # potentially update to accommodate for gaps and indels
+    return np.array([i.start() for i in re.finditer(variant_sequence, full_sequence)])
+
 def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
     sample_info = samplesheet.loc[samplesheet['SampleID'] == SampleID].to_dict('records')[0] 
     file = "results/crispresso/CRISPResso_on_{SampleID}/Alleles_frequency_table.zip".format(SampleID=SampleID)
@@ -13,6 +20,7 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         allele_tbl = pd.read_csv(file, sep='\t')
         allele_tbl['#Reads'] = allele_tbl['#Reads'].astype(np.int32)
         variantInfo = pd.read_table(variantInfoFile)
+        variantInfo = variantInfo[['AmpliconID', 'VariantID', 'MappingSequence', 'RefAllele']] # keep required cols only
         variantInfo = variantInfo[variantInfo['AmpliconID'] == sample_info['AmpliconID']] # only search variants for this amplicon
         variantSearchList = []
         
@@ -20,24 +28,40 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         unmatched_variants = []
         for index, row in variantInfo.iterrows():
             variant_df = allele_tbl[allele_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)].copy()
+            # add column of locations where this variant is found
+            variant_df['MatchLocations'] = variant_df['Aligned_Sequence'].apply(lambda x: find_variant_locations(row.MappingSequence, x))
+            
+            # keep this code in case we want to filter on variant location or something
+            # allele_tbl['MatchLocations'] = allele_tbl['Aligned_Sequence'].apply(lambda x: find_variant_locations(row.MappingSequence, x))
+            # keep only rows where the variant is found (i.e., where MatchLocations is not empty)
+            # variant_df = allele_tbl[allele_tbl['MatchLocations'].map(lambda x: len(x)) > 0]
+            # drop the column so it is empty for next variant
+            # allele_tbl.drop('MatchLocations', axis=1, inplace=True)
+
+            # store unmatched variants and continue to next variant in iteration
+            if len(variant_df) == 0: 
+                unmatched_variants.append(row)
+                continue
+
             variant_df['Match_Sequence'] = row.MappingSequence
             variant_df['VariantID'] = row.VariantID
             variantSearchList.append(variant_df)
-            # store unmatched variants
-            if len(variant_df) == 0: 
-                unmatched_variants.append(row)
 
-        # combine variants and group by unique variant 
-        variants = pd.concat(variantSearchList) 
-        #reference_sequence = variants['Reference_Sequence'].mode().item()
-        variants_grouped = variants.groupby(['Reference_Name', 'Match_Sequence', 'VariantID'])
-        variant_counts = variants_grouped.sum()
-        variant_counts.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
-        variant_counts['Counts'] = variants_grouped.size()
-        #variant_counts['Reference_Sequence'] = reference_sequence
-        variant_counts = variant_counts.reset_index()
+        if len(variantSearchList) > 0:
+            # combine variants and group by unique variant 
+            variants = pd.concat(variantSearchList) 
+            variants_grouped = variants.groupby(['Reference_Name', 'Match_Sequence', 'VariantID'])
+            variant_counts = variants_grouped.sum()
+            variant_counts.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
+            variant_counts['Counts'] = variants_grouped.size()
+            variant_counts['MatchLocations'] = variants_grouped['MatchLocations'].apply(lambda x: list(set([item for sublist in x for item in sublist]))) # elaborate apply() to flatten list of lists
+            variant_counts = variant_counts.reset_index()
+        else:
+            # set up empty variant_counts dataframe if no variants found
+            variant_counts = pd.DataFrame(columns=['Reference_Name', 'Match_Sequence', 'VariantID', '#Reads', '%Reads', 'Counts', 'MatchLocations', 'RefAllele'])
 
         # get rows of allele_tbl that do not contain one of the variants
+        # maybe update to check location of variant
         references = allele_tbl[~allele_tbl['Aligned_Sequence'].str.contains('|'.join(variantInfo[variantInfo['RefAllele'] == False]['MappingSequence']))]
         references.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
 
@@ -64,14 +88,23 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         references['Errors'] = references.apply(lambda x: len(x.Mismatches)+len(x.Insertions)+len(x.Deletions), axis=1)
         reference_threshold = sample_info['ReferenceErrorThreshold']
         print('Using reference error threshold of %d' % reference_threshold)
+        
+        # save all references before filtering
+        references.to_csv('results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=sample_info['SampleID']), sep='\t', index=False)
+
         references = references[references['Errors'] <= reference_threshold]
                 
-        references.to_csv('results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=sample_info['SampleID']), sep='\t', index=False)
-        
         # group/sum all references together and get dict representation
-        inferred_reference = references.groupby('Reference_Name')['#Reads', '%Reads'].sum().reset_index().to_dict(orient='records')[0]
-        inferred_reference['VariantID'] = sample_info['AmpliconID'] + ':InferredReference'
-        inferred_reference['Counts'] = len(references)
+        grouped_references = references.groupby('Reference_Name')[['#Reads', '%Reads']].sum().reset_index().to_dict(orient='records')
+        if len(grouped_references) == 1: # expected behavior, all references should compress to one entry
+            inferred_reference = grouped_references[0]
+            inferred_reference['VariantID'] = sample_info['AmpliconID'] + ':InferredReference'
+            inferred_reference['Counts'] = len(references)
+        else:
+            print('No references found after filtering.') 
+            inferred_reference = pd.DataFrame(columns=['Reference_Name', 'Match_Sequence', 'VariantID', '#Reads', '%Reads', 'Counts', 'MatchLocations', 'RefAllele'])
+            inferred_reference['VariantID'] = sample_info['AmpliconID'] + ':InferredReference'
+            inferred_reference['Counts'] = 0
         variant_counts = variant_counts.append(inferred_reference, ignore_index=True)
         variant_counts['RefAllele'] = variant_counts['VariantID'].str.contains('Reference') # odd way to get RefAllele boolean after grouping
         
@@ -86,8 +119,13 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         return
 
     else:  
-        print('File \'%s\' not found.' % file)
-        exit(1)
+        print('File \'%s\' not found; writing empty variant and reference files.' % file)
+        empty_variant = pd.DataFrame(columns=['AmpliconID', 'MappingSequence', 'VariantID', '#Reads', '%Reads', 'Counts', 'MatchLocations', 'RefAllele'])
+        empty_variant.to_csv(outfile, sep='\t', index=False)
+        empty_reference = pd.DataFrame(columns=['Aligned_Sequence', 'Reference_Sequence', 'Reference_Name', 'Read_Status', '#Reads', '%Reads', 'Mismatches', 'Deletions', 'Insertions', 'Aligned_Window', 'Reference_Window', 'Errors'])
+        empty_reference.to_csv('results/variantCounts/{SampleID}.referenceAlleles.txt'.format(SampleID=sample_info['SampleID']), sep='\t', index=False)
+        return
+        # exit(1)
 
 
 
@@ -104,14 +142,24 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
     for idx, row in currSamples.iterrows():
         file = "results/variantCounts/{SampleID}.variantCounts.txt".format(SampleID=row['SampleID'])
         if os.path.exists(file):
-            allele_tbl = pd.read_csv(file, sep='\t')
+            try:
+                allele_tbl = pd.read_csv(file, sep='\t')
+            except:
+                # empty file
+                print('Error reading file: %s' % file)
+                continue
+
+            if len(allele_tbl) == 0: # empty table
+                print('%s is empty.' % file)
+                continue
+            
             allele_tbl['#Reads'] = allele_tbl['#Reads'].astype(np.int32)
 
             # pare down allele_tbl columns for counts
             allele_tbl = allele_tbl[['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele', '#Reads']]
             allele_tbl.rename(columns={"#Reads":row['SampleID']}, inplace=True)
             allele_tbls.append(allele_tbl)
-
+    
     # combine allele_tbls into one and sum on unique variants to get count table    
     count_tbl = pd.concat(allele_tbls).groupby(['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele']).sum()
     
@@ -121,7 +169,7 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
     for b in bin_list:
         rep_columns = currSamples.loc[currSamples['Bin']==b,'SampleID'].tolist()
         if (len(rep_columns) > 0):
-            combined_count_tbl[b] = count_tbl[rep_columns].sum(axis=1).astype(np.int32) # sum replicate columns
+            combined_count_tbl[b] = count_tbl[count_tbl.columns.intersection(rep_columns)].sum(axis=1).astype(np.int32) # sum replicate columns, only selecting ones in the count tbl (could be that variant counts file was empty, so column isn't there)
         else:
             combined_count_tbl[b] = 0
 

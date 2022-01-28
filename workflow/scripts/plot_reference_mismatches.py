@@ -10,8 +10,13 @@ import os
 def plot_reference_mismatches(reference_files, amplicon, output_file):
     ref_data = []
     for file in reference_files:
-        df = pd.read_csv(file, sep='\t')
-        ref_data.append(df)
+        try:
+            df = pd.read_csv(file, sep='\t')
+            ref_data.append(df)
+        except:
+            # empty file
+            print('%s is empty.' % file)
+            continue
     ref_data = pd.concat(ref_data)
 
     reads_info = {}
@@ -56,7 +61,7 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
     reads_df['DeletionFreq'] = reads_df['Deletions#Reads']/(ref_data['#Reads'].sum())
 
     # save plots
-    locator = matplotlib.ticker.MultipleLocator(1) # force x-axis integer step size 1
+    # locator = matplotlib.ticker.MultipleLocator(1) # force x-axis integer step size 1
     with PdfPages(output_file) as pdf:
         
         fig_mismatch, ax_mismatch = plt.subplots()
@@ -64,7 +69,7 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
         ax_mismatch.set_title('%s Aligned/Reference Mismatch Frequency' % amplicon)
         ax_mismatch.set_xlabel('#Mismatches')
         ax_mismatch.set_ylabel('Read Frequency')
-        ax_mismatch.xaxis.set_major_locator(locator)
+        # ax_mismatch.xaxis.set_major_locator(locator)
         pdf.savefig(fig_mismatch)
         plt.close(fig_mismatch)
 
@@ -73,7 +78,7 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
         ax_insertion.set_title('%s Aligned/Reference Insertion Frequency' % amplicon)
         ax_insertion.set_xlabel('#Insertions')
         ax_insertion.set_ylabel('Read Frequency')
-        ax_insertion.xaxis.set_major_locator(locator)
+        # ax_insertion.xaxis.set_major_locator(locator)
         pdf.savefig(fig_insertion)
         plt.close(fig_insertion)
 
@@ -82,7 +87,7 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
         ax_deletion.set_title('%s Aligned/Reference Deletion Frequency' % amplicon)
         ax_deletion.set_xlabel('#Deletions')
         ax_deletion.set_ylabel('Read Frequency')
-        ax_deletion.xaxis.set_major_locator(locator)
+        # ax_deletion.xaxis.set_major_locator(locator)
         pdf.savefig(fig_deletion)
         plt.close(fig_deletion)
 
@@ -91,7 +96,7 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
         ax_mfreq.set_title('%s Aligned/Reference Mismatch Frequency by Position' % amplicon)
         ax_mfreq.set_xlabel('Reference Position')
         ax_mfreq.set_ylabel('#Mismatch Reads/Total #Reads')
-        ax_mfreq.xaxis.set_major_locator(locator)
+        # ax_mfreq.xaxis.set_major_locator(locator)
         ax_mfreq.ticklabel_format(axis='y', style='sci')
         pdf.savefig(fig_mfreq)
         plt.close(fig_mfreq)
@@ -101,7 +106,7 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
         ax_ifreq.set_title('%s Aligned/Reference Insertion Frequency by Position' % amplicon)
         ax_ifreq.set_xlabel('Reference Position')
         ax_ifreq.set_ylabel('#Insertion Reads/Total #Reads')
-        ax_ifreq.xaxis.set_major_locator(locator)
+        # ax_ifreq.xaxis.set_major_locator(locator)
         ax_ifreq.ticklabel_format(axis='y', style='sci')
         pdf.savefig(fig_ifreq)
         plt.close(fig_ifreq)
@@ -111,7 +116,7 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
         ax_dfreq.set_title('%s Aligned/Reference Deletion Frequency by Position' % amplicon)
         ax_dfreq.set_xlabel('Reference Position')
         ax_dfreq.set_ylabel('#Deletion Reads/Total #Reads')
-        ax_dfreq.xaxis.set_major_locator(locator)
+        # ax_dfreq.xaxis.set_major_locator(locator)
         ax_dfreq.ticklabel_format(axis='y', style='sci')
         pdf.savefig(fig_dfreq)
         plt.close(fig_dfreq)
