@@ -160,20 +160,24 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
             allele_tbl.rename(columns={"#Reads":row['SampleID']}, inplace=True)
             allele_tbls.append(allele_tbl)
     
-    # combine allele_tbls into one and sum on unique variants to get count table    
-    count_tbl = pd.concat(allele_tbls).groupby(['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele']).sum()
-    
-    # rename bins and combine duplicates 
-    bin_list = bins + list(set(currSamples['Bin'].unique())-set(bins))
-    combined_count_tbl = pd.DataFrame(index=count_tbl.index)
-    for b in bin_list:
-        rep_columns = currSamples.loc[currSamples['Bin']==b,'SampleID'].tolist()
-        if (len(rep_columns) > 0):
-            combined_count_tbl[b] = count_tbl[count_tbl.columns.intersection(rep_columns)].sum(axis=1).astype(np.int32) # sum replicate columns, only selecting ones in the count tbl (could be that variant counts file was empty, so column isn't there)
-        else:
-            combined_count_tbl[b] = 0
+    try:
+        # combine allele_tbls into one and sum on unique variants to get count table    
+        count_tbl = pd.concat(allele_tbls).groupby(['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele']).sum()
+        
+        # rename bins and combine duplicates 
+        bin_list = bins + list(set(currSamples['Bin'].unique())-set(bins))
+        combined_count_tbl = pd.DataFrame(index=count_tbl.index)
+        for b in bin_list:
+            rep_columns = currSamples.loc[currSamples['Bin']==b,'SampleID'].tolist()
+            if (len(rep_columns) > 0):
+                combined_count_tbl[b] = count_tbl[count_tbl.columns.intersection(rep_columns)].sum(axis=1).astype(np.int32) # sum replicate columns, only selecting ones in the count tbl (could be that variant counts file was empty, so column isn't there)
+            else:
+                combined_count_tbl[b] = 0
 
-    count_tbl = combined_count_tbl
+        count_tbl = combined_count_tbl
+    except:
+        print("Error combining allele tables, writing empty count table.")
+        count_tbl = pd.DataFrame(columns=['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele'])
 
     ## OUTPUT OF THIS FUNCTION:
 
