@@ -113,8 +113,8 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         # if there are unmatched variants for this sample, add them to the variant_counts table as 0 reads
         if len(unmatched_variants) > 0:
             variant_counts = variant_counts.append(pd.DataFrame(unmatched_variants))
-            variant_counts.fillna(0, inplace=True)
-
+        
+        variant_counts.fillna(0, inplace=True)
         variant_counts.to_csv(outfile, sep='\t', index=False)
         return
 
@@ -131,7 +131,6 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
 
 def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_frequencies, variantInfo=None, samplesToExclude=None):
     ## Function to make a count table at various layers of resolution (e.g., by experiment, or by replicate, or by PCR replicate)
-
     currSamples = samplesheet.loc[samplesheet[group_col]==group_id]
     currSamples['Bin'] = currSamples['Bin'].fillna('NA')
     if samplesToExclude is not None:
@@ -161,8 +160,11 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
             allele_tbls.append(allele_tbl)
     
     try:
-        # combine allele_tbls into one and sum on unique variants to get count table    
-        count_tbl = pd.concat(allele_tbls).groupby(['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele']).sum()
+        # combine allele_tbls into one and sum on unique variants to get count table   
+        # fill NaNs to make sure nothing dropped from grouping 
+        all_allele_tbls = pd.concat(allele_tbls).fillna(0)
+        all_allele_tbls['MappingSequence'] = all_allele_tbls['MappingSequence'].astype(str) # handle string zero vs int zero 
+        count_tbl = all_allele_tbls.groupby(['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele']).sum()
         
         # rename bins and combine duplicates 
         bin_list = bins + list(set(currSamples['Bin'].unique())-set(bins))
@@ -271,11 +273,10 @@ def main():
     parser.add_argument("--outfile_frequencies", type=str, required=True) 
     parser.add_argument("--variantInfoFile", type=str, required=True)
     parser.add_argument("--samplesToExclude", required=False, default=None)
-    parser.add_argument("--reference_threshold", required=False, default=None)
     parser.add_argument("--edit_regions", required=False, default=None)
 
     args = parser.parse_args()
-    aggregate_variant_counts(args.samplesheet, args.sample_id, args.outfile, args.variantInfoFile, args.reference_threshold)
+    aggregate_variant_counts(args.samplesheet, args.sample_id, args.outfile, args.variantInfoFile)
     make_count_table(args.samplesheet, args.group_col, args.group_id, args.bins, args.outfile, args.outfile_frequencies, args.samplesToExclude, args.edit_regions)
     
 if __name__ == "__main__":
