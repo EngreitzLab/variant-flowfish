@@ -18,6 +18,7 @@ option.list <- list(
   make_option(c("-clo", "--countsLocation"), type="character", help="Counts document location, ex: ~/Documents/Harvard/LanderResearch/flo1/raw/4.tsv"),
   make_option(c("-sp", "--sortParamsloc"), type="character", help="MUST HAVE A MEAN, BOUNDS, AND BARCODE COLUMN!!, ex: ~/Documents/Harvard/LanderResearch/flo1/raw/sortParams/gata1ff3.txt"),
   make_option(c("-om", "--outputmle"), type="character", help="File to write the MLE mean into for each guide"),
+  make_option(c("-rs", "--rescaledCounts"), type="character", help="File to check rescaled counts"),
   make_option(c("-l", "--log"), type="character", help="Log results of MLE"),
   make_option("--ignoreInputBinCounts", type="logical", default=FALSE, help="If TRUE, ignore the input bin bounds (Bin == 'All') in the MLE procedure")
 )
@@ -28,6 +29,7 @@ opt <- parse_args(OptionParser(option_list=option.list))
 countsLocation <- opt$countsLocation 
 sortParamsloc <- opt$sortParamsloc
 outputmle <- opt$outputmle
+rescaledCounts <- opt$rescaledCounts
 log <- opt$log 
 
 print(paste("Counts Location: ", countsLocation))
@@ -110,7 +112,7 @@ ll <- function(mu, std, observations, bins) {
 
   # add n+1th bin = p(fall outside bin)
   pe <- c(pe, 1-sum(pe)) # add a "bin" for the remaining cells
-  pe[pe == 0] <- 10^-10 # remove any 0s from the probabilities (shouldn't happen but might)
+  pe[pe <= 0] <- 10^-10 # remove any 0s from the probabilities (shouldn't happen but might)
 
   # assert that the lengths match
   if (length(pe) != length (observations)) {
@@ -478,7 +480,8 @@ runMLE <- function(mS, sort.params, ignoreInputBinCounts=FALSE) {
 
 
 # write(pe[7],file=log,append=TRUE)
-counts <- runMLE(counts, sort.params, opt$ignoreInputBinCounts)
+mleOutput <- runMLE(counts, sort.params, opt$ignoreInputBinCounts)
 
-write.table(counts, file=outputmle, sep="\t", quote=F, row.names=F, col.names=T)
+write.table(mleOutput, file=outputmle, sep="\t", quote=F, row.names=F, col.names=T)
+write.table(counts, file=rescaledCounts, sep="\t", quote=F, row.names=F, col.names=T)
 write("Finished",file=log,append=TRUE)

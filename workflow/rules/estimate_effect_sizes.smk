@@ -47,7 +47,8 @@ rule calculate_allelic_effect_sizes:
 		counts='results/{directory}/{ExperimentID}.bin_counts.txt',
 		sortparams=get_sortparams_file 
 	output:
-		'results/{directory}/{ExperimentID}.raw_effects.txt'
+		raw='results/{directory}/{ExperimentID}.raw_effects.txt',
+		counts='results/{directory}/{ExperimentID}.rescaled_counts.txt'	
 	log:
 		'results/{directory}/{ExperimentID}.mle_log.txt'
 	shell:
@@ -55,7 +56,7 @@ rule calculate_allelic_effect_sizes:
 		Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \
 			 --countsLocation {input.counts} \
 			 --sortParamsloc {input.sortparams} \
-			 --outputmle {output} --log {log}
+			 --outputmle {output.raw} --log {log} --rescaledCounts {output.counts}
 		"""
 
 
@@ -103,7 +104,7 @@ def aggregate_allelic_effect_tables(samplesheet, outfile, wildcards):
 rule aggregate_allelic_effects:
     input:
         lambda wildcards: 
-        	['results/{dir}/{e}.effects_vs_ref.txt'.format(dir=wildcards.replicateDirectory, e=e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList),wildcards.ExperimentID].drop_duplicates()]
+        	['results/{dir}/{e}.effects_vs_ref_ignoreInputBin.txt'.format(dir=wildcards.replicateDirectory, e=e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList),wildcards.ExperimentID].drop_duplicates()]
     output:
         flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz'
     run:
@@ -133,7 +134,8 @@ rule calculate_allelic_effect_sizes_ignoreInputBin:
 		counts='results/{directory}/{ExperimentID}.bin_counts.txt',
 		sortparams=get_sortparams_file 
 	output:
-		'results/{directory}/{ExperimentID}.raw_effects_ignoreInputBin.txt'
+		raw='results/{directory}/{ExperimentID}.raw_effects_ignoreInputBin.txt',
+		counts='results/{directory}/{ExperimentID}.rescaled_counts_ignoreInputBin.txt'	
 	log:
 		'results/{directory}/{ExperimentID}.mle_log_ignoreInputBin.txt'
 	shell:
@@ -141,7 +143,7 @@ rule calculate_allelic_effect_sizes_ignoreInputBin:
 		Rscript variant-flowfish/workflow/scripts/get_allele_effect_sizes.R \
 			 --countsLocation {input.counts} \
 			 --sortParamsloc {input.sortparams} \
-			 --outputmle {output} --log {log} \
+			 --outputmle {output.raw} --log {log} --rescaledCounts {output.counts} \
 			 --ignoreInputBinCounts TRUE
 		"""
 
