@@ -22,6 +22,9 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         variantInfo = pd.read_table(variantInfoFile)
         variantInfo = variantInfo[['AmpliconID', 'VariantID', 'MappingSequence', 'RefAllele']] # keep required cols only
         variantInfo = variantInfo[variantInfo['AmpliconID'] == sample_info['AmpliconID']] # only search variants for this amplicon
+        if len(variantInfo) == 0: 
+            print('No matching variants found for AmpliconID: %s, check inputs.' % sample_info['AmpliconID'])
+            exit(0)
         variantSearchList = []
         
         # select rows which Aligned_Sequence contains a variant 
