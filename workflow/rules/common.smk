@@ -167,7 +167,7 @@ if genotyping_only:
 else:
 	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon','VFFSpikeIn']
 
-single_end = ('single_end' in config) and (bool(config['single_end']))
+single_end = ('single_end' in config) and (config['single_end'].lower() == 'true')
 
 ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer','QuantificationWindowStart','QuantificationWindowEnd', 'ReferenceErrorThreshold']  ## To do:  Allow specifying crispresso quantification window for different amplicons
 variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
