@@ -66,7 +66,7 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
             variant_counts['Counts'] = variants_grouped.size()
             # add dictionary of variant locations : reads 
             variant_counts['MatchLocationReadDict'] = variants_grouped['MatchLocationReads'].apply(lambda x: list(x))
-            variant_counts['MatchLocationReadDict'] = variant_counts['MatchLocationReadDict'].apply(lambda x: sum([Counter(d) for d in x], Counter()))
+            variant_counts['MatchLocationReadDict'] = variant_counts['MatchLocationReadDict'].apply(lambda x: str(dict(sum([Counter(d) for d in x], Counter()))))
             variant_counts = variant_counts.reset_index()
         else:
             # set up empty variant_counts dataframe if no variants found

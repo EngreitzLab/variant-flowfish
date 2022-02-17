@@ -63,6 +63,14 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
     # save plots
     # locator = matplotlib.ticker.MultipleLocator(1) # force x-axis integer step size 1
     with PdfPages(output_file) as pdf:
+
+        fig_errors, ax_errors = plt.subplots()
+        ax_errors.hist(ref_data['Errors'], range=(0, 15), bins=15, density=True)
+        ax_errors.set_title('%s Probability Density Histogram of Errors' % amplicon)
+        ax_errors.set_xlabel('# errors (mismatches + insertions + deletions)')
+        ax_errors.set_ylabel('Probability Density')
+        pdf.savefig(fig_errors)
+        plt.close(fig_errors)
         
         fig_mismatch, ax_mismatch = plt.subplots()
         ax_mismatch.bar(mismatch_grouped['#Mismatches'], mismatch_grouped['Read_freq'])
