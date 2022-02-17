@@ -5,13 +5,18 @@ import pandas as pd
 import numpy as np
 import argparse
 import regex as re
+from collections import Counter
 
 pd.options.mode.chained_assignment = None  # default='warn', turn off warnings bc we are doing assignments correctly
 
 # returns list of indexes where the variant sequence was found
-def find_variant_locations(variant_sequence, full_sequence):
+def find_variant_locations(variant_sequence, aligned_sequence, reference_sequence):
     # potentially update to accommodate for gaps and indels
-    return np.array([i.start() for i in re.finditer(variant_sequence, full_sequence)])
+    locs = np.array([i.start() for i in re.finditer(variant_sequence, aligned_sequence)])
+    for i in range(len(locs)):
+        num_gaps = reference_sequence[:locs[i]].count('-')
+        locs[i] -= num_gaps
+    return list(set(locs))
 
 def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
     sample_info = samplesheet.loc[samplesheet['SampleID'] == SampleID].to_dict('records')[0] 
@@ -31,8 +36,15 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         unmatched_variants = []
         for index, row in variantInfo.iterrows():
             variant_df = allele_tbl[allele_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)].copy()
+            
+            # store unmatched variants and continue to next variant in iteration
+            if len(variant_df) == 0: 
+                unmatched_variants.append(row)
+                continue
+
             # add column of locations where this variant is found
-            variant_df['MatchLocations'] = variant_df['Aligned_Sequence'].apply(lambda x: find_variant_locations(row.MappingSequence, x))
+            variant_df['MatchLocations'] = variant_df.apply(lambda x: find_variant_locations(row.MappingSequence, x.Aligned_Sequence, x.Reference_Sequence), axis=1)
+            variant_df['MatchLocationReads'] = variant_df.apply(lambda x: {y : x['#Reads'] for y in x['MatchLocations']}, axis=1) 
             
             # keep this code in case we want to filter on variant location or something
             # allele_tbl['MatchLocations'] = allele_tbl['Aligned_Sequence'].apply(lambda x: find_variant_locations(row.MappingSequence, x))
@@ -40,11 +52,6 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
             # variant_df = allele_tbl[allele_tbl['MatchLocations'].map(lambda x: len(x)) > 0]
             # drop the column so it is empty for next variant
             # allele_tbl.drop('MatchLocations', axis=1, inplace=True)
-
-            # store unmatched variants and continue to next variant in iteration
-            if len(variant_df) == 0: 
-                unmatched_variants.append(row)
-                continue
 
             variant_df['Match_Sequence'] = row.MappingSequence
             variant_df['VariantID'] = row.VariantID
@@ -57,7 +64,9 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
             variant_counts = variants_grouped.sum()
             variant_counts.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
             variant_counts['Counts'] = variants_grouped.size()
-            variant_counts['MatchLocations'] = variants_grouped['MatchLocations'].apply(lambda x: list(set([item for sublist in x for item in sublist]))) # elaborate apply() to flatten list of lists
+            # add dictionary of variant locations : reads 
+            variant_counts['MatchLocationReadDict'] = variants_grouped['MatchLocationReads'].apply(lambda x: list(x))
+            variant_counts['MatchLocationReadDict'] = variant_counts['MatchLocationReadDict'].apply(lambda x: sum([Counter(d) for d in x], Counter()))
             variant_counts = variant_counts.reset_index()
         else:
             # set up empty variant_counts dataframe if no variants found
