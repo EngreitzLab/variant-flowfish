@@ -31,6 +31,7 @@ sortParamsloc <- opt$sortParamsloc
 outputmle <- opt$outputmle
 rescaledCounts <- opt$rescaledCounts
 log <- opt$log 
+useSeventhBin <- TRUE
 
 print(paste("Counts Location: ", countsLocation))
 print(paste("Sort Params Location: ", sortParamsloc))
@@ -64,29 +65,35 @@ estimateSeventhBinInput <- function(bin.counts, input.fraction, total.count) {
 # essentially performing one step of EM procedure
 ### TODO ###
 # iterate EM until convergence
+# katherine note: I added iteration to convergence but not totally sure this is right
 estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=MINMEAN, maxmean=MAXMEAN, minvar=0, maxvar=2) {
     o <- c(bin.counts, 0) # have to artificially pad with a 0 so the likelihood function doesn't complain
+    prev_seventh_bin <- MAXMEAN
+    seventh.bin.count <- 0
+    while(abs(seventh.bin.count - prev_seventh_bin) > 1) {
+      est <- mle(minuslog=ll,
+              start=list(mu=mu.guess,std=sd.guess),
+              fixed=list(observations=o, bins=bins),
+              method="L-BFGS-B",
+              lower=c(log10(minmean), minvar),
+              # lower=c(0, 0), since we are in log space, I think there are no constraints on the mean
+              upper=c(log10(maxmean), maxvar))#,
+              #control=list(ndeps = c(0.05,0.05)))
 
-    est <- mle(minuslog=ll,
-             start=list(mu=mu.guess,std=sd.guess),
-             fixed=list(observations=o, bins=bins),
-             method="L-BFGS-B",
-             lower=c(log10(minmean), minvar),
-             # lower=c(0, 0), since we are in log space, I think there are no constraints on the mean
-             upper=c(log10(maxmean), maxvar))#,
-             #control=list(ndeps = c(0.05,0.05)))
+      MU <- est@coef[[1]]
+      SI <- est@coef[[2]]
 
-    MU <- est@coef[[1]]
-    SI <- est@coef[[2]]
+      ps <- vector()
 
-    ps <- vector()
+      for (i in c(1:dim(bins)[1])) {
+        ps <- c(ps, pnorm(bins[i,2], mean=MU, sd=SI, log.p=FALSE) - pnorm(bins[i,1], mean=MU, sd=SI, log.p=FALSE))
+      }
+      prev_seventh_bin <- seventh.bin.count
 
-    for (i in c(1:dim(bins)[1])) {
-      ps <- c(ps, pnorm(bins[i,2], mean=MU, sd=SI, log.p=FALSE) - pnorm(bins[i,1], mean=MU, sd=SI, log.p=FALSE))
+      # use this to guess how many cells are in last bin
+      seventh.bin.count <- sum(bin.counts) / sum(ps) * (1 - sum(ps))
+      o <- c(bin.counts, seventh.bin.count)
     }
-
-    # use this to guess how many cells are in last bin
-    seventh.bin.count <- sum(bin.counts) / sum(ps) * (1 - sum(ps))
 
     return(seventh.bin.count)
 }
@@ -109,9 +116,12 @@ ll <- function(mu, std, observations, bins) {
   for (i in c(1:dim(bins)[1])) {
     pe <- c(pe, pnorm(bins[i,2], mean=mu, sd=std, log.p=FALSE) - pnorm(bins[i,1], mean=mu, sd=std, log.p=FALSE))
   }
-
-  # add n+1th bin = p(fall outside bin)
-  pe <- c(pe, 1-sum(pe)) # add a "bin" for the remaining cells
+  
+  if (useSeventhBin){
+    # add n+1th bin = p(fall outside bin)
+    pe <- c(pe, 1-sum(pe)) # add a "bin" for the remaining cells
+  }
+  
   pe[pe <= 0] <- 10^-10 # remove any 0s from the probabilities (shouldn't happen but might)
 
   # assert that the lengths match
@@ -141,20 +151,24 @@ getNormalMLE <- function(mu.i, sd.i, bin.counts, bins, input.present, idx, total
   # cast to numeric vector
   bin.counts <- as.numeric(as.matrix(bin.counts))
 
-  # first, need to figure out how to estimate the seventh bin counts
-  seventh.bin.count <- 0
-  if (input.present) {
-    seventh.bin.count <- estimateSeventhBinInput(bin.counts, mS$input.fraction[idx], total.count)
+  if (useSeventhBin) {
+    # first, need to figure out how to estimate the seventh bin counts
+    seventh.bin.count <- 0
+    if (input.present) {
+      seventh.bin.count <- estimateSeventhBinInput(bin.counts, mS$input.fraction[idx], total.count)
+    }
+
+    if (seventh.bin.count <= 0 || !input.present) {
+      print("Estimating seventh bin count with MLE")
+      seventh.bin.count <- estimateSeventhBinEM(mu.i, sd.i, bin.counts, bins)
+    }
+
+    # add on "seventh" bin counts
+    # o <- c(bin.counts, total.count - sum(bin.counts))
+    o <- c(bin.counts, seventh.bin.count)
+  } else {
+    o <- bin.counts
   }
-
-  if (seventh.bin.count <= 0 || !input.present) {
-    seventh.bin.count <- estimateSeventhBinEM(mu.i, sd.i, bin.counts, bins)
-  }
-
-  # add on "seventh" bin counts
-  # o <- c(bin.counts, total.count - sum(bin.counts))
-  o <- c(bin.counts, seventh.bin.count)
-
   ## Observation vector now has one entry for each bin, plus one entry for the estimated number of counts falling outside any of the bins (n+1 = "7")
   ## bins still has only n (=6) entries, for the observed bins, but the log-likelihood function `ll` adds in the n+1th bin (7th bin = 1-sum(p_i))
 
