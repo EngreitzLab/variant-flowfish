@@ -241,10 +241,11 @@ getBinnedBarplot <- function(countsFlat, samples, binList, group="ExperimentIDRe
             summarize(GroupedFrequency=mean(Frequency, na.rm=T)) %>%
             group_by_at(c(group,"VariantID","RefAllele")) %>%
             mutate(GroupedFrequencyAvgBin=mean(GroupedFrequency),
-                   GroupedFreqRelativeToAverageBin=GroupedFrequency/mean(GroupedFrequency)) %>%
+                   GroupedFreqRelativeToAverageBin=GroupedFrequency/GroupedFrequencyAvgBin) %>%
             as.data.frame()
 
-  counts <- merge(counts, countsGrouped) %>% mutate(FreqRelativeToAverageBin=Frequency * GroupedFreqRelativeToAverageBin / GroupedFrequency)
+  counts <- merge(counts, countsGrouped) %>% 
+            mutate(FreqRelativeToAverageBin=Frequency/GroupedFrequencyAvgBin)
 
   p <- countsGrouped %>% mutate(Variant=paste0(VariantID,"\n(",format(GroupedFrequencyAvgBin, digits=2),"%)")) %>%
        ggplot(aes(x=Variant, y=GroupedFreqRelativeToAverageBin, fill=Bin)) +
