@@ -70,7 +70,9 @@ estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=M
     o <- c(bin.counts, 0) # have to artificially pad with a 0 so the likelihood function doesn't complain
     prev_seventh_bin <- MAXMEAN
     seventh.bin.count <- 0
-    while(abs(seventh.bin.count - prev_seventh_bin) > 1) {
+    iterations <- 0
+    while((abs(seventh.bin.count - prev_seventh_bin) > 10) & (iterations < 100)) {
+      iterations <- iterations + 1
       est <- mle(minuslog=ll,
               start=list(mu=mu.guess,std=sd.guess),
               fixed=list(observations=o, bins=bins),
