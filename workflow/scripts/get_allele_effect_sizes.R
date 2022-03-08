@@ -215,7 +215,7 @@ loadReadCounts <- function(countsfile) {
 
 getBinNames <- function(counts) {
   col.names <- colnames(counts)
-  bin.names <- col.names [! col.names %in% c('AmpliconID', 'MappingSequence','All', 'Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele')]
+  bin.names <- col.names [! col.names %in% c('AmpliconID', 'MappingSequence','All', 'Neg', 'Reference_Name', 'Match_Sequence', 'VariantID', 'RefAllele')]
   return(bin.names)
 }
 
@@ -269,7 +269,7 @@ loadSortParams_Astrios <- function(filename, mS, total.binname="Total") {
   ##   count
   ## totalCount: Total count of cells sorted
 
-  sort.params <- read.csv(filename)
+  sort.params <- read.csv(filename, strip.white=TRUE)
 
   ## Check the sort params
   required.cols <- c("Mean","Bounds","Barcode","Count")
@@ -319,7 +319,7 @@ loadSortParams_BigFoot <- function(filename, bin.names, total.binname="Total", f
   ##   count
   ## totalCount: Total count of cells sorted
 
-  sort.params <- read.csv(filename)
+  sort.params <- read.csv(filename, strip.white=TRUE)
 
   ## Check the sort params
   # check that it has all the required columns
@@ -382,7 +382,7 @@ loadSortParams_Influx <- function(filename, bin.names, total.binname="Total", fu
   ##   count
   ## totalCount: Total count of cells sorted
 
-  sort.params <- read.csv(filename)
+  sort.params <- read.csv(filename, strip.white=TRUE)
 
   ## Check the sort params
   # check that it has all the required columns
