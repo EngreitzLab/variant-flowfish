@@ -90,7 +90,7 @@ rule plot_allelic_effect_sizes:
 def aggregate_allelic_effect_tables(samplesheet, outfile, wildcards):
     allele_tbls = []
     for expt in samplesheet[wildcards.ExperimentID].drop_duplicates():
-        file = 'results/{dir}/{e}.effects_vs_ref.txt'.format(dir=wildcards.replicateDirectory, e=expt)
+        file = 'results/{dir}/{e}.effects_vs_ref_ignoreInputBin.txt'.format(dir=wildcards.replicateDirectory, e=expt)
 
         if (os.path.exists(file)):
             allele_tbl = pd.read_csv(file, sep='\t')
