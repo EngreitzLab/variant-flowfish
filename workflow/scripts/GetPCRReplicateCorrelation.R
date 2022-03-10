@@ -60,6 +60,8 @@ getLowCorrelationSamples <- function(cormat, minCorrelation) {
 
   lowCorrelations <- apply(cormat, 1, function(row) sum(row <= minCorrelation))
   meanCorrelation <- apply(cormat, 1, mean)
+  lowCorrelations[is.na(lowCorrelations)] <- 0
+  meanCorrelation[is.na(meanCorrelation)] <- 0
   if (all(lowCorrelations == 0)) return(c())
 
   i <- which.max(lowCorrelations * (1-meanCorrelation))[1]
