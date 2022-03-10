@@ -49,9 +49,8 @@ pdf(file=opt$outfile, width=12, height=6)
 
 for (amplicon in unique(samplesheet$AmpliconID)) {
     p1 <- ggplot(mle %>% filter(AmpliconID==amplicon), aes_string("VariantID", opt$effectColumn)) +
-        geom_dotplot(binaxis='y', 
-                    stackdir='center', 
-                    dotsize = .3) + 
+        geom_point(size=0.05) + 
+        geom_jitter(width = 0.05) +
         stat_summary(aes(VariantID, effect_size), fun.data = mean_cl_normal, geom="errorbar") + 
         stat_summary(fun.y=mean, geom="point", shape=18,
                         size=2, color="red") + 
@@ -70,9 +69,8 @@ for (amplicon in unique(samplesheet$AmpliconID)) {
   
     p2 <- mle %>% filter(AmpliconID==amplicon) %>% mutate(PctEffect=(get(opt$effectColumn)-1)*100) %>%
         ggplot(aes_string(x="VariantID", y="PctEffect")) +
-        geom_dotplot(binaxis='y', 
-                    stackdir='center', 
-                    dotsize = .3) + 
+        geom_point(size=0.05) + 
+        geom_jitter(width = 0.05) +
         stat_summary(aes(VariantID, PctEffect), fun.data = mean_cl_normal, geom="errorbar") + 
         stat_summary(fun.y=mean, geom="point", shape=18,
                         size=2, color="red") + 
