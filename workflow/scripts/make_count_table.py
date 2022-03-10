@@ -9,6 +9,34 @@ from collections import Counter
 
 pd.options.mode.chained_assignment = None  # default='warn', turn off warnings bc we are doing assignments correctly
 
+# make table of all variants
+def make_flat_table(samplesheet, outfile):
+    allele_tbls = []
+    for idx, row in samplesheet.iterrows():
+        file = row['variantCountFile']
+
+        if (os.path.exists(file)):
+            try:
+                allele_tbl = pd.read_csv(file, sep='\t')
+                allele_tbl['SampleID'] = row['SampleID']
+                allele_tbl['BioRep'] = row['BioRep']
+                allele_tbl['FlowFISHRep'] = row['FlowFISHRep']
+                allele_tbl['PCRRep'] = row['PCRRep']
+                allele_tbl['Bin'] = row['Bin']
+                allele_tbl['Location'] = allele_tbl['VariantID'].str.split(':').str[:3].str.join(':')
+                allele_tbl['Variant'] = allele_tbl['VariantID'].str.split(':').str[-1:].str.join(':')  
+                allele_tbls.append(allele_tbl)
+            except:
+                print("Error reading file: " + file)
+                continue
+
+    try:
+        flat = pd.concat(allele_tbls, axis='index', ignore_index=True)
+    except:
+        # need to error handle this? 
+        flat = pd.DataFrame()
+    flat.to_csv(outfile, sep='\t', index=False, compression='gzip')
+
 # returns list of indexes where the variant sequence was found
 def find_variant_locations(variant_sequence, aligned_sequence, reference_sequence):
     # potentially update to accommodate for gaps and indels

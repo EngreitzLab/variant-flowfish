@@ -74,27 +74,28 @@ rule normalize_allelic_effect_sizes:
 		python {params.codedir}/workflow/scripts/normalize_allele_effects.py -i {input} -o {output} -v {params.variantInfo}
 		"""
 
-rule plot_allelic_effect_sizes:
-	input:
-		'results/{replicateDirectory}/{ExperimentIDReplicates}.effects_vs_ref.txt'
-	output:
-		'results/{replicateDirectory}/{ExperimentIDReplicates}.effects_vs_ref.pdf'
-	params:
-		codedir=config['codedir']
-	shell:
-		"""
-		Rscript {params.codedir}/workflow/scripts/PlotMleVariantEffects.R --mleEffects {input} --outfile {output} 
-		"""
-
 
 def aggregate_allelic_effect_tables(samplesheet, outfile, wildcards):
     allele_tbls = []
     for expt in samplesheet[wildcards.ExperimentID].drop_duplicates():
-        file = 'results/{dir}/{e}.effects_vs_ref.txt'.format(dir=wildcards.replicateDirectory, e=expt)
+        file = 'results/{dir}/{e}.effects_vs_ref_ignoreInputBin.txt'.format(dir=wildcards.replicateDirectory, e=expt)
 
         if (os.path.exists(file)):
             allele_tbl = pd.read_csv(file, sep='\t')
             allele_tbl[wildcards.ExperimentID] = expt
+            id_split = allele_tbl[wildcards.ExperimentID].str.split('-', expand=False)
+            if wildcards.ExperimentID == "ExperimentIDReplicates": # byExperimentRep
+                allele_tbl['BioRep'] = id_split.str[-3]
+                allele_tbl['Spike-In'] = id_split.str[-2]
+                allele_tbl['FFRep'] = id_split.str[-1]
+            else: #byPCRRep
+                assert wildcards.ExperimentID == "ExperimentIDPCRRep"
+                allele_tbl['BioRep'] = id_split.str[-4]
+                allele_tbl['Spike-In'] = id_split.str[-3]
+                allele_tbl['FFRep'] = id_split.str[-2]
+                allele_tbl['PCRRep'] = id_split.str[-1]
+            allele_tbl['Location'] = allele_tbl['VariantID'].str.split(':').str[:3].str.join(':')
+            allele_tbl['Variant'] = allele_tbl['VariantID'].str.split(':').str[-1:].str.join(':')  
             allele_tbls.append(allele_tbl)
 
     flat = pd.concat(allele_tbls, axis='index', ignore_index=True)
@@ -109,20 +110,6 @@ rule aggregate_allelic_effects:
         flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz'
     run:
         aggregate_allelic_effect_tables(samplesheet, output.flat, wildcards) 
-
-
-rule plot_aggregate_allelic_effects:
-	input:
-		flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz',
-		samplesheet="SampleList.snakemake.tsv"
-	output:
-		'results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.pdf'
-	params:
-		codedir=config['codedir']
-	shell:
-		"""
-		Rscript {params.codedir}/workflow/scripts/PlotMleVariantEffectsAggregated.R --allelicEffectFile {input.flat} --outfile {output} --samplesheet {input.samplesheet} --effectColumn effect_size
-		"""
 
 
 ###################################################################################
@@ -159,16 +146,4 @@ rule normalize_allelic_effect_sizes_ignoreInputBin:
 	shell:
 		"""
 		python {params.codedir}/workflow/scripts/normalize_allele_effects.py -i {input} -o {output} -v {params.variantInfo}
-		"""
-
-rule plot_allelic_effect_sizes_ignoreInputBin:
-	input:
-		'results/{replicateDirectory}/{ExperimentIDReplicates}.effects_vs_ref_ignoreInputBin.txt'
-	output:
-		'results/{replicateDirectory}/{ExperimentIDReplicates}.effects_vs_ref_ignoreInputBin.pdf'
-	params:
-		codedir=config['codedir']
-	shell:
-		"""
-		Rscript {params.codedir}/workflow/scripts/PlotMleVariantEffects.R --mleEffects {input} --outfile {output} 
 		"""

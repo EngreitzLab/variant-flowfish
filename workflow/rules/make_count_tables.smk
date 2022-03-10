@@ -6,28 +6,6 @@ import pandas as pd
 import numpy as np
 from scripts.make_count_table import *
 
-def make_flat_table(samplesheet, outfile):
-    allele_tbls = []
-    for idx, row in samplesheet.iterrows():
-        file = row['variantCountFile']
-
-        if (os.path.exists(file)):
-            try:
-                allele_tbl = pd.read_csv(file, sep='\t')
-                allele_tbl['SampleID'] = row['SampleID']
-                allele_tbls.append(allele_tbl)
-            except:
-                print("Error reading file: " + file)
-                continue
-
-    try:
-        flat = pd.concat(allele_tbls, axis='index', ignore_index=True)
-    except:
-        # need to error handle this? 
-        flat = pd.DataFrame()
-    flat.to_csv(outfile, sep='\t', index=False, compression='gzip')
-
-
 rule aggregate_variant_counts:
     input:
         lambda wildcards:
