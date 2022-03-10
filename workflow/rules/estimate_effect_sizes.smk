@@ -25,9 +25,9 @@ def write_design_file(counts_file, design):
 
 def get_sortparams_file(wildcards):
 	if wildcards.directory == "byExperimentRep" or wildcards.directory == "byExperimentRepCorFilter":
-		currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "")]
+		currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "") & (samplesheet['Bin'] != "Neg")]
 	else:
-		currSamples = samplesheet.loc[(samplesheet['ExperimentIDPCRRep'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "")]
+		currSamples = samplesheet.loc[(samplesheet['ExperimentIDPCRRep'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "") & (samplesheet['Bin'] != "Neg")]
 	sortParams = currSamples['sortParamsFile'].unique()
 	if (len(sortParams) > 1):
 		print(sortParams)
