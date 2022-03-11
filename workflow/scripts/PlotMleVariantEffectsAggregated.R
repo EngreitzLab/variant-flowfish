@@ -62,7 +62,7 @@ for (amplicon in unique(samplesheet$AmpliconID)) {
         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6), plot.title = 
         element_text(hjust = 0.5)) +
         theme(strip.background = element_blank(), strip.text.x = element_blank()) # don't show facet grid labels
-    if (length((mle %>% filter(AmpliconID==amplicon))$VariantID) > 10) {
+    if (length(unique((mle %>% filter(AmpliconID==amplicon))$VariantID)) > 10) {
         p1 <- p1 + facet_grid(cols = vars(Location), scales = "free_x", switch = "x", space = "free_x")
     }
     print(p1)
@@ -82,7 +82,7 @@ for (amplicon in unique(samplesheet$AmpliconID)) {
         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=6), plot.title = 
         element_text(hjust = 0.5)) +
         theme(strip.background = element_blank(), strip.text.x = element_blank()) # don't show facet grid labels
-    if (length((mle %>% filter(AmpliconID==amplicon))$VariantID) > 10) {
+    if (length(unique((mle %>% filter(AmpliconID==amplicon))$VariantID)) > 10) {
         p2 <- p2 + facet_grid(cols = vars(Location), scales = "free_x", switch = "x", space = "free_x")
     }
     print(p2)
