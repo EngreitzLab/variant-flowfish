@@ -71,31 +71,31 @@ estimateSeventhBinEM <- function(mu.guess, sd.guess, bin.counts, bins, minmean=M
     prev_seventh_bin <- MAXMEAN
     seventh.bin.count <- 0
     iterations <- 0
-    while((abs(seventh.bin.count - prev_seventh_bin) > 10) & (iterations < 100)) {
-      iterations <- iterations + 1
-      est <- mle(minuslog=ll,
-              start=list(mu=mu.guess,std=sd.guess),
-              fixed=list(observations=o, bins=bins),
-              method="L-BFGS-B",
-              lower=c(log10(minmean), minvar),
-              # lower=c(0, 0), since we are in log space, I think there are no constraints on the mean
-              upper=c(log10(maxmean), maxvar))#,
-              #control=list(ndeps = c(0.05,0.05)))
+    # while((abs(seventh.bin.count - prev_seventh_bin) > 10) & (iterations < 100)) {
+    # iterations <- iterations + 1
+    est <- mle(minuslog=ll,
+            start=list(mu=mu.guess,std=sd.guess),
+            fixed=list(observations=o, bins=bins),
+            method="L-BFGS-B",
+            lower=c(log10(minmean), minvar),
+            # lower=c(0, 0), since we are in log space, I think there are no constraints on the mean
+            upper=c(log10(maxmean), maxvar))#,
+            #control=list(ndeps = c(0.05,0.05)))
 
-      MU <- est@coef[[1]]
-      SI <- est@coef[[2]]
+    MU <- est@coef[[1]]
+    SI <- est@coef[[2]]
 
-      ps <- vector()
+    ps <- vector()
 
-      for (i in c(1:dim(bins)[1])) {
-        ps <- c(ps, pnorm(bins[i,2], mean=MU, sd=SI, log.p=FALSE) - pnorm(bins[i,1], mean=MU, sd=SI, log.p=FALSE))
-      }
-      prev_seventh_bin <- seventh.bin.count
-
-      # use this to guess how many cells are in last bin
-      seventh.bin.count <- sum(bin.counts) / sum(ps) * (1 - sum(ps))
-      o <- c(bin.counts, seventh.bin.count)
+    for (i in c(1:dim(bins)[1])) {
+      ps <- c(ps, pnorm(bins[i,2], mean=MU, sd=SI, log.p=FALSE) - pnorm(bins[i,1], mean=MU, sd=SI, log.p=FALSE))
     }
+    prev_seventh_bin <- seventh.bin.count
+
+    # use this to guess how many cells are in last bin
+    seventh.bin.count <- sum(bin.counts) / sum(ps) * (1 - sum(ps))
+    # o <- c(bin.counts, seventh.bin.count)
+    # }
 
     return(seventh.bin.count)
 }
