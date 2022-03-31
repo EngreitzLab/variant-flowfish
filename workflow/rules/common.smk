@@ -206,6 +206,7 @@ def all_input(wildcards):
 	wanted_input.extend([
 			'results/summary/{}.reference_plots.pdf'.format(e) for e in samplesheet['AmpliconID'].unique()
 		])
+	wanted_input.append("results/summary/crispresso_aggregate_reads.pdf")
 
 	# wanted_input.extend(
 	# 	['crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'.format(
