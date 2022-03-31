@@ -44,10 +44,13 @@ Required columns:
     SampleID          Unique name for each amplicon library. (e.g., BATCH-CellLine-Sample-FFRep-PCRRep-Bin)
     AmpliconID        Name of genomic amplicon contained in the library - must match corresponding AmpliconID column in the Amplicon Table (see below)
                         Currently, this parameter (together with the Amplicon Table) controls which variants the pipeline quantifies for each sample
+    
+    Batch             Batch ID used to identify the appropriate FACS sort params file (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
+    SampleNumber      FlowFISH sample number - used to identify the appropriate FACS sort params file (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
+    
     Bin               Name of a FACS-sorted bin (e.g.: A B C D E F). 'All' for FlowFISH-input edited samples. 'Neg' or blank if not applicable
     PCRRep            PCR replicate number or name
     ControlForAmplicon TRUE or FALSE. Set to TRUE for unedited samples that will be used to evaluate background sequencing/PCR error rate
-    EditFromGuide     [currently required, but soon not to be]: Distance of edit from guide spacer, used to control where CRISPResso looks for edits
     VFFSpikeIn        [required, but not currently used] Integer from 0 to 100 representing the percentage of unedited cells spiked into this sample
 
     [Experiment Keys] Provide any number of additional columns (e.g., CellLine, Guides, TestProbe) that distinguish different samples.
@@ -67,10 +70,9 @@ Optional columns:
     fastqR1           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R1_*fastq.gz)
     fastqR2           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R2_*fastq.gz)
     
-    Batch             Batch ID used to identify the appropriate FACS sort params file (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
-    SampleNumber      FlowFISH sample number - used to identify the appropriate FACS sort params file (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
     sortParamsFile    If provided in the Sample Sheet, overwrites the default value (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
-    
+    EditFromGuide     [currently required, but soon not to be]: Distance of edit from guide spacer, used to control where CRISPResso looks for edits
+
     Parameters that overwrite values in the Amplicon Table below:
     AmpliconSeq       Sequence of the genomic amplicon to align to. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
     GuideSpacer       Spacer of the gRNA used. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
@@ -97,9 +99,9 @@ Required columns:
 
     AmpliconID                  Arbitrary name of the amplicon
     AmpliconSeq                 Full genomic sequence to align to
-    GuideSpacer                 Spacer sequence of the gRNA around which to quantify edits (no PAM) [not currently used]
     QuantificationWindowStart   Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele
     QuantificationWindowEnd     Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele 
+    ReferenceErrorThreshold     Integer indicating how many errors (mismatch/insertion/deletion) are tolerable when inferring the reference allele.
 
 To do:  Add additional parameters here to control the crispresso2 quantification window.
 
