@@ -101,6 +101,7 @@ Required columns:
     AmpliconSeq                 Full genomic sequence to align to
     QuantificationWindowStart   Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele
     QuantificationWindowEnd     Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele 
+    ReferenceErrorThreshold     Integer indicating how many errors (mismatch/insertion/deletion) are tolerable when inferring the reference allele.
 
 To do:  Add additional parameters here to control the crispresso2 quantification window.
 
