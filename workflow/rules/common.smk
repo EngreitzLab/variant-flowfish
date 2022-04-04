@@ -206,7 +206,8 @@ def all_input(wildcards):
 	wanted_input.extend([
 			'results/summary/{}.reference_plots.pdf'.format(e) for e in samplesheet['AmpliconID'].unique()
 		])
-	wanted_input.append("results/summary/crispresso_aggregate_reads.pdf")
+	if genotyping_only:
+		wanted_input.append("results/summary/crispresso_aggregate_reads_genotyping_only.pdf")
 
 	# wanted_input.extend(
 	# 	['crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'.format(
@@ -232,6 +233,8 @@ def all_input(wildcards):
 	## At what point do we merge in the spike-in data? 
 
 	if not genotyping_only:
+		wanted_input.append("results/summary/crispresso_aggregate_reads.pdf")
+
 		## Output files for PCR replicates (before merging spike-in data)
 		wanted_input.extend(list(samplesheet['ExperimentIDPCRRep_BinCounts'].unique()))
 		wanted_input.extend([

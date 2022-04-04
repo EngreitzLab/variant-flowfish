@@ -6,6 +6,7 @@ suppressPackageStartupMessages(library("optparse"))
 
 option.list <- list(
   make_option("--CRISPRessoAggFolder", type="character", help="CRISPResso Aggregate Directory"),
+  make_option("--genotyping_only", type="logical", help="If analysis is genotyping only"),
   make_option("--outfile", type="character", help="Output plot filename")
   )
 opt <- parse_args(OptionParser(option_list=option.list))
@@ -13,7 +14,13 @@ opt <- parse_args(OptionParser(option_list=option.list))
 crispresso_agg <- paste0(opt$CRISPRessoAggFolder, "/CRISPRessoAggregate_quantification_of_editing_frequency_by_amplicon.txt")
 
 agg <- read.delim(crispresso_agg, check.names=F, stringsAsFactors=F)
-agg <- extract(agg, Folder, into = c("Sample", "Bin"), "^.\\/CRISPResso_on_(.*)-(Bin.*$)")
+
+if (opt$genotyping_only) {
+  agg <- extract(agg, Folder, into = c("Sample"), "^.\\/CRISPResso_on_(.*)")
+} else {
+  agg <- extract(agg, Folder, into = c("Sample", "Bin"), "^.\\/CRISPResso_on_(.*)-(Bin.*$)")
+}
+
 
 pdf(file=opt$outfile, width=12, height=6)
 p <- agg %>% gather("Reads", "num_reads", c('Reads_in_input', 'Reads_aligned')) %>% 

@@ -5,14 +5,26 @@ from scripts.plot_reference_mismatches import *
 # CRISPResso aggregate plot
 rule plot_crispresso_aggregate_reads:
 	input:
-		"results/crispresso/CRISPRessoAggregate_on_Aggregate/",
+		CRISPRessoAggFolder="results/crispresso/CRISPRessoAggregate_on_Aggregate/",
 	output:
 		"results/summary/crispresso_aggregate_reads.pdf"
 	params:
 		codedir=config['codedir']
 	shell:
 		"""
-		Rscript {params.codedir}/workflow/scripts/PlotCRISPRessoReads.R --CRISPRessoAggFolder {input} --outfile {output} 
+		Rscript {params.codedir}/workflow/scripts/PlotCRISPRessoReads.R --CRISPRessoAggFolder {input.CRISPRessoAggFolder} --genotyping_only FALSE --outfile {output} 
+		"""
+
+rule plot_crispresso_aggregate_reads_genotyping_only:
+	input:
+		CRISPRessoAggFolder="results/crispresso/CRISPRessoAggregate_on_Aggregate/",
+	output:
+		"results/summary/crispresso_aggregate_reads_genotyping_only.pdf"
+	params:
+		codedir=config['codedir']
+	shell:
+		"""
+		Rscript {params.codedir}/workflow/scripts/PlotCRISPRessoReads.R --CRISPRessoAggFolder {input.CRISPRessoAggFolder} --genotyping_only TRUE --outfile {output} 
 		"""
 
 # Variant frequency plots
