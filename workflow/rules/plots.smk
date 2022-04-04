@@ -5,14 +5,14 @@ from scripts.plot_reference_mismatches import *
 # CRISPResso aggregate plot
 rule plot_crispresso_aggregate_reads:
 	input:
-		"results/crispresso/CRISPRessoAggregate_on_Aggregate/CRISPRessoAggregate_quantification_of_editing_frequency_by_amplicon.txt",
+		"results/crispresso/CRISPRessoAggregate_on_Aggregate/",
 	output:
 		"results/summary/crispresso_aggregate_reads.pdf"
 	params:
 		codedir=config['codedir']
 	shell:
 		"""
-		Rscript {params.codedir}/workflow/scripts/PlotCRISPRessoReads.R --CRISPRessoAggFile {input} --outfile {output} 
+		Rscript {params.codedir}/workflow/scripts/PlotCRISPRessoReads.R --CRISPRessoAggFolder {input} --outfile {output} 
 		"""
 
 # Variant frequency plots

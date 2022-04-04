@@ -5,12 +5,12 @@ suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library("optparse"))
 
 option.list <- list(
-  make_option("--CRISPRessoAggFile", type="character", help="CRISPResso Aggregate editing frequency file"),
+  make_option("--CRISPRessoAggFolder", type="character", help="CRISPResso Aggregate Directory"),
   make_option("--outfile", type="character", help="Output plot filename")
   )
 opt <- parse_args(OptionParser(option_list=option.list))
 
-crispresso_agg <- opt$CRISPRessoAggFile
+crispresso_agg <- paste0(opt$CRISPRessoAggFolder, "/CRISPRessoAggregate_quantification_of_editing_frequency_by_amplicon.txt")
 
 agg <- read.delim(crispresso_agg, check.names=F, stringsAsFactors=F)
 agg <- extract(agg, Folder, into = c("Sample", "Bin"), "^.\\/CRISPResso_on_(.*)-(Bin.*$)")
