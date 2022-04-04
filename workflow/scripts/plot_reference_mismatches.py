@@ -38,8 +38,10 @@ def plot_reference_mismatches(reference_files, amplicon, output_file):
                     reads_info[val] = {}
                     reads_info[val][col] = 1
                     reads_info[val][col + '#Reads'] = row['#Reads']
-    
+
     reads_df = pd.DataFrame(reads_info).T
+    reads_df = reads_df.reindex(columns=['Mismatches', 'Mismatches#Reads', 'Deletions', 'Deletions#Reads', 'Insertions', 'Insertions#Reads']) # add any missing columns
+    reads_df = reads_df.fillna(0)
 
     # Mismatches, insertions, deletions per read
     ref_data['#Mismatches'] = ref_data['Mismatches'].apply(lambda x: len(ast.literal_eval(x)))
