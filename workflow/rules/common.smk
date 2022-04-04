@@ -169,7 +169,7 @@ else:
 
 single_end = ('single_end' in config) and (config['single_end'].lower() == 'true')
 
-ampliconRequiredCols = ['AmpliconID','AmpliconSeq','GuideSpacer','QuantificationWindowStart','QuantificationWindowEnd', 'ReferenceErrorThreshold']  ## To do:  Allow specifying crispresso quantification window for different amplicons
+ampliconRequiredCols = ['AmpliconID','AmpliconSeq','QuantificationWindowStart','QuantificationWindowEnd', 'ReferenceErrorThreshold']  ## To do:  Allow specifying crispresso quantification window for different amplicons
 variantRequiredCols = ['AmpliconID','VariantID','MappingSequence','RefAllele']
 keyCols = config['experiment_keycols'].split(',')
 repCols = config['replicate_keycols'].split(',')
