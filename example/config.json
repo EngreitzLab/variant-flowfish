@@ -8,5 +8,6 @@
     "replicate_keycols": "FlowFISHRep",    
     "experiment_keycols": "AmpliconID,CellLine,Guides",
     "crispresso_min_average_read_quality": 20,
-    "crispresso_min_single_bp_quality": 0
+    "crispresso_min_single_bp_quality": 0,
+    "genotyping_only": "True"
 }
