@@ -219,13 +219,13 @@ def all_input(wildcards):
 
 	## Bowtie2 alignments:
 	wanted_input.extend(
-		['results/aligned/{s}/{s}.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
-	)
-	wanted_input.append("results/summary/alignment.counts.tsv")
-	## PhiX alignment: 
-	wanted_input.extend(
+	 	['results/aligned/{s}/{s}.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
+	 )
+	 wanted_input.append("results/summary/alignment.counts.tsv")
+	 ## PhiX alignment: 
+	 wanted_input.extend(
 		['results/aligned/Undetermined/Undetermined.PhiX.bam']
-	)
+	 )
 
 	## Variant counts:
 	wanted_input.extend(list(samplesheet['variantCountFile'].unique()))
@@ -265,6 +265,7 @@ def all_input(wildcards):
 		])
 		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz')
 		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.pdf')
+		wanted_input.append('results/summary/AllelicEffectsStats.byExperimentRep.ExperimentIDReplicates.tsv')
 
 		## Output files for replicate experiments (after merging spike-in data)
 		wanted_input.extend([])
