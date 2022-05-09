@@ -5,9 +5,9 @@
 
 rule compute_significance_and_power:
     input:
-        flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz'
+        flat='results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
     output:
-        stats='results/summary/AllelicEffectsStats.{replicateDirectory}.{ExperimentID}.tsv'
+        stats='results/summary/AllelicEffectsStats.tsv',
         effectCor='results/summary/effectCorrelations.pdf'
     params:
         codedir=config['codedir']

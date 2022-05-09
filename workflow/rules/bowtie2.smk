@@ -41,7 +41,6 @@ if not single_end:
       unaligned_R2='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.2.gz'
     params:
       amplicon_seq=lambda wildcards: samplesheet.at[wildcards.SampleID,'AmpliconSeq'],
-      guide=lambda wildcards: samplesheet.at[wildcards.SampleID,'GuideSpacer'],
       q=config['crispresso_min_average_read_quality'],
       s=config['crispresso_min_single_bp_quality'],
       unaligned='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.gz',
@@ -76,7 +75,6 @@ else:
       unaligned_R1='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.gz'
     params:
       amplicon_seq=lambda wildcards: samplesheet.at[wildcards.SampleID,'AmpliconSeq'],
-      guide=lambda wildcards: samplesheet.at[wildcards.SampleID,'GuideSpacer'],
       q=config['crispresso_min_average_read_quality'],
       s=config['crispresso_min_single_bp_quality'],
       unaligned='results/aligned/{SampleID}/{SampleID}_unaligned.fastq.gz',
