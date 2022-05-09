@@ -54,7 +54,7 @@ VariantEffects$Expression_Effect <- "Insignificant"
 VariantEffects$Expression_Effect[VariantEffects$Percent_Effect > 0.0 & VariantEffects$BH.p.value < 0.05] <- "Activating"
 VariantEffects$Expression_Effect[VariantEffects$Percent_Effect < 0.0 & VariantEffects$BH.p.value < 0.05] <- "Suppressive"
 
-## Volcano Plotting
+## Volcano Plotting of Variant effects and significance
 pdf(file=opt$volcanoPlots, width=9, height=7)
 mycolors <- c("#00AFBB", "gray", "#E7B800")
 names(mycolors) <- c("Activating", "Insignificant", "Suppressive")
@@ -90,7 +90,7 @@ p2 <- ggplot(VariantEffects, aes(x=abs(Percent_Effect), y=MinCells)) +
   ylab("# of cells estimated to reach significance") +
   ggtitle(label = "Target number of cells per effect")
 
-## Plotting MinCells vs Total CellCount
+## Plotting estimated cell count vs observed cell count
 high <- max(abs(VariantEffects$MinCells))
 low <- min(abs(VariantEffects$MinCells))
 p3 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=MinCells, col=Expression_Effect)) + 
@@ -141,7 +141,7 @@ p6 <- ggplot(VariantEffects, aes(x=mean.cellCount*abs(Percent_Effect), y=Power))
   xlab("% Effect * Number of cells") +
   ylab("Power")
 
-
+## Plotting power vs estimated effect
 p7 <- ggplot(VariantEffects, aes(x=abs(Percent_Effect), y=Power)) + 
   geom_point(aes(col=Expression_Effect)) +
   ylim(0,1) + 
@@ -152,6 +152,7 @@ p7 <- ggplot(VariantEffects, aes(x=abs(Percent_Effect), y=Power)) +
   xlab("% Effect on Gene Expression") +
   ylab("Power")
 
+## Plotting power vs number of cells observed
 p8 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Power)) + 
   geom_point(aes(col=abs(Percent_Effect))) +
   scale_colour_gradient(low = 'white', high = 'red') +
@@ -164,7 +165,7 @@ p8 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Power)) +
   ylab("Power")
 
 
-
+## Plotting
 p9 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Power), col = SD_Group) + 
   geom_point() +
   ylim(0,1) + 
@@ -181,6 +182,8 @@ x <- 0.05/nrow(VariantEffects)
 test <- pwr.t.test(d= 0.8, sig.level = x, power = 0.8, type = 'one.sample')
 p9 <- plot(test)
 
+
+## Histogram of Variant Counts
 p10 <- ggplot(VariantEffects, aes(x = mean.cellCount)) + 
   geom_histogram() + 
   scale_x_log10() + 
