@@ -108,8 +108,12 @@ variantStats <- data.frame(row.names = unique(mle$VariantID))
 test.p.val <- 0.05/nrow(variantStats)
 
 for (variant in unique(mle$VariantID)) {
+  ## Select variants with at least 500 alleles per rep
+  ## Choose the AmpliconID, total number of cells in rep, and the estimated effect size
   t.data <- mle[(mle$VariantID == variant & mle$sum1 > 500),]
   t.data <- t.data[, c('AmpliconID', 'sum1', 'effect_size')]
+  ## Initialize values for power code
+  ## Calculate statistics
   p.value <- 1
   MinReps <- NA
   Power <- NA
@@ -118,13 +122,23 @@ for (variant in unique(mle$VariantID)) {
   mean.cellCount <- mean(t.data$sum1)
   sd.cellCount <- sd(t.data$sum1)
   total.cellCount <- as.integer(sum(t.data$sum1))
+  ## Calculate Cohen's D
   variantDelta <- (abs(1-mean(t.data$effect_size)))/SD
+  ## Select only variants with observations in more than 1 rep
   if (length(t.data$effect_size) > 1) {
+    ## Get rid of reference alleles
     if (mean(t.data$effect_size) != 1){
+      ## Run one sample t-test for variant.
+      ## Null is x = 1
       tmp <- t.test(t.data$effect_size, mu = 1)
       p.value <- tmp$p.value
+      ## Estimate power
+      ## Use the estimated effect size, sig.level is the bonferroni corrected p-val, power at 0.9
+      ## Power at 0.9 means that 90% of the time the negatives are true negatives
+      ## Compute sample size needed to pass significance (ie MinReps)
       pwr.tmp <- pwr.t.test(d = variantDelta, sig.level = test.p.val, power = 0.9, type = "one.sample")
       MinReps <- pwr.tmp$n
+      ## Estimate power using effect sizes and standard deviations
       pwr.tmp2 <- pwr.t.test(d = variantDelta, sig.level = test.p.val, n = (total.cellCount/mean.cellCount), type = 'one.sample')
       Power <- pwr.tmp2$power
     }
