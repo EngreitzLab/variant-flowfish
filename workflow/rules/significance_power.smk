@@ -16,5 +16,5 @@ rule compute_significance_and_power:
         bash -c '
                 . $HOME/.bashrc 
                 conda activate vff_R
-                Rscript {params.codedir}/workflow/scripts/t.test.R --allelicEffectFile {input.flat} --outfile {output.stats} --repPlots {output.effectCor} --effectColumn effect_size
+                Rscript {params.codedir}/workflow/scripts/t.test.R --allelicEffectFile {input.flat} --outfile {output.stats} --repPlots {output.effectCor} --effectColumn effect_size'
         """

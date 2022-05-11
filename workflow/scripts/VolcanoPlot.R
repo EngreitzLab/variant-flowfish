@@ -188,7 +188,20 @@ p10 <- ggplot(VariantEffects, aes(x = mean.cellCount)) +
   geom_histogram() + 
   scale_x_log10() + 
   theme_minimal() +
-  xlab("Number of cells per FFRep")
+  xlab("Cells with Variant per FFRep")
+
+cellsPerBin <- vector()
+cellsPerBin <- append(allEffects$A)
+cellsPerBin <- append(allEffects$B)
+cellsPerBin <- append(allEffects$C)
+cellsPerBin <- append(allEffects$D)
+
+cellsPerBin <- as.data.frame(cellsPerBin)
+
+p11 <- ggplot(cellsPerBin, aes(cellsPerBin)) + 
+  geom_histogram() + 
+  theme_minimal() +
+  xlab("# of Cells per Bin")
 
 print(p4)
 print(p5)
@@ -199,6 +212,7 @@ print(p7)
 print(p8)
 print(p9)
 print(p10)
+print(p11)
 invisible(dev.off())
 
 

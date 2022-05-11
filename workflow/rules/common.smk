@@ -223,9 +223,9 @@ def all_input(wildcards):
 	 )
 	wanted_input.append("results/summary/alignment.counts.tsv")
 	## PhiX alignment: 
-	wanted_input.extend(
-		['results/aligned/Undetermined/Undetermined.PhiX.bam']
-	 )
+	#wanted_input.extend(
+		#['results/aligned/Undetermined/Undetermined.PhiX.bam']
+	 #)
 
 	## Variant counts:
 	wanted_input.extend(list(samplesheet['variantCountFile'].unique()))
