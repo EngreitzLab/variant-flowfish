@@ -41,7 +41,7 @@ def find_fastq_files(samplesheet, fastqdir):
 				elif len(file) == 1:
 					samplesheet.at[i,colName] = file[0]
 
-	
+
 	return samplesheet
 
 
@@ -57,7 +57,7 @@ def add_experiment_names(samplesheet):
 	if ('ExperimentIDReplicates' in samplesheet.columns) or ('ExperimentID' in samplesheet.columns) or ('ExperimentIDPCRRep' in samplesheet.columns):
 		print("Warning: ExperimentID columns found and will be overwritten in the sample sheet")
 
-	## Experiments at the level of PCR replicates 
+	## Experiments at the level of PCR replicates
 	if genotyping_only:
 		cols_ExperimentIDPCRRep = keyCols + repCols + ['PCRRep']
 		cols_ExperimentIDReplicates = keyCols + repCols
@@ -79,7 +79,7 @@ def add_experiment_names(samplesheet):
 	s['ExperimentID'] = ['-'.join([str(v) for v in list(row.values)]) for index,row in s.iterrows()]
 	samplesheet = samplesheet.merge(s)
 
-	return(samplesheet)	
+	return(samplesheet)
 
 
 def add_outputs(samplesheet):
@@ -118,6 +118,7 @@ def validate_sample_sheet(samplesheet):
 
 def load_sample_sheet(samplesheetFile, ampliconInfoFile, idcol='AmpliconID'):
 	samplesheet = pd.read_table(samplesheetFile, dtype=str)
+	samplesheet.dropna(how='all', inplace=True)
 	validate_sample_sheet(samplesheet)
 	samplesheet.index = samplesheet['SampleID']  ## Requires that SampleID is unique
 
@@ -129,7 +130,7 @@ def load_sample_sheet(samplesheetFile, ampliconInfoFile, idcol='AmpliconID'):
 			raise ValueError("Amplicon info file must contain AmpliconID AmpliconSeq GuideSpacer")
 		samplesheet = samplesheet.merge(amplicons[ampliconRequiredCols])
 		if not set(ampliconRequiredCols).issubset(samplesheet.columns):
-			raise ValueError("Failed to merge samplesheet and amplicon info file.")		
+			raise ValueError("Failed to merge samplesheet and amplicon info file.")
 
 	samplesheet = find_fastq_files(samplesheet, fastqdir)
 	if not genotyping_only:
@@ -147,7 +148,7 @@ def get_bin_list():
 		if  "All" not in binList.tolist():
 			print("\nWARNING: Did not find any entries with Bin == 'All' (unsorted edited cells input into FlowFISH). Was this intended, or was 'All' mispelled?\n\n")
 		if "Neg" not in binList.tolist():
-			print("\nWARNING: Did not find any entries with Bin == 'Neg' (unedited cells used to assess sequencing error rate). Was this intended, or was 'Neg' mispelled?\n\n")		
+			print("\nWARNING: Did not find any entries with Bin == 'Neg' (unedited cells used to assess sequencing error rate). Was this intended, or was 'Neg' mispelled?\n\n")
 	binList = binList[(binList != "All") & (binList != "Neg") & (binList.notnull())]
 	binList = [str(b) for b in list(binList)]
 	print("Processing unique bins: " + ' '.join(binList))
@@ -211,18 +212,18 @@ def all_input(wildcards):
 
 	# wanted_input.extend(
 	# 	['crispresso/CRISPResso_on_{SampleID}/{AmpliconID}.Alleles_frequency_table_around_sgRNA_{GuideSpacer}.txt'.format(
-	# 		SampleID=row['SampleID'], 
-	# 		AmpliconID=row['AmpliconID'], 
-	# 		GuideSpacer=row['GuideSpacer']) 
+	# 		SampleID=row['SampleID'],
+	# 		AmpliconID=row['AmpliconID'],
+	# 		GuideSpacer=row['GuideSpacer'])
 	# 	for index, row in samplesheet.iterrows()]
 	# )
 
 	## Bowtie2 alignments:
-	wanted_input.extend(
-	 	['results/aligned/{s}/{s}.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
-	 )
-	wanted_input.append("results/summary/alignment.counts.tsv")
-	## PhiX alignment: 
+	# wanted_input.extend(
+	#  	['results/aligned/{s}/{s}.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
+	#  )
+	# wanted_input.append("results/summary/alignment.counts.tsv")
+	## PhiX alignment:
 	#wanted_input.extend(
 		#['results/aligned/Undetermined/Undetermined.PhiX.bam']
 	 #)
@@ -230,7 +231,7 @@ def all_input(wildcards):
 	## Variant counts:
 	wanted_input.extend(list(samplesheet['variantCountFile'].unique()))
 
-	## At what point do we merge in the spike-in data? 
+	## At what point do we merge in the spike-in data?
 
 	if not genotyping_only:
 		wanted_input.append("results/summary/crispresso_aggregate_reads.pdf")
@@ -283,5 +284,3 @@ def all_input(wildcards):
 		wanted_input.extend([])
 
 	return wanted_input
-
-

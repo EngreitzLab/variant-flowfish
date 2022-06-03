@@ -35,7 +35,7 @@ stopifnot(opt$effectColumn %in% colnames(mle))
 mle$Percent_Effect <- (mle$effect_size - 1)*100
 
 
-## Drop references and variants without observations
+## Drop references and variants without observations below 500
 mle <- subset(mle, effect_size != 1 & logMean != 0 & sum1 > 500)
 
 ## Capture the highest observed value to set limits of graphs

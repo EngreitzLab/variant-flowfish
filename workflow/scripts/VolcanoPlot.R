@@ -59,7 +59,8 @@ pdf(file=opt$volcanoPlots, width=9, height=7)
 mycolors <- c("#00AFBB", "gray", "#E7B800")
 names(mycolors) <- c("Activating", "Insignificant", "Suppressive")
 for (amplicon in unique(VariantEffects$AmpliconID)) {
-  p1 <- ggplot(data=VariantEffects, aes(x=Percent_Effect, y=-log10(BH.p.value), col=Expression_Effect)) +
+  ampliconEffects <- VariantEffects[VariantEffects$AmpliconID == amplicon, ]
+  p1 <- ggplot(data=ampliconEffects, aes(x=Percent_Effect, y=-log10(BH.p.value), col=Expression_Effect)) +
     geom_point() +
     geom_errorbarh(aes(xmin=Percent_Effect-Percent_CI, xmax=Percent_Effect+Percent_CI)) +
     scale_color_manual(values = mycolors) +
@@ -142,9 +143,11 @@ p6 <- ggplot(VariantEffects, aes(x=mean.cellCount*abs(Percent_Effect), y=Power))
   ylab("Power")
 
 ## Plotting power vs estimated effect
-p7 <- ggplot(VariantEffects, aes(x=abs(Percent_Effect), y=Power)) + 
-  geom_point(aes(col=Expression_Effect)) +
+p7 <- ggplot(VariantEffects, aes(x=abs(Percent_Effect), y=Power, col=Expression_Effect)) + 
+  geom_point() +
+  geom_errorbarh(aes(xmin=abs(Percent_Effect)-Percent_CI, xmax=abs(Percent_Effect)+Percent_CI)) +
   ylim(0,1) + 
+  xlim(0,NA) +
   theme_minimal() +
   geom_smooth(method = 'glm', col = 'seashell4', fill = 'seashell2', method.args = list(family = "binomial"), se = FALSE) +
   scale_color_manual(values = mycolors) +
@@ -165,13 +168,15 @@ p8 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Power)) +
   ylab("Power")
 
 
-## Plotting
-p9 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Power), col = SD_Group) + 
-  geom_point() +
+## Plotting Power vs cell # w/o gradient color
+p9 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Power)) + 
+  geom_point(aes(col=Expression_Effect)) +
   ylim(0,1) + 
+  scale_x_continuous(trans='log10') +
   theme_minimal() +
+  scale_color_manual(values = mycolors) +
   geom_smooth(method = 'glm', col = 'seashell4', fill = 'seashell2', method.args = list(family = "binomial"), se = FALSE) +
-  labs(col = "SD Value") +
+  labs(col = "Effect") +
   xlab("Number of cells per FFRep") +
   ylab("Power")
 
@@ -180,28 +185,15 @@ p9 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Power), col = SD_Group) +
 
 x <- 0.05/nrow(VariantEffects)
 test <- pwr.t.test(d= 0.8, sig.level = x, power = 0.8, type = 'one.sample')
-p9 <- plot(test)
+p10 <- plot(test)
 
 
 ## Histogram of Variant Counts
-p10 <- ggplot(VariantEffects, aes(x = mean.cellCount)) + 
+p11 <- ggplot(VariantEffects, aes(x = mean.cellCount)) + 
   geom_histogram() + 
   scale_x_log10() + 
   theme_minimal() +
   xlab("Cells with Variant per FFRep")
-
-cellsPerBin <- vector()
-cellsPerBin <- append(allEffects$A)
-cellsPerBin <- append(allEffects$B)
-cellsPerBin <- append(allEffects$C)
-cellsPerBin <- append(allEffects$D)
-
-cellsPerBin <- as.data.frame(cellsPerBin)
-
-p11 <- ggplot(cellsPerBin, aes(cellsPerBin)) + 
-  geom_histogram() + 
-  theme_minimal() +
-  xlab("# of Cells per Bin")
 
 print(p4)
 print(p5)
