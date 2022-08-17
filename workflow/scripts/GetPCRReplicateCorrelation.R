@@ -7,7 +7,7 @@ suppressPackageStartupMessages(library("optparse"))
 option.list <- list(
   make_option("--variantCounts", type="character", help="Desired variant count flat file"),
   make_option("--samplesheet", type="character", help="Snakemake sample sheet including SampleID info"),
-  make_option("--minCorrelation", type="numeric", default=-1, help="PCR replicates with less than this correlation will be flagged for removal"),
+  make_option("--minCorrelation", type="numeric", default=0.8, help="PCR replicates with less than this correlation will be flagged for removal"),
   make_option("--correlationFile", type="character", help="Output file for PCR replicate correlation table"),
   make_option("--lowCorSamplesFile", type="character", help="Output file to list samples flagged with low replicate correlations"),
   make_option("--cvFile", type="character", help="Output file for coefficient of variation table")

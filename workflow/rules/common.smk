@@ -219,26 +219,16 @@ def all_input(wildcards):
 	# )
 
 	## Bowtie2 alignments:
-<<<<<<< HEAD
-	 wanted_input.extend(
-	#  	['results/aligned/{s}/{s}.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
-	#  )
-	# wanted_input.append("results/summary/alignment.counts.tsv")
-	## PhiX alignment:
-	wanted_input.extend(
-		['results/aligned/Undetermined/Undetermined.PhiX.bam']
-	 )
-=======
 	wanted_input.extend(
 	 	['results/aligned/{s}/{s}.bam'.format(s=s) for s in samplesheet['SampleID'].unique()]
-	 )
+	  )
 	wanted_input.append("results/summary/alignment.counts.tsv")
+	
 	## PhiX alignment:
-	wanted_input.extend(
-		['results/aligned/Undetermined/Undetermined.PhiX.bam']
-	 )
->>>>>>> ad7824b3fd296138989a47f988c730c3eac7e54e
-
+	# wanted_input.extend(
+		# ['results/aligned/Undetermined/Undetermined.PhiX.bam']
+	# )
+	
 	## Variant counts:
 	wanted_input.extend(list(samplesheet['variantCountFile'].unique()))
 
@@ -295,3 +285,5 @@ def all_input(wildcards):
 		wanted_input.extend([])
 
 	return wanted_input
+
+
