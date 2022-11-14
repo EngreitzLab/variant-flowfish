@@ -269,7 +269,6 @@ def count_mismatches(Aligned_Sequence, Reference_Sequence, RefQuantificationWind
         refEnd = refEnd + 1
 
     start_shift = refStart - RefQuantificationWindowStart
-    # end_shift = refEnd - RefQuantificationWindowEnd
 
     ## Count mismatches, deletions, and insertions in this window
     mismatches = []
@@ -279,8 +278,10 @@ def count_mismatches(Aligned_Sequence, Reference_Sequence, RefQuantificationWind
     gap_spaces = 0
 
     for i in range(refStart,refEnd):
+        # added lines to count every base insertion and deletion, not just the first instance
         if Reference_Sequence[i:(i+1)] == '-':
             if gap:
+                insertions.append(i-(start_shift+gap_spaces))
                 pass
             else:
                 insertions.append(i-(start_shift+gap_spaces))
@@ -289,11 +290,11 @@ def count_mismatches(Aligned_Sequence, Reference_Sequence, RefQuantificationWind
 
         elif Aligned_Sequence[i:(i+1)] == '-':
             if gap:
+                deletions.append(i-(start_shift+gap_spaces))
                 pass
             else:
                 deletions.append(i-(start_shift+gap_spaces))
                 gap = True
-                # gap_spaces += 1
 
         elif Reference_Sequence[i:(i+1)] != Aligned_Sequence[i:(i+1)]:
             mismatches.append(i-(start_shift+gap_spaces))
