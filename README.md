@@ -33,6 +33,7 @@ Install conda environments using [conda](https://conda.io/projects/conda/en/late
 For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
 
 ### Step 3: Set up the Sample Sheet
+The files created in steps 3, 4, 6, 7 should be saved in a separate `config/` folder.
 
 (Updated 11/12/21 JME)
 
@@ -132,9 +133,9 @@ Required columns:
     RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
 
 
-### Step 6: Configure workflow
+### Step 7: Configure workflow
 
-Edit `workflow/config.json` to point to the right files and define certain variables.
+Copy `example/config.json` to your newly created `config/` folder and edit the fields to point to the right files and define certain variables.
 
 Options to control behavior of the workflow at a high level:
 
@@ -142,6 +143,7 @@ Options to control behavior of the workflow at a high level:
     single_end          Set "true" if the data is single-end as opposed to paired-end reads
     replicate_keycols   Comma-separated list of columns in the sample sheet used mark replicates (see Replicate Keys above)
     experiment_keycols  Comma-separated list of columns in the sample sheet used to mark different experiments (see Experiment Keys above)
+    reps                Total number of replicates (bioreplicates, technical replicates). E.g. 2 bioreps x 4 technical reps = 8 reps 
 
 File paths (can specify relative or absolute paths):
 
@@ -158,7 +160,7 @@ Other parameters:
     crispresso_min_single_bp_quality        Parameter passed to CRISPResso2 regarding minimum single bp quality score (e.g., 0)
     
     
-### Step 7: Execute workflow
+### Step 8: Execute workflow
 
 Activate the conda environment:
 
