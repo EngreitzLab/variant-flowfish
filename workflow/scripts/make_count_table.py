@@ -20,15 +20,28 @@ def make_flat_table(samplesheet, outfile):
                 allele_tbl = pd.read_csv(file, sep='\t')
                 allele_tbl['SampleID'] = row['SampleID']
                 allele_tbl['BioRep'] = row['BioRep']
-                allele_tbl['FlowFISHRep'] = row['FlowFISHRep']
+
+                if 'FlowFISHRep' in row.keys():
+                    allele_tbl['FlowFISHRep'] = row['FlowFISHRep']
+                else:
+                    print('No FlowFISHRep column (ok if genotyping)')
+
                 allele_tbl['PCRRep'] = row['PCRRep']
-                allele_tbl['Bin'] = row['Bin']
+
+                if 'Bin' in row.keys():
+                    allele_tbl['Bin'] = row['Bin']
+                else:
+                    print('No Bin column (ok if genotyping)')
+
+                # splitting like this is specific to our current syntax for VariantID, may need to change
                 allele_tbl['Location'] = allele_tbl['VariantID'].str.split(':').str[:3].str.join(':')
                 allele_tbl['Variant'] = allele_tbl['VariantID'].str.split(':').str[-1:].str.join(':')
                 allele_tbls.append(allele_tbl)
             except:
                 print("Error reading file: " + file)
                 continue
+        else:
+            print('File not found:', file)
 
     try:
         flat = pd.concat(allele_tbls, axis='index', ignore_index=True)
