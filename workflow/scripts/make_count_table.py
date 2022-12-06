@@ -250,7 +250,16 @@ def make_count_table(samplesheet, group_col, group_id, bins, outfile, outfile_fr
 
     count_tbl.to_csv(outfile, sep='\t')
 
-    freq_tbl = count_tbl.div(count_tbl.sum(axis=0), axis=1)
+    freq_tbl = count_tbl.reset_index()
+
+    if len(freq_tbl[freq_tbl['RefAllele'] == True]) > 1: # avoid double counting "true" and "inferred" reference in freq table
+        freq_tmp_no_infer = freq_tbl[~freq_tbl['VariantID'].str.contains('InferredReference')][count_tbl.columns] # select count data without inferred reference
+        freq_tmp = freq_tbl[count_tbl.columns] # save count data with inferred 
+        freq_tbl[count_tbl.columns] = freq_tmp.div(freq_tmp_no_infer.sum(axis=0), axis=1) # freq divide; not including Inferred Reference count in sum
+        freq_tbl.set_index(count_tbl.index.names, inplace=True)  
+    else:
+        freq_tbl = count_tbl.div(count_tbl.sum(axis=0), axis=1)
+
     freq_tbl.to_csv(outfile_frequencies, sep='\t', float_format='%.6f')
 
 
