@@ -30,11 +30,18 @@ def rescale_effects_qpcr(effects_table, ff_tss_kd, qpcr_tss_kd):
 def adjust_effects_heterozygous_editing(effects_table, variantInfoFile, pooled='True'):
     variant_df = pd.read_table(variantInfoFile)
     num_variants = len(variant_df)
-    if 'input.fraction' in effects_table.columns:
-        effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['input.fraction']*num_variants, pooled), axis=1)
-    else:
-        # if there isn't input bin, use the other bins frequency instead
-        effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['freq']*num_variants, pooled), axis=1)
+    if pooled.lower() == 'true':
+        if 'input.fraction' in effects_table.columns:
+            effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['input.fraction']*num_variants, pooled), axis=1)
+        else:
+            # if there isn't input bin, use the other bins frequency instead
+            effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['freq']*num_variants, pooled), axis=1)
+    else: # don't multiply by pooled frequency
+        if 'input.fraction' in effects_table.columns:
+            effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['input.fraction'], pooled), axis=1)
+        else:
+            # if there isn't input bin, use the other bins frequency instead
+            effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['freq'], pooled), axis=1)
     effects_table.loc[~(effects_table['effect_size_scaled_adjusted'] > 0), 'effect_size_scaled_adjusted'] = 0 # set effect sizes less than 0 to 0
     return effects_table
 
