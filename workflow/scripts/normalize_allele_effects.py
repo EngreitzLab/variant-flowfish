@@ -28,7 +28,6 @@ def rescale_effects_qpcr(effects_table, ff_tss_kd, qpcr_tss_kd):
     return effects_table
 
 def adjust_effects_heterozygous_editing(effects_table, variantInfoFile, pooled='True'):
-    import pdb; pdb.set_trace()
     variant_df = pd.read_table(variantInfoFile)
     num_variants = len(variant_df)
     if 'input.fraction' in effects_table.columns:
