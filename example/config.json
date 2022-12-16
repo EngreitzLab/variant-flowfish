@@ -10,5 +10,8 @@
     "crispresso_min_average_read_quality": 20,
     "crispresso_min_single_bp_quality": 0,
     "reps": 4,
-    "genotyping_only": "True"
+    "genotyping_only": "True",
+    "pooled": "True", 
+    "ff_tss_guide_kd": 0.65,
+    "qpcr_tss_guide_kd": 0.96
 }

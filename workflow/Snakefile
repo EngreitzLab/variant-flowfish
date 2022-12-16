@@ -8,7 +8,6 @@
 
 # report: "report/workflow.rst"
 include: "rules/common.smk"
-# include: "rules/common.smk"
 include: "rules/crispresso2.smk"
 include: "rules/bowtie2.smk"
 include: "rules/make_count_tables.smk"
