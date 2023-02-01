@@ -29,8 +29,10 @@ def rescale_effects_qpcr(effects_table, ff_tss_kd, qpcr_tss_kd):
 
 def adjust_effects_heterozygous_editing(effects_table, variantInfoFile, pooled='True'):
     variant_df = pd.read_table(variantInfoFile)
-    num_variants = len(variant_df)
-    if pooled.lower() == 'true':
+    num_variants = len(variant_df[~variant_df['VariantID'].str.contains('Reference')]['VariantID'].unique()) # this should be the number of unique variants introduced; we are assuming each variant corresponds to a guide
+    # TODO: add check for if edit rate > 1 
+
+    if pooled.lower() == 'true' # and (effects_table['AmpliconID'].str.contains('Pool')).all():
         if 'input.fraction' in effects_table.columns:
             effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['input.fraction']*num_variants, pooled), axis=1)
         else:
@@ -38,10 +40,10 @@ def adjust_effects_heterozygous_editing(effects_table, variantInfoFile, pooled='
             effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['freq']*num_variants, pooled), axis=1)
     else: # don't multiply by pooled frequency
         if 'input.fraction' in effects_table.columns:
-            effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['input.fraction'], pooled), axis=1)
+            effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['input.fraction'], 'false'), axis=1)
         else:
             # if there isn't input bin, use the other bins frequency instead
-            effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['freq'], pooled), axis=1)
+            effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['freq'], 'false'), axis=1)
     effects_table.loc[~(effects_table['effect_size_scaled_adjusted'] > 0), 'effect_size_scaled_adjusted'] = 0 # set effect sizes less than 0 to 0
     return effects_table
 
@@ -70,4 +72,5 @@ raw_effects = pd.read_table(args.input)
 normalized_effects = normalize_effects(raw_effects)
 qpcr_rescaled_effects = rescale_effects_qpcr(normalized_effects, args.ff_tss_guide_kd, args.qpcr_tss_guide_kd)
 final_effects = adjust_effects_heterozygous_editing(qpcr_rescaled_effects, args.variantInfo, args.pooled)
+final_effects = final_effects.rename(columns={"effect_size": "initial_effect_size", "effect_size_scaled_adjusted": "effect_size"})
 final_effects.to_csv(args.output, index=None, sep='\t')
