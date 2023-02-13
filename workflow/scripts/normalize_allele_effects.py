@@ -13,7 +13,8 @@ def normalize_effects(raw_effects_table):
     raw['mean'] = np.power(10, raw['logMean']+.5*(raw['logSD']**2))
     raw['freq'] = raw['sum1'] / raw['sum1'].sum()
 
-    # find Reference means use larger Reference mean (assuming there is both Reference and Inferred Reference) 
+    # find Reference means use larger Reference mean 
+    # (assuming there is both Reference and Inferred Reference) 
     refMean = raw[raw['VariantID'].str.contains('Reference')]['mean'].max()
 
     # normalize to reference allele
@@ -32,7 +33,7 @@ def adjust_effects_heterozygous_editing(effects_table, variantInfoFile, pooled='
     num_variants = len(variant_df[~variant_df['VariantID'].str.contains('Reference')]['VariantID'].unique()) # this should be the number of unique variants introduced; we are assuming each variant corresponds to a guide
     # TODO: add check for if edit rate > 1 
 
-    if pooled.lower() == 'true' # and (effects_table['AmpliconID'].str.contains('Pool')).all():
+    if pooled.lower() == 'true': # and (effects_table['AmpliconID'].str.contains('Pool')).all():
         if 'input.fraction' in effects_table.columns:
             effects_table['effect_size_scaled_adjusted'] = effects_table.apply(lambda x: 1 + get_homozygous_variant_effect_from_FF_effect(x['effect_size_scaled_qpcr'] - 1, x['input.fraction']*num_variants, pooled), axis=1)
         else:
