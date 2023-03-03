@@ -1,4 +1,5 @@
 from scripts.plot_reference_mismatches import *
+from scripts.plot_pcr_correlation import *
 
 ## Plotting
 
@@ -77,6 +78,15 @@ rule plot_allelic_effect_sizes_ignoreInputBin:
 		"""
 		Rscript {params.codedir}/workflow/scripts/PlotMleVariantEffects.R --mleEffects {input} --outfile {output} 
 		"""
+
+# PCR correlation plots
+rule plot_PCR_correlations:
+	input:
+		pcr_replicates = samplesheet['ExperimentIDPCRRep_BinCounts'].str.strip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
+	output:
+		pcr_correlation_plots = "results/summary/PCRReplicateCorrelations.pdf"
+	run:
+		plot_pcr_correlation(input.pcr_replicates, output.pcr_correlation_plots)
 
 # Reference error plots
 rule plot_reference_mismatches:
