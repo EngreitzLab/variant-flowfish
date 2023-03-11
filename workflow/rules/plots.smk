@@ -84,9 +84,11 @@ rule plot_PCR_correlations:
 	input:
 		pcr_replicates = samplesheet['ExperimentIDPCRRep_BinCounts'].str.strip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
 	output:
+		biorep_correlation_plots = "results/summary/BioReplicateCorrelations.pdf",
+		ffrep_correlation_plots = "results/summary/FFReplicateCorrelations.pdf",
 		pcr_correlation_plots = "results/summary/PCRReplicateCorrelations.pdf"
 	run:
-		plot_pcr_correlation(input.pcr_replicates, output.pcr_correlation_plots)
+		plot_correlations(input.pcr_replicates, output.biorep_correlation_plots, output.ffrep_correlation_plots, output.pcr_correlation_plots)
 
 # Reference error plots
 rule plot_reference_mismatches:
