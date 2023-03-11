@@ -32,7 +32,7 @@ def plot_correlations_between_reps(effect_table_1, effect_table_2, title, pdf):
 # only plotting replicate 1 and 2 correlation currently
 def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcrrep_output_file):
     files = pd.DataFrame(pcr_replicates, columns=['PCRRepFile'])
-    files = files.join(files.PCRRepFile.str.split(r'-([0-9]|nan)-([0-9]|nan)-([0-9]|nan)-([0-9]|nan)', \
+    files = files.join(files.PCRRepFile.str.split(r'([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)', \
                                     expand=True).set_axis(['prefix', 'BioRep', 'SpikeIn', 'FFRep', 'PCRRep','suffix'], \
                                                             axis=1))
     # by bio rep
