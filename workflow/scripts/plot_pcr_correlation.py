@@ -54,7 +54,7 @@ def plot_correlations_between_reps_dense(effect_table_1, effect_table_2, title, 
 def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcrrep_output_file):
     import pdb; pdb.set_trace()
     files = pd.DataFrame(pcr_replicates, columns=['PCRRepFile'])
-    file_regex = r'-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)|^([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)'
+    file_regex = r'-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)|\/([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)'
     files = files.join(files.PCRRepFile.str.split(file_regex, \
                                     expand=True).dropna(axis=1).set_axis(['prefix', 'BioRep', 'SpikeIn', 'FFRep', 'PCRRep','suffix'], \
                                                             axis=1))
