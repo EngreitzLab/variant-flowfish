@@ -27,7 +27,28 @@ def plot_correlations_between_reps(effect_table_1, effect_table_2, title, pdf):
         plt.xlim([-6, 0])
         plt.ylim([-6, 0])
         plt.savefig(pdf, format='pdf') 
-        plt.clf()
+        plt.close()
+
+def plot_correlations_between_reps_dense(effect_table_1, effect_table_2, title, pdf):
+    bin_list = effect_table_1.filter(regex=("^[A-Z]$")).columns.tolist()
+    pearson_annotation = ''
+    plt.figure(figsize=(6,6))
+    for b in bin_list:
+        freq_df = pd.DataFrame([np.log10(effect_table_1[b]), np.log10(effect_table_2[b])]).T
+        freq_df.columns = ['PCRRep1', 'PCRRep2']
+        with pd.option_context('mode.use_inf_as_na', True):
+            freq_df.dropna(inplace=True)
+        plt.scatter(freq_df['PCRRep1'], freq_df['PCRRep2'], alpha=0.5, label='Bin %s' % b)        
+        pearson_annotation += 'Bin %s Pearson r = {:.3f}\n'.format(stats.pearsonr(freq_df['PCRRep1'], freq_df['PCRRep2'])[0]) % b
+    plt.xlim([-6, 0])
+    plt.ylim([-6, 0])
+    plt.legend(loc='upper left')
+    plt.xlabel('PCR Replicate 1 (log10)')
+    plt.ylabel('PCR Replicate 2 (log10)')
+    plt.title(title)
+    plt.annotate(pearson_annotation, (-3, -5.5))
+    plt.savefig(pdf, format='pdf') 
+    plt.close()
         
 # only plotting replicate 1 and 2 correlation currently
 def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcrrep_output_file):
@@ -36,8 +57,11 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
                                     expand=True).set_axis(['prefix', 'BioRep', 'SpikeIn', 'FFRep', 'PCRRep','suffix'], \
                                                             axis=1))
     # by bio rep
-    with PdfPages(biorep_output_file) as pdf:
+    with PdfPages(biorep_output_file) as pdf, PdfPages(biorep_output_file.split('.')[0] + '_condensed.pdf') as pdf2:
         for pair in files.groupby(['FFRep', 'PCRRep'])['PCRRepFile'].unique():
+            if len(pair) < 2:
+                print('PCR replicate pair not complete for %s ' % pair[0])
+                continue
             pair1 = pd.read_table(pair[0])
             pair2 = pd.read_table(pair[1])
             pair1 = get_freq_from_effect_table(pair1)
@@ -46,10 +70,14 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
             pair2 = pair2[~pair2['RefAllele'] == True]
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
+            plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
         
     # by FF rep
-    with PdfPages(ffrep_output_file) as pdf:
+    with PdfPages(ffrep_output_file) as pdf, PdfPages(ffrep_output_file.split('.')[0] + '_condensed.pdf') as pdf2:
         for pair in files.groupby(['BioRep', 'PCRRep'])['PCRRepFile'].unique():
+            if len(pair) < 2:
+                print('PCR replicate pair not complete for %s ' % pair[0])
+                continue
             pair1 = pd.read_table(pair[0])
             pair2 = pd.read_table(pair[1])
             pair1 = get_freq_from_effect_table(pair1)
@@ -58,10 +86,14 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
             pair2 = pair2[~pair2['RefAllele'] == True]
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
+            plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
 
     # by PCR rep
-    with PdfPages(pcrrep_output_file) as pdf:
+    with PdfPages(pcrrep_output_file) as pdf, PdfPages(pcrrep_output_file.split('.')[0] + '_condensed.pdf') as pdf2:
         for pair in files.groupby(['BioRep', 'FFRep'])['PCRRepFile'].unique():
+            if len(pair) < 2:
+                print('PCR replicate pair not complete for %s ' % pair[0])
+                continue
             pair1 = pd.read_table(pair[0])
             pair2 = pd.read_table(pair[1])
             pair1 = get_freq_from_effect_table(pair1)
@@ -70,3 +102,4 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
             pair2 = pair2[~pair2['RefAllele'] == True]
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
+            plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
