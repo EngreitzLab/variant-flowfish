@@ -21,8 +21,8 @@ def plot_correlations_between_reps(effect_table_1, effect_table_2, title, pdf):
         plt.figure(figsize=(6,6))
         plt.scatter(freq_df['PCRRep1'], freq_df['PCRRep2'])        
         plt.annotate("Pearson r = {:.3f}".format(stats.pearsonr(freq_df['PCRRep1'], freq_df['PCRRep2'])[0]), (-4, -1))
-        plt.xlabel('PCR Replicate 1 (log10)')
-        plt.ylabel('PCR Replicate 2 (log10)')
+        plt.xlabel('PCR Replicate 1 Variant Frequency (log10)')
+        plt.ylabel('PCR Replicate 2 Variant Frequency (log10)')
         plt.title(title + ' Bin %s' % b)
         plt.xlim([-6, 0])
         plt.ylim([-6, 0])
@@ -43,23 +43,61 @@ def plot_correlations_between_reps_dense(effect_table_1, effect_table_2, title, 
     plt.xlim([-6, 0])
     plt.ylim([-6, 0])
     plt.legend(loc='upper left')
-    plt.xlabel('PCR Replicate 1 (log10)')
-    plt.ylabel('PCR Replicate 2 (log10)')
+    plt.xlabel('PCR Replicate 1 Variant Frequency (log10)')
+    plt.ylabel('PCR Replicate 2 Variant Frequency (log10)')
     plt.title(title)
     plt.annotate(pearson_annotation, (-3, -5.5))
+    plt.savefig(pdf, format='pdf') 
+    plt.close()
+
+def plot_correlations_between_reps_effects(effect_table_1, effect_table_2, title, pdf):
+    plt.figure(figsize=(6,6))
+    effect_table_1 = effect_table_1[(effect_table_1['sum1'] > 1000)] 
+    effect_table_2 = effect_table_2[(effect_table_2['sum1'] > 1000)] 
+    freq_df = pd.DataFrame([(effect_table_1['effect_size']-1)*100, (effect_table_2['effect_size']-1)*100]).T
+    freq_df.columns = ['PCRRep1', 'PCRRep2']
+    with pd.option_context('mode.use_inf_as_na', True):
+        freq_df.dropna(inplace=True)
+    plt.scatter(freq_df['PCRRep1'], freq_df['PCRRep2'])        
+    pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(freq_df['PCRRep1'], freq_df['PCRRep2'])[0])#  % b
+    plt.xlim([-100, 100])
+    plt.ylim([-100, 100])
+    plt.legend(loc='upper left')
+    plt.xlabel('PCR Replicate 1 Effect Size (%)')
+    plt.ylabel('PCR Replicate 2 Effect Size (%)')
+    plt.title(title + " Effect Size (sum1 > 1000)")
+    plt.annotate(pearson_annotation, (-50, 50))
+    plt.savefig(pdf, format='pdf') 
+    plt.close()
+
+    plt.figure(figsize=(6,6))
+    effect_table_1 = effect_table_1[(effect_table_1['freq'] > 0.001)] 
+    effect_table_2 = effect_table_2[(effect_table_2['freq'] > 0.001)] 
+    freq_df = pd.DataFrame([(effect_table_1['effect_size']-1)*100, (effect_table_2['effect_size']-1)*100]).T
+    freq_df.columns = ['PCRRep1', 'PCRRep2']
+    with pd.option_context('mode.use_inf_as_na', True):
+        freq_df.dropna(inplace=True)
+    plt.scatter(freq_df['PCRRep1'], freq_df['PCRRep2'])       
+    pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(freq_df['PCRRep1'], freq_df['PCRRep2'])[0])#  % b
+    plt.xlim([-100, 100])
+    plt.ylim([-100, 100])
+    plt.legend(loc='upper left')
+    plt.xlabel('PCR Replicate 1 Effect Size (%)')
+    plt.ylabel('PCR Replicate 2 Effect Size (%)')
+    plt.title(title+ "Effect Size (sum1 > 1000 and freq > 0.001)")
+    plt.annotate(pearson_annotation, (-50, 50))
     plt.savefig(pdf, format='pdf') 
     plt.close()
         
 # only plotting replicate 1 and 2 correlation currently
 def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcrrep_output_file):
-    import pdb; pdb.set_trace()
     files = pd.DataFrame(pcr_replicates, columns=['PCRRepFile'])
-    file_regex = r'-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)|^([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)'
+    file_regex = r'-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)|\/([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)-([0-9]*|nan)'
     files = files.join(files.PCRRepFile.str.split(file_regex, \
                                     expand=True).dropna(axis=1).set_axis(['prefix', 'BioRep', 'SpikeIn', 'FFRep', 'PCRRep','suffix'], \
                                                             axis=1))
     # by bio rep
-    with PdfPages(biorep_output_file) as pdf, PdfPages(biorep_output_file.split('.')[0] + '_condensed.pdf') as pdf2:
+    with PdfPages(biorep_output_file) as pdf, PdfPages(biorep_output_file.split('.')[0] + '_condensed.pdf') as pdf2, PdfPages(biorep_output_file.split('.')[0] + '_effects.pdf') as pdf3:
         for pair in files.groupby(['FFRep', 'PCRRep'])['PCRRepFile'].unique():
             if len(pair) < 2:
                 print('PCR replicate pair not complete for %s ' % pair[0])
@@ -73,9 +111,10 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
             plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
+            plot_correlations_between_reps_effects(pair1, pair2, title, pdf3)
         
     # by FF rep
-    with PdfPages(ffrep_output_file) as pdf, PdfPages(ffrep_output_file.split('.')[0] + '_condensed.pdf') as pdf2:
+    with PdfPages(ffrep_output_file) as pdf, PdfPages(ffrep_output_file.split('.')[0] + '_condensed.pdf') as pdf2, PdfPages(ffrep_output_file.split('.')[0] + '_effects.pdf') as pdf3:
         for pair in files.groupby(['BioRep', 'PCRRep'])['PCRRepFile'].unique():
             if len(pair) < 2:
                 print('PCR replicate pair not complete for %s ' % pair[0])
@@ -89,9 +128,10 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
             plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
+            plot_correlations_between_reps_effects(pair1, pair2, title, pdf3)
 
     # by PCR rep
-    with PdfPages(pcrrep_output_file) as pdf, PdfPages(pcrrep_output_file.split('.')[0] + '_condensed.pdf') as pdf2:
+    with PdfPages(pcrrep_output_file) as pdf, PdfPages(pcrrep_output_file.split('.')[0] + '_condensed.pdf') as pdf2, PdfPages(pcrrep_output_file.split('.')[0] + '_effects.pdf') as pdf3:
         for pair in files.groupby(['BioRep', 'FFRep'])['PCRRepFile'].unique():
             if len(pair) < 2:
                 print('PCR replicate pair not complete for %s ' % pair[0])
@@ -105,3 +145,4 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
             plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
+            plot_correlations_between_reps_effects(pair1, pair2, title, pdf3)
