@@ -62,7 +62,6 @@ def plot_correlations_between_reps_effects(effect_table_1, effect_table_2, title
     pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(freq_df['PCRRep1'], freq_df['PCRRep2'])[0])#  % b
     plt.xlim([-100, 100])
     plt.ylim([-100, 100])
-    plt.legend(loc='upper left')
     plt.xlabel('PCR Replicate 1 Effect Size (%)')
     plt.ylabel('PCR Replicate 2 Effect Size (%)')
     plt.title(title + " Effect Size (sum1 > 1000)")
@@ -81,7 +80,6 @@ def plot_correlations_between_reps_effects(effect_table_1, effect_table_2, title
     pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(freq_df['PCRRep1'], freq_df['PCRRep2'])[0])#  % b
     plt.xlim([-100, 100])
     plt.ylim([-100, 100])
-    plt.legend(loc='upper left')
     plt.xlabel('PCR Replicate 1 Effect Size (%)')
     plt.ylabel('PCR Replicate 2 Effect Size (%)')
     plt.title(title+ "Effect Size (sum1 > 1000 and freq > 0.001)")
