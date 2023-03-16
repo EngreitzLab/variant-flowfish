@@ -207,7 +207,9 @@ def all_input(wildcards):
 	wanted_input.extend([
 			'results/summary/{}.reference_plots.pdf'.format(e) for e in samplesheet['AmpliconID'].unique()
 		])
-	wanted_input.extend(["results/summary/BioReplicateCorrelations.pdf", "results/summary/FFReplicateCorrelations.pdf", "results/summary/PCRReplicateCorrelations.pdf"])
+	wanted_input.extend(["results/summary/BioReplicateCorrelations.pdf", \
+						"results/summary/FFReplicateCorrelations.pdf", "results/summary/PCRReplicateCorrelations.pdf", \
+						"results/summary/BioReplicateExperimentCorrelations.pdf", "results/summary/FFReplicateExperimentCorrelations.pdf"])
 	if genotyping_only:
 		wanted_input.append("results/summary/crispresso_aggregate_reads_genotyping_only.pdf")
 
