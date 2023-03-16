@@ -191,8 +191,11 @@ def plot_correlations_experiment(experiment_replicates, biorep_output_file, ffre
             df_list.append(pair2)
 
     all_effects = pd.concat(df_list)
+    all_effects['freq'] = np.log10(all_effects['freq'])
+    with pd.option_context('mode.use_inf_as_na', True):
+        all_effects.dropna(inplace=True)
     with PdfPages('results/summary/variant_frequency_hist.pdf') as pdf:
-        plt.hist(np.log10(all_effects['freq']))
+        plt.hist(all_effects['freq'])
         plt.xlabel('Variant Frequency (freq, log10)')
         plt.ylabel('Count over all ExperimentReps')
         plt.title('Histogram of Variant Frequencies in Experiment Replicates')
