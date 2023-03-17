@@ -70,7 +70,8 @@ getStackedBarplot <- function(countsFlat, samples, group="ExperimentIDPCRRep", f
             dplyr:::rename(Frequency="%Reads", nReads="#Reads") %>%
             mutate(Edited=ordered(ControlForAmplicon, levels=c(FALSE,TRUE), labels=c("Edited","Unedited"))) %>%
             as.data.frame()
-
+  write.table(counts, file=paste0(opt$outbase, ".editingRate.txt"), sep="\t", quote=F, row.names=F, col.names=T, append=F)
+  
   y <- ifelse(plotNReads, "nReads", "Frequency")
   ylab <- ifelse(plotNReads, "Variant Read Count (#)", "Variant Frequency (%)")
   p <- ggplot(counts, aes_string(x=group, y=y, fill=fill)) + geom_col()
@@ -203,6 +204,8 @@ getPCRReplicateVariantCV <- function(countsFlat, samplesheet, includeRef=FALSE) 
 getReplicatePlot <- function(countsFlat, samplesheet) {
   cor.df <- getPCRReplicateCorrelations(countsFlat, samplesheet)
   vcv <- getPCRReplicateVariantCV(countsFlat, samplesheet)
+  write.table(cor.df, file=paste0(opt$outbase, ".PCRReplicateCorrelations.tsv"), sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE)
+  write.table(vcv, file=paste0(opt$outbase, ".PCRReplicateVariantCV.tsv"), sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE)
 
   p1 <- ggplot(cor.df, aes(x=cor)) + geom_histogram(binwidth=0.01) +
       theme_classic() +

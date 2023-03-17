@@ -115,7 +115,7 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
 
         # get rows of allele_tbl that do not contain one of the variants
         # maybe update to check location of variant
-        references = allele_tbl[~allele_tbl['Aligned_Sequence'].str.contains('|'.join(variantInfo[variantInfo['RefAllele'] == False]['MappingSequence']))]
+        references = allele_tbl[~allele_tbl['Aligned_Sequence'].str.contains('|'.join(variantInfo[variantInfo['RefAllele'].str.casefold() == 'false']['MappingSequence']))]
         references.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
 
         # get mismatch info for references
