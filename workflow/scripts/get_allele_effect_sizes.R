@@ -36,7 +36,7 @@ useSeventhBin <- TRUE
 print(paste("Counts Location: ", countsLocation))
 print(paste("Sort Params Location: ", sortParamsloc))
 
-MAXMEAN <- 10000 # in FACS space, max value a guide can take
+MAXMEAN <- 2000000 # in FACS space, max value a guide can take
 MINMEAN <- 1  # in FACS space, max value a guide can take
 
 
