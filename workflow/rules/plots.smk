@@ -82,7 +82,7 @@ rule plot_allelic_effect_sizes_ignoreInputBin:
 # PCR correlation plots
 rule plot_PCR_correlations:
 	input:
-		pcr_replicates = samplesheet['ExperimentIDPCRRep_BinCounts'].str.strip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
+		pcr_replicates = samplesheet[samplesheet['ExperimentIDPCRRep_BinCounts'].str.contains('^(?!.*nan-.*-nan.*).+')]['ExperimentIDPCRRep_BinCounts'].str.strip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
 	output:
 		biorep_correlation_plots = "results/summary/BioReplicateCorrelations.pdf",
 		ffrep_correlation_plots = "results/summary/FFReplicateCorrelations.pdf",
@@ -92,7 +92,7 @@ rule plot_PCR_correlations:
 
 rule plot_experiment_correlations:
 	input:
-		pcr_replicates = samplesheet['ExperimentIDReplicates_BinCounts'].str.strip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
+		pcr_replicates = samplesheet[samplesheet['ExperimentIDPCRRep_BinCounts'].str.contains('^(?!.*nan-.*-nan.*).+',regex=True)]['ExperimentIDPCRRep_BinCounts'].str.strip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
 	output:
 		biorep_correlation_plots = "results/summary/BioReplicateExperimentCorrelations.pdf",
 		ffrep_correlation_plots = "results/summary/FFReplicateExperimentCorrelations.pdf",

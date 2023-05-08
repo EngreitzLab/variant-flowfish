@@ -8,9 +8,9 @@
 
 # report: "report/workflow.rst"
 include: "rules/common.smk"
-include: "rules/crispresso2.smk"
-include: "rules/bowtie2.smk"
-include: "rules/make_count_tables.smk"
+#include: "rules/crispresso2.smk"
+#include: "rules/bowtie2.smk"
+#include: "rules/make_count_tables.smk"
 include: "rules/estimate_effect_sizes.smk"
 include: "rules/plots.smk"
 include: "rules/significance_power.smk"

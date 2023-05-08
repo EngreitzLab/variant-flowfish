@@ -28,6 +28,8 @@ def get_sortparams_file(wildcards):
 		currSamples = samplesheet.loc[(samplesheet['ExperimentIDReplicates'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "") & (samplesheet['Bin'] != "Neg")]
 	else:
 		currSamples = samplesheet.loc[(samplesheet['ExperimentIDPCRRep'] == wildcards.ExperimentID) & (samplesheet['sortParamsFile'] != "") & (samplesheet['Bin'] != "Neg")]
+	if len(currSamples) == 0:
+		return '' # no samples that are not controls 
 	sortParams = currSamples['sortParamsFile'].unique()
 	if (len(sortParams) > 1):
 		print(sortParams)
@@ -49,6 +51,9 @@ rule calculate_allelic_effect_sizes:
 	output:
 		raw='results/{directory}/{ExperimentID}.raw_effects.txt',
 		counts='results/{directory}/{ExperimentID}.rescaled_counts.txt'	
+	wildcard_constraints:
+		ExperimentID="(?!.*nan-.*-nan.*).+"
+		# ExperimentID="^(?!.*nan-.*-nan.*).*$"
 	log:
 		'results/{directory}/{ExperimentID}.mle_log.txt'
 	shell:
@@ -66,6 +71,8 @@ rule normalize_allelic_effect_sizes:
 		'results/{directory}/{ExperimentID}.raw_effects.txt'
 	output:
 		'results/{directory}/{ExperimentID}.effects_vs_ref.txt'
+	wildcard_constraints:
+		ExperimentID="(?!.*nan-.*-nan.*).+"
 	params:
 		codedir=config['codedir'],
 		variantInfo=config['variant_info'],
@@ -126,6 +133,8 @@ rule calculate_allelic_effect_sizes_ignoreInputBin:
 	output:
 		raw='results/{directory}/{ExperimentID}.raw_effects_ignoreInputBin.txt',
 		counts='results/{directory}/{ExperimentID}.rescaled_counts_ignoreInputBin.txt'	
+	wildcard_constraints:
+		ExperimentID="(?!.*nan-.*-nan.*).+"
 	log:
 		'results/{directory}/{ExperimentID}.mle_log_ignoreInputBin.txt'
 	shell:
@@ -143,6 +152,8 @@ rule normalize_allelic_effect_sizes_ignoreInputBin:
 		'results/{directory}/{ExperimentID}.raw_effects_ignoreInputBin.txt'
 	output:
 		'results/{directory}/{ExperimentID}.effects_vs_ref_ignoreInputBin.txt'
+	wildcard_constraints:
+		ExperimentID="(?!.*nan-.*-nan.*).+"
 	params:
 		codedir=config['codedir'],
 		variantInfo=config['variant_info'],
