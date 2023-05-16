@@ -130,17 +130,19 @@ for (variant in unique(mle$VariantID)) {
     if (mean(t.data$effect_size) != 1){
       ## Run one sample t-test for variant.
       ## Null is x = 1
-      tmp <- t.test(t.data$effect_size, mu = 1)
-      p.value <- tmp$p.value
-      ## Estimate power
-      ## Use the estimated effect size, sig.level is the bonferroni corrected p-val, power at 0.9
-      ## Power at 0.9 means that 90% of the time the negatives are true negatives
-      ## Compute sample size needed to pass significance (ie MinReps)
-      pwr.tmp <- pwr.t.test(d = variantDelta, sig.level = test.p.val, power = 0.9, type = "one.sample")
-      MinReps <- pwr.tmp$n
-      ## Estimate power using effect sizes and standard deviations
-      pwr.tmp2 <- pwr.t.test(d = variantDelta, sig.level = test.p.val, n = (total.cellCount/mean.cellCount), type = 'one.sample')
-      Power <- pwr.tmp2$power
+      if (length(unique(t.data$effect_size)) != 1){ # error when all of the effects are the same
+        tmp <- t.test(t.data$effect_size, mu = 1)
+        p.value <- tmp$p.value
+        ## Estimate power
+        ## Use the estimated effect size, sig.level is the bonferroni corrected p-val, power at 0.9
+        ## Power at 0.9 means that 90% of the time the negatives are true negatives
+        ## Compute sample size needed to pass significance (ie MinReps)
+        pwr.tmp <- pwr.t.test(d = variantDelta, sig.level = test.p.val, power = 0.9, type = "one.sample")
+        MinReps <- pwr.tmp$n
+        ## Estimate power using effect sizes and standard deviations
+        pwr.tmp2 <- pwr.t.test(d = variantDelta, sig.level = test.p.val, n = (total.cellCount/mean.cellCount), type = 'one.sample')
+        Power <- pwr.tmp2$power
+      }
     }
   }
   variantStats[variant, c('Mean_Effect', 'p.value', 'SD', 'MinReps', 'Power', 'mean.cellCount', 'sd.cellCount', 'total.cellCount')] <- c(Mean_Effect, p.value, SD, MinReps, Power, mean.cellCount, sd.cellCount, total.cellCount)
