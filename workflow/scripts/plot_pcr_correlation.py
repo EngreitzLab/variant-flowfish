@@ -122,8 +122,8 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
             pair2 = pd.read_table(pair[1])
             pair1 = get_freq_from_effect_table(pair1)
             pair2 = get_freq_from_effect_table(pair2)
-            pair1 = pair1[~pair1['RefAllele'] == True]
-            pair2 = pair2[~pair2['RefAllele'] == True]
+            pair1 = pair1[pair1['RefAllele'].astype('str') != 'True']
+            pair2 = pair2[pair2['RefAllele'].astype('str') != 'True']
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
             plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
@@ -139,8 +139,8 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
             pair2 = pd.read_table(pair[1])
             pair1 = get_freq_from_effect_table(pair1)
             pair2 = get_freq_from_effect_table(pair2)
-            pair1 = pair1[~pair1['RefAllele'] == True]
-            pair2 = pair2[~pair2['RefAllele'] == True]
+            pair1 = pair1[pair1['RefAllele'].astype('str') != 'True']
+            pair2 = pair2[pair2['RefAllele'].astype('str') != 'True']
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
             plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
@@ -156,8 +156,8 @@ def plot_correlations(pcr_replicates, biorep_output_file, ffrep_output_file, pcr
             pair2 = pd.read_table(pair[1])
             pair1 = get_freq_from_effect_table(pair1)
             pair2 = get_freq_from_effect_table(pair2)
-            pair1 = pair1[~pair1['RefAllele'] == True]
-            pair2 = pair2[~pair2['RefAllele'] == True]
+            pair1 = pair1[pair1['RefAllele'].astype('str') != 'True']
+            pair2 = pair2[pair2['RefAllele'].astype('str') != 'True']
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
             plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
@@ -181,8 +181,8 @@ def plot_correlations_experiment(experiment_replicates, biorep_output_file, ffre
             pair2 = pd.read_table(pair[1])
             pair1 = get_freq_from_effect_table(pair1)
             pair2 = get_freq_from_effect_table(pair2)
-            pair1 = pair1[~pair1['RefAllele'] == True]
-            pair2 = pair2[~pair2['RefAllele'] == True]
+            pair1 = pair1[pair1['RefAllele'].astype('str') != 'True']
+            pair2 = pair2[pair2['RefAllele'].astype('str') != 'True']
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
             plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
@@ -211,8 +211,8 @@ def plot_correlations_experiment(experiment_replicates, biorep_output_file, ffre
             pair2 = pd.read_table(pair[1])
             pair1 = get_freq_from_effect_table(pair1)
             pair2 = get_freq_from_effect_table(pair2)
-            pair1 = pair1[~pair1['RefAllele'] == True]
-            pair2 = pair2[~pair2['RefAllele'] == True]
+            pair1 = pair1[pair1['RefAllele'].astype('str') != 'True']
+            pair2 = pair2[pair2['RefAllele'].astype('str') != 'True']
             title = pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
             plot_correlations_between_reps(pair1, pair2, title, pdf)
             plot_correlations_between_reps_dense(pair1, pair2, title, pdf2)
