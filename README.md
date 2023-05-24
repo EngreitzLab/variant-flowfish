@@ -54,8 +54,7 @@ Required columns:
     Bin               Name of a FACS-sorted bin (e.g.: A B C D E F). 'All' for FlowFISH-input edited samples. 'Neg' or blank if not applicable
     PCRRep            PCR replicate number or name
     ControlForAmplicon TRUE or FALSE. Set to TRUE for unedited samples that will be used to evaluate background sequencing/PCR error rate
-    VFFSpikeIn        [required, but not currently used] Integer from 0 to 100 representing the percentage of unedited cells spiked into this sample
-
+    
     [Experiment Keys] Provide any number of additional columns (e.g., CellLine, Guides, TestProbe) that distinguish different samples.
                         Key columns are defined as such by the 'experiment_keycols' parameter in the config file.
                         These columns will be combined to form a unique experiment key.
@@ -65,7 +64,7 @@ Required columns:
                         Replicate columns are defined as such by the 'replicate_keycols' parameter in the config file.
                         These columns will be combined to form a unique replicate id.
                         PCR replicate counts for each unique replicate key will be summed at the level of this replicate ID.
-                        MLE estimates and VFF spike-in calculations will also be performed at the level of this replicate ID, 
+                        MLE estimates will also be performed at the level of this replicate ID, 
                         then compared according to grouping of the experiment key.
                         
 Optional columns:
