@@ -40,6 +40,8 @@ The files created in steps 3, 4, 6, 7 should be saved in a separate `config/` fo
 The Sample Sheet lists all of the sequencing libraries that will be included in the analysis, and describes their relationships and groupings.
 Example: https://drive.google.com/file/d/15dn5mh1MdgDYSD-yzLuXAkrItvfvt0k9/view?usp=sharing
 
+Note that for FlowFISH analyses, if you provide non-sorted "Neg" samples, you will need to assign them pseudo experimental key values (AmpliconID, BioRep, Guides, etc.) from your other samples to avoid the pipeline searching for a separate sortParams file for them. 
+
 Required columns:
     
     SampleID          Unique name for each amplicon library. (e.g., BATCH-CellLine-Sample-FFRep-PCRRep-Bin)
