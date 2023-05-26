@@ -23,15 +23,9 @@ We designed this pipeline to specifically analyze genome editing efficiencies ac
 
 ## Generate Required Input Data Tables
 
-
-
 There are several required inputs prior to installing and executing this pipeline. For ease of use, generate a subdirectory 'config/' in the directory you are performing the data analysis. Generate and place the following documents inside it.
 
-
-
-
 ### Input 1: Sample Sheet
-
 
 The Sample Sheet lists all of the sequencing libraries that will be included in the analysis, and describes their relationships and groupings.
 Example: https://drive.google.com/file/d/15dn5mh1MdgDYSD-yzLuXAkrItvfvt0k9/view?usp=sharing
@@ -159,11 +153,16 @@ Copy `example/config.json` to your newly created `config/` folder and edit the f
 
 Options to control behavior of the workflow at a high level:
 
-    genotyping_only     Set "true" to mark the workflow to process up to the point of aligning and quantifying variants, without attempting to calculate effect sizes via the maximum likelihood estimator
+    genotyping_only     Set "true" to mark the workflow to process up to the point of aligning and quantifying variants, without attempting to calculate effect                              sizes via the maximum likelihood estimator
     single_end          Set "true" if the data is single-end as opposed to paired-end reads
     replicate_keycols   Comma-separated list of columns in the sample sheet used mark replicates (see Replicate Keys above)
     experiment_keycols  Comma-separated list of columns in the sample sheet used to mark different experiments (see Experiment Keys above)
     pooled              Set "true" if you are analyzing a pool of variants, "false" if analyzing a single variant
+    ff_tss_guide_kd     This value is used in conjunction with the parameter below to generate a scaling factor by which to scale the
+                         data by. We assume FlowFISH probesets have non-specific binding, creating a background level of fluorescence in
+                         a given cell. Perform a total KD experiment of the gene of interest and measure the effects in both qPCR and FF assays. 
+                         The proportional difference between the two is the scaling factor we apply to the estimated effects. Set to 1 if unknown.
+    qpcr_tss_guide_kd   See above. Set to 1 if unknown.
 
 File paths (can specify relative or absolute paths):
 
@@ -205,7 +204,6 @@ For more about cluster configuration using snakemake, see [here](https://www.sic
 
 
 ## Outputs
-
 
 
 
