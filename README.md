@@ -15,6 +15,7 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 
 ## Description
 
+
 This pipeline is configured to analyze Variant-FlowFISH and other like experiments with the capacity to analyze hundreds of variants in a single analysis. It can also be set solely to assess genome editing rates using [CRISPResso](https://github.com/pinellolab/CRISPResso2). 
 
 We designed this pipeline to specifically analyze genome editing efficiencies across samples/modalities, compute effect sizes for genetic variants, generate statistics concerning technical noise introduced at various steps in the molecular biological workflow, and to provide data optimized for interpretation and transferrability. Significane scores for variants are computed using 1-sample T-tests and corrected for multiple testing.
@@ -23,39 +24,19 @@ We designed this pipeline to specifically analyze genome editing efficiencies ac
 ## Usage
 
 
+
 There are several required inputs prior to installing and executing this pipeline. For ease of use, generate a subdirectory 'config/' in the directory you are performing the data analysis. Generate and place the following documents inside it.
+
+
 
 
 ### Input 1: Sample Sheet
 
-The Sample Sheet lists all of the sequencing libraries that will be included in the analysis, and describes their relationships and groupings.
-Example: https://drive.google.com/file/d/15dn5mh1MdgDYSD-yzLuXAkrItvfvt0k9/view?usp=sharing
-
-Note that for FlowFISH analyses, if you provide non-sorted "Neg" samples, you will need to assign them pseudo experimental key values (AmpliconID, BioRep, Guides, etc.) from your other samples to avoid the pipeline searching for a separate sortParams file for them. 
-
-
-### Step 1: Clone this github repository
-
-[Clone](https://help.github.com/en/articles/cloning-a-repository) this to your local system or server where you want to perform the data analysis.
-
-### Step 2: Install conda environment
-
-Install conda environments using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
-
-    conda env create --file envs/EngreitzLab.yml
-    conda env create --file envs/crispresso2_v2.2.6.yml
-
-For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
-
-### Step 3: Set up the Sample Sheet
-The files created in steps 3, 4, 6, 7 should be saved in a separate `config/` folder.
-
-(Updated 11/12/21 JME)
 
 The Sample Sheet lists all of the sequencing libraries that will be included in the analysis, and describes their relationships and groupings.
 Example: https://drive.google.com/file/d/15dn5mh1MdgDYSD-yzLuXAkrItvfvt0k9/view?usp=sharing
 
-Note that for FlowFISH analyses, if you provide non-sorted "Neg" samples, you will need to assign them pseudo experimental key values (AmpliconID, BioRep, Guides, etc.) from your other samples to avoid the pipeline searching for a separate sortParams file for them. 
+Note that for FlowFISH analyses, if you provide non-sorted "Neg" samples, you will need to assign them pseudo experimental key values (AmpliconID, BioRep, Guides, etc.) from your other samples to avoid the pipeline failing to find a separate non-existant sortParams file for them.
 
 Required columns:
     
@@ -102,9 +83,8 @@ Optional columns:
     Other columns can be present but are ignored.
 
 
-### Step 4: Set up the Amplicon Table
+### Input 2: Amplicon Table
 
-(Updated 12/6/21 JME)
 
 The Amplicon Table lists details for the genomic PCR amplicons used in the experiment.  It is optional; the information could be instead provided in the Sample Sheet.
 
@@ -120,7 +100,23 @@ Required columns:
     QuantificationWindowEnd     Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele 
     ReferenceErrorThreshold     Integer indicating how many errors (mismatch/insertion/deletion) are tolerable when inferring the reference allele.
 
-To do:  Add additional parameters here to control the crispresso2 quantification window.
+Note: The quantification window should span the length of the amplicon you wish to assay and interpret background PCR/sequencing error ie. the region you wish to edit.
+
+
+### Step 1: Clone this github repository
+
+[Clone](https://help.github.com/en/articles/cloning-a-repository) this to your local system or server where you want to perform the data analysis.
+
+### Step 2: Install conda environment
+
+Install conda environments using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
+
+    conda env create --file envs/EngreitzLab.yml
+    conda env create --file envs/crispresso2_v2.2.6.yml
+
+For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
+
+
 
 
 ### Step 5: Provide sort params files
