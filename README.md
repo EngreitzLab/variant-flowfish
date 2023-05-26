@@ -16,7 +16,7 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 ## Description
 
 
-This pipeline is configured to analyze Variant-FlowFISH and other like experiments with the capacity to analyze hundreds of variants in a single analysis. It can also be set solely to assess genome editing rates using [CRISPResso](https://github.com/pinellolab/CRISPResso2). 
+This pipeline is configured to analyze Variant-FlowFISH and other like experiments with the capacity to analyze hundreds of variants in a single analysis. It can also be set solely to assess genome editing rates using [CRISPResso2](https://github.com/pinellolab/CRISPResso2). 
 
 We designed this pipeline to specifically analyze genome editing efficiencies across samples/modalities, compute effect sizes for genetic variants, generate statistics concerning technical noise introduced at various steps in the molecular biological workflow, and to provide data optimized for interpretation and transferrability. Significane scores for variants are computed using 1-sample T-tests and corrected for multiple testing.
 
@@ -69,7 +69,6 @@ Optional columns:
     fastqR2           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R2_*fastq.gz)
     
     sortParamsFile    If provided in the Sample Sheet, overwrites the default value (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
-    EditFromGuide     [currently required, but soon not to be]: Distance of edit from guide spacer, used to control where CRISPResso looks for edits
 
     Parameters that overwrite values in the Amplicon Table below:
     AmpliconSeq       Sequence of the genomic amplicon to align to. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
@@ -80,7 +79,7 @@ Optional columns:
     MappingSequence   Genomic sequence of this variant / allele + genomic context; must match the output of CRISPResso2.    
     RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
 
-    Other columns can be present but are ignored.
+    Other columns can be present for storing meta information but are ignored.
 
 
 ### Input 2: Amplicon Table
@@ -102,6 +101,35 @@ Required columns:
 
 Note: The quantification window should span the length of the amplicon you wish to assay and interpret background PCR/sequencing error ie. the region you wish to edit.
 
+### Input 3: Sorting parameters files
+
+This file lists statistics and values derived from the FACS sort for each sample. The file names need to be named {Batch}_{SampleNumber}.csv and located in the config['sortParams'] directory, or alternatively the filename listed explicitly in the Sample Sheet in a column called 'sortParamsFile'
+
+Required columns:
+
+    Name               Gate name on the cytomoter (may differ than 'Barcode' you choose to label with)
+    Barcode            Name of the sorted bin, needs to match "Bin" column in the Sample Sheet
+    Count              Number of cells sorted into this bin
+    Mean               Mean fluorescence values of cells sorted into this bin     
+    Min                Minimum fluorescence value sorted into this bin (e.g., edge of the gate)
+    Max                Maximum fluorescence value sorted into this bin (e.g., edge of the gate)
+
+Required Data:
+    
+    Total Sorted Population: The sorted bins should be subpopulations of the same larger population that encompasses all the bins you sorted. For estimation purposes, we need information on the total number of cells in this population (ie. the number of cells you captured in the sort and the cells you did not sort if applicable). Label the 'Barcode' column for this population 'Total.'
+
+
+### Input 4: Variant Table
+
+The Variant Table lists details for specific variants/alleles in the experiment. 
+
+Required columns:
+
+    AmpliconID         Arbitrary name of the amplicon that matches AmpliconID in the provided amplicon table
+    VariantID          Unique readable name of the variant / allele
+    MappingSequence    Genomic sequence of this variant / allele + genomic context; We use this sequence to find the variant of interest and quantify its                                   frequency. We typically use the variant and 3-5nt on either side of the variant to uniquely distinguish it within a given amplicon.  
+    RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
+
 
 ### Step 1: Clone this github repository
 
@@ -119,30 +147,6 @@ For installation details, see the [instructions in the Snakemake documentation](
 
 
 
-### Step 5: Provide sort params files
-
-This file lists statistics and values derived from the FACS sort for each sample. The file names need to be named {Batch}_{SampleNumber}.csv and located in the config['sortParams'] directory, or alternatively the filename listed explicitly in the Sample Sheet in a column called 'sortParamsFile'
-
-Required columns:
-
-    Bin                Name of the sorted bin, needs to match "Bin" column in the Sample Sheet
-    Count              Number of cells sorted into this bin
-    Mean               Mean fluorescence values of cells sorted into this bin     
-    Min                Minimum fluorescence value sorted into this bin (e.g., edge of the gate)
-    Max                Maximum fluorescence value sorted into this bin (e.g., edge of the gate)
-
-
-### Step 6: Set up the Variant Table (optional)
-
-The Variant Table lists details for specific variants/alleles in the experiment.  It is optional, to create condensed
-tables in which certain variants + alleles are named for plotting and downstream analysis.
-
-Required columns:
-
-    AmpliconID        Arbitrary name of the amplicon
-    VariantID         Unique readable name of the variant / allele
-    MappingSequence   Genomic sequence of this variant / allele + genomic context; must match the output of CRISPResso2.    
-    RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
 
 
 ### Step 7: Configure workflow
