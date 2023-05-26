@@ -116,10 +116,11 @@ Required columns:
 
 Required Data:
     
-    Total Sorted Population:          The sorted bins should be subpopulations of the same larger population that encompasses 
-                                        all the bins you sorted. For estimation purposes, we need information on the total number of cells in this 
-                                        population (ie. the number of cells you captured in the sort and the cells you did not sort if applicable).
-                                        Label the 'Barcode' column for this population 'Total.'
+    Total Sorted Population:  The sorted bins should be subpopulations of the same larger population that encompasses 
+                                all the bins you sorted. For estimation purposes, we need information on the total 
+                                number of cells in this population (ie. the number of cells you captured in the sort 
+                                and the cells you did not sort if applicable). Label the 'Barcode' column for this 
+                                population 'Total.'
 
 
 ### Input 4: Variant Table
