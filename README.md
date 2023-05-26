@@ -15,16 +15,24 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 
 ## Description
 
-This pipeline is configured to analyze Variant-FlowFISH and other like experiments. We designed this pipeline to compute effect sizes for genetic variants, generate analyses concerning technical noise introduced at various steps in the pipeline, and to provide data optimized for interpretation and transferrability.
+This pipeline is configured to analyze Variant-FlowFISH and other like experiments with the capacity to analyze hundreds of variants in a single analysis. It can also be set solely to assess genome editing rates using [CRISPResso](https://github.com/pinellolab/CRISPResso2). 
 
-There are several required inputs prior to installing and executing this pipeline. For ease of use, generate a subdirectory 'config/' in the directory you are performing the data analysis. Generate and place the following documents inside it.
-
-### Input 1: Sample Sheet
-
-
+We designed this pipeline to specifically analyze genome editing efficiencies across samples/modalities, compute effect sizes for genetic variants, generate statistics concerning technical noise introduced at various steps in the molecular biological workflow, and to provide data optimized for interpretation and transferrability. Significane scores for variants are computed using 1-sample T-tests and corrected for multiple testing.
 
 
 ## Usage
+
+
+There are several required inputs prior to installing and executing this pipeline. For ease of use, generate a subdirectory 'config/' in the directory you are performing the data analysis. Generate and place the following documents inside it.
+
+
+### Input 1: Sample Sheet
+
+The Sample Sheet lists all of the sequencing libraries that will be included in the analysis, and describes their relationships and groupings.
+Example: https://drive.google.com/file/d/15dn5mh1MdgDYSD-yzLuXAkrItvfvt0k9/view?usp=sharing
+
+Note that for FlowFISH analyses, if you provide non-sorted "Neg" samples, you will need to assign them pseudo experimental key values (AmpliconID, BioRep, Guides, etc.) from your other samples to avoid the pipeline searching for a separate sortParams file for them. 
+
 
 ### Step 1: Clone this github repository
 
@@ -194,3 +202,13 @@ snakemake \
 `
 
 For more about cluster configuration using snakemake, see [here](https://www.sichong.site/2020/02/25/snakemake-and-slurm-how-to-manage-workflow-with-resource-constraint-on-hpc/)
+
+
+
+## Outputs
+
+
+
+
+
+
