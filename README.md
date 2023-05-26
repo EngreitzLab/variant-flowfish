@@ -17,6 +17,13 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 
 This pipeline is configured to analyze Variant-FlowFISH and other like experiments. We designed this pipeline to compute effect sizes for genetic variants, generate analyses concerning technical noise introduced at various steps in the pipeline, and to provide data optimized for interpretation and transferrability.
 
+There are several required inputs prior to installing and executing this pipeline. For ease of use, generate a subdirectory 'config/' in the directory you are performing the data analysis. Generate and place the following documents inside it.
+
+### Input 1: Sample Sheet
+
+
+
+
 ## Usage
 
 ### Step 1: Clone this github repository
