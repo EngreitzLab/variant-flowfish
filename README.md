@@ -116,7 +116,10 @@ Required columns:
 
 Required Data:
     
-    Total Sorted Population: The sorted bins should be subpopulations of the same larger population that encompasses all the bins you sorted. For estimation purposes, we need information on the total number of cells in this population (ie. the number of cells you captured in the sort and the cells you did not sort if applicable). Label the 'Barcode' column for this population 'Total.'
+    Total Sorted Population:          The sorted bins should be subpopulations of the same larger population that encompasses 
+                                        all the bins you sorted. For estimation purposes, we need information on the total number of cells in this 
+                                        population (ie. the number of cells you captured in the sort and the cells you did not sort if applicable).
+                                        Label the 'Barcode' column for this population 'Total.'
 
 
 ### Input 4: Variant Table
@@ -127,7 +130,9 @@ Required columns:
 
     AmpliconID         Arbitrary name of the amplicon that matches AmpliconID in the provided amplicon table
     VariantID          Unique readable name of the variant / allele
-    MappingSequence    Genomic sequence of this variant / allele + genomic context; We use this sequence to find the variant of interest and quantify its                                   frequency. We typically use the variant and 3-5nt on either side of the variant to uniquely distinguish it within a given amplicon.  
+    MappingSequence    Genomic sequence of this variant / allele + genomic context; We use this sequence to find the 
+                        variant of interest and quantify its frequency. We typically use the variant and 3-5nt on either 
+                        side of the variant to uniquely distinguish it within a given amplicon.  
     RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
 
 
