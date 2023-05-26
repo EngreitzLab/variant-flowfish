@@ -21,7 +21,7 @@ This pipeline is configured to analyze Variant-FlowFISH and other like experimen
 We designed this pipeline to specifically analyze genome editing efficiencies across samples/modalities, compute effect sizes for genetic variants, generate statistics concerning technical noise introduced at various steps in the molecular biological workflow, and to provide data optimized for interpretation and transferrability. Significane scores for variants are computed using 1-sample T-tests and corrected for multiple testing.
 
 
-## Usage
+## Generate Required Input Data Tables
 
 
 
@@ -137,6 +137,9 @@ Required columns:
     RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
 
 
+## Usage
+
+
 ### Step 1: Clone this github repository
 
 [Clone](https://help.github.com/en/articles/cloning-a-repository) this to your local system or server where you want to perform the data analysis.
@@ -150,12 +153,7 @@ Install conda environments using [conda](https://conda.io/projects/conda/en/late
 
 For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
 
-
-
-
-
-
-### Step 7: Configure workflow
+### Step 3: Configure workflow
 
 Copy `example/config.json` to your newly created `config/` folder and edit the fields to point to the right files and define certain variables.
 
@@ -165,7 +163,7 @@ Options to control behavior of the workflow at a high level:
     single_end          Set "true" if the data is single-end as opposed to paired-end reads
     replicate_keycols   Comma-separated list of columns in the sample sheet used mark replicates (see Replicate Keys above)
     experiment_keycols  Comma-separated list of columns in the sample sheet used to mark different experiments (see Experiment Keys above)
-    reps                Total number of replicates (bioreplicates, technical replicates). E.g. 2 bioreps x 4 technical reps = 8 reps 
+    pooled              Set "true" if you are analyzing a pool of variants, "false" if analyzing a single variant
 
 File paths (can specify relative or absolute paths):
 
@@ -175,14 +173,9 @@ File paths (can specify relative or absolute paths):
     fastqdir            Path to directory containing FASTQ files
     sortparamsdir       Path to directory containing FACS sort parameters files [not required for genotyping_only="true"]
     codedir             Path to the variant-flowfish code (e.g. "variant-flowfish/")
-
-Other parameters:
-
-    crispresso_min_average_read_quality     Parameter passed to CRISPResso2 regarding minimum read quality score (e.g., 20)
-    crispresso_min_single_bp_quality        Parameter passed to CRISPResso2 regarding minimum single bp quality score (e.g., 0)
     
     
-### Step 8: Execute workflow
+### Step 4: Execute workflow
 
 Activate the conda environment:
 
@@ -212,7 +205,6 @@ For more about cluster configuration using snakemake, see [here](https://www.sic
 
 
 ## Outputs
-
 
 
 
