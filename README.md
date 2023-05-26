@@ -15,13 +15,13 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 
 ## Description
 
-To do
+This pipeline is configured to analyze Variant-FlowFISH and other like experiments. We designed this pipeline to compute effect sizes for genetic variants, generate analyses concerning technical noise introduced at various steps in the pipeline, and to provide data optimized for interpretation and transferrability.
 
 ## Usage
 
 ### Step 1: Clone this github repository
 
-[Clone](https://help.github.com/en/articles/cloning-a-repository) this to your local system, into the place where you want to perform the data analysis.
+[Clone](https://help.github.com/en/articles/cloning-a-repository) this to your local system or server where you want to perform the data analysis.
 
 ### Step 2: Install conda environment
 
