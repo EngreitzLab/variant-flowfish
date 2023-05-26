@@ -153,7 +153,8 @@ Copy `example/config.json` to your newly created `config/` folder and edit the f
 
 Options to control behavior of the workflow at a high level:
 
-    genotyping_only     Set "true" to mark the workflow to process up to the point of aligning and quantifying variants, without attempting to calculate effect                              sizes via the maximum likelihood estimator
+    genotyping_only     Set "true" to mark the workflow to process up to the point of aligning and quantifying variants, without 
+                         attempting to calculate effect sizes via the maximum likelihood estimator
     single_end          Set "true" if the data is single-end as opposed to paired-end reads
     replicate_keycols   Comma-separated list of columns in the sample sheet used mark replicates (see Replicate Keys above)
     experiment_keycols  Comma-separated list of columns in the sample sheet used to mark different experiments (see Experiment Keys above)
