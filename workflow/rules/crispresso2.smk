@@ -83,7 +83,7 @@ rule run_crispresso_aggregate:
 			. $HOME/.bashrc 
 			conda activate crispresso2_v2.2.6
 			cd results/crispresso/
-			CRISPRessoAggregate --name Aggregate --prefix ./CRISPResso_on_ || true'
+			CRISPRessoAggregate --name Aggregate --suppress_plots --prefix ./CRISPResso_on_ || true'
 		"""
 
 
