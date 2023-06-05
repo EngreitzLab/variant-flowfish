@@ -269,9 +269,9 @@ def all_input(wildcards):
 		wanted_input.append('results/summary/volcanoEffects.pdf')
 
 		## PCR and FF replicate frequency and effect correlation plots
-		wanted_input.extend(["results/summary/BioReplicateCorrelations.pdf", \
-						"results/summary/FFReplicateCorrelations.pdf", "results/summary/PCRReplicateCorrelations.pdf", \
-						"results/summary/BioReplicateExperimentCorrelations.pdf", "results/summary/FFReplicateExperimentCorrelations.pdf"])
+		wanted_input.extend(["results/summary/correlation_plots/BioReplicatePCRCorrelations.pdf", \
+						"results/summary/correlation_plots/BioReplicatePCRCorrelations.pdf", "results/summary/correlation_plots/PCRReplicateCorrelations.pdf", \
+						"results/summary/correlation_plots/BioReplicateCorrelations.pdf", "results/summary/correlation_plots/FFReplicateCorrelations.pdf"])
 
 	return wanted_input
 

@@ -84,20 +84,20 @@ rule plot_PCR_correlations:
 	input:
 		pcr_replicates = samplesheet['ExperimentIDPCRRep_BinCounts'].str.rstrip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
 	output:
-		biorep_correlation_plots = "results/summary/BioReplicateCorrelations.pdf",
-		ffrep_correlation_plots = "results/summary/FFReplicateCorrelations.pdf",
-		pcr_correlation_plots = "results/summary/PCRReplicateCorrelations.pdf"
+		biorep_correlation_plots = "results/summary/correlation_plots/BioReplicatePCRCorrelations.pdf",
+		ffrep_correlation_plots = "results/summary/correlation_plots/FFReplicatePCRCorrelations.pdf",
+		pcr_correlation_plots = "results/summary/correlation_plots/PCRReplicateCorrelations.pdf"
 	run:
-		plot_correlations(input.pcr_replicates, output.biorep_correlation_plots, output.ffrep_correlation_plots, output.pcr_correlation_plots)
+		plot_pcr_correlations(input.pcr_replicates, output.biorep_correlation_plots, output.ffrep_correlation_plots, output.pcr_correlation_plots)
 
 rule plot_experiment_correlations:
 	input:
 		pcr_replicates = samplesheet['ExperimentIDPCRRep_BinCounts'].str.rstrip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
 	output:
-		biorep_correlation_plots = "results/summary/BioReplicateExperimentCorrelations.pdf",
-		ffrep_correlation_plots = "results/summary/FFReplicateExperimentCorrelations.pdf",
+		biorep_correlation_plots = "results/summary/correlation_plots/BioReplicateCorrelations.pdf",
+		ffrep_correlation_plots = "results/summary/correlation_plots/FFReplicateCorrelations.pdf",
 	run:
-		plot_correlations_experiment(input.pcr_replicates, output.biorep_correlation_plots, output.ffrep_correlation_plots)
+		plot_pcr_correlations_averaged(input.pcr_replicates, output.biorep_correlation_plots, output.ffrep_correlation_plots)
 
 # Reference error plots
 rule plot_reference_mismatches:
