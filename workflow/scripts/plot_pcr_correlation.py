@@ -54,17 +54,22 @@ def plot_correlations_between_reps_dense(effect_table_1, effect_table_2, title, 
     plt.savefig(pdf, format='pdf') 
     plt.close()
 
-def plot_correlations_between_reps_effects(effect_table_1, effect_table_2, title, pdf):
+def plot_correlations_between_reps_effects(effect_table_1, effect_table_2, title, pdf):  
+    both_df = effect_table_1.merge(effect_table_2, on=['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele'])
+
+    both_df['effect_size_x'] = (both_df['effect_size_x']-1)*100 # using % change
+    both_df['effect_size_y'] = (both_df['effect_size_y']-1)*100
+
+    with pd.option_context('mode.use_inf_as_na', True):
+        both_df.dropna(inplace=True)
+    
     plt.figure(figsize=(6,6))
     plt.axline((0, 0), (1, 1), linewidth=1, color='k') # x=y line
-    effect_table_1 = effect_table_1[(effect_table_1['sum1'] > 1000)] 
-    effect_table_2 = effect_table_2[(effect_table_2['sum1'] > 1000)] 
-    freq_df = pd.DataFrame([(effect_table_1['effect_size'].reset_index(drop=True)-1)*100, (effect_table_2['effect_size'].reset_index(drop=True)-1)*100]).T
-    freq_df.columns = ['PCRRep1', 'PCRRep2']
-    with pd.option_context('mode.use_inf_as_na', True):
-        freq_df.dropna(inplace=True)
-    plt.scatter(freq_df['PCRRep1'], freq_df['PCRRep2'])        
-    pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(freq_df['PCRRep1'], freq_df['PCRRep2'])[0])#  % b
+
+    both_df = both_df[(both_df['sum1_x'] > 1000) & (both_df['sum1_y'] > 1000)] 
+
+    plt.scatter(both_df['effect_size_x'], both_df['effect_size_y'])     
+    pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(both_df['effect_size_x'], both_df['effect_size_y'])[0])
     plt.xlim([-100, 100])
     plt.ylim([-100, 100])
     plt.xlabel('PCR Replicate 1 Effect Size (%)')
@@ -76,14 +81,9 @@ def plot_correlations_between_reps_effects(effect_table_1, effect_table_2, title
 
     plt.figure(figsize=(6,6))
     plt.axline((0, 0), (1, 1), linewidth=1, color='k') # x=y line
-    effect_table_1 = effect_table_1[(effect_table_1['freq'] > 0.0001)] 
-    effect_table_2 = effect_table_2[(effect_table_2['freq'] > 0.0001)] 
-    freq_df = pd.DataFrame([(effect_table_1['effect_size'].reset_index(drop=True)-1)*100, (effect_table_2['effect_size'].reset_index(drop=True)-1)*100]).T
-    freq_df.columns = ['PCRRep1', 'PCRRep2']
-    with pd.option_context('mode.use_inf_as_na', True):
-        freq_df.dropna(inplace=True)
-    plt.scatter(freq_df['PCRRep1'], freq_df['PCRRep2'])       
-    pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(freq_df['PCRRep1'], freq_df['PCRRep2'])[0])#  % b
+    both_df = both_df[(both_df['freq_x'] > 0.0001) & (both_df['freq_y'] > 0.0001)] 
+    plt.scatter(both_df['effect_size_x'], both_df['effect_size_y'])       
+    pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(both_df['effect_size_x'], both_df['effect_size_y'])[0])
     plt.xlim([-100, 100])
     plt.ylim([-100, 100])
     plt.xlabel('Replicate 1 Effect Size (%)')
@@ -95,14 +95,9 @@ def plot_correlations_between_reps_effects(effect_table_1, effect_table_2, title
 
     plt.figure(figsize=(6,6))
     plt.axline((0, 0), (1, 1), linewidth=1, color='k') # x=y line
-    effect_table_1 = effect_table_1[(effect_table_1['freq'] > 0.001)] 
-    effect_table_2 = effect_table_2[(effect_table_2['freq'] > 0.001)] 
-    freq_df = pd.DataFrame([(effect_table_1['effect_size'].reset_index(drop=True)-1)*100, (effect_table_2['effect_size'].reset_index(drop=True)-1)*100]).T
-    freq_df.columns = ['PCRRep1', 'PCRRep2']
-    with pd.option_context('mode.use_inf_as_na', True):
-        freq_df.dropna(inplace=True)
-    plt.scatter(freq_df['PCRRep1'], freq_df['PCRRep2'])       
-    pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(freq_df['PCRRep1'], freq_df['PCRRep2'])[0])#  % b
+    both_df = both_df[(both_df['freq_x'] > 0.001) & (both_df['freq_y'] > 0.001)]
+    plt.scatter(both_df['effect_size_x'], both_df['effect_size_y'])       
+    pearson_annotation = 'Pearson r = {:.3f}\n'.format(stats.pearsonr(both_df['effect_size_x'], both_df['effect_size_y'])[0])
     plt.xlim([-100, 100])
     plt.ylim([-100, 100])
     plt.xlabel('Replicate 1 Effect Size (%)')
@@ -195,7 +190,7 @@ def plot_pcr_correlations_averaged(pcr_replicates, biorep_output_file, ffrep_out
             br2_effects_mean = br2_effects.groupby(['AmpliconID', 'MappingSequence', 'VariantID', 'RefAllele']).mean().reset_index()
             br1_effects_mean = br1_effects_mean[br1_effects_mean['RefAllele'].astype('str') != 'True']
             br2_effects_mean = br2_effects_mean[br2_effects_mean['RefAllele'].astype('str') != 'True']
-            title = "BioReplicate %s, %s\nAveraged PCR Frequency Correlation" % (pair[0], pair[1])# pair[0].split('.')[0].split('/')[-1] + ', ' + pair[1].split('.')[0].split('/')[-1] + '\nCorrelation'
+            title = "BioReplicate %s, %s\nAveraged PCR Frequency Correlation" % (pair[0], pair[1])
             plot_correlations_between_reps(br1_effects_mean, br2_effects_mean, title, pdf)
             plot_correlations_between_reps_dense(br1_effects_mean, br2_effects_mean, title, pdf2)
             plot_correlations_between_reps_effects(br1_effects_mean, br2_effects_mean, title, pdf3)
