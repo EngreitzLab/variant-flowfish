@@ -15,30 +15,22 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 
 ## Description
 
-To do
+
+This pipeline is configured to analyze Variant-FlowFISH and other like experiments with the capacity to analyze hundreds of variants in a single analysis. It can also be set solely to assess genome editing rates using [CRISPResso2](https://github.com/pinellolab/CRISPResso2). 
+
+We designed this pipeline to specifically analyze genome editing efficiencies across samples/modalities, compute effect sizes for genetic variants, generate statistics concerning technical noise introduced at various steps in the molecular biological workflow, and to provide data optimized for interpretation and transferrability. Significane scores for variants are computed using 1-sample T-tests and corrected for multiple testing.
+
 
 ## Usage
 
-### Step 1: Clone this github repository
+There are several required inputs prior to installing and executing this pipeline. For ease of use, generate a subdirectory 'config/' in the directory you are performing the data analysis. Generate and place the following documents inside it.
 
-[Clone](https://help.github.com/en/articles/cloning-a-repository) this to your local system, into the place where you want to perform the data analysis.
-
-### Step 2: Install conda environment
-
-Install conda environments using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
-
-    conda env create --file envs/EngreitzLab.yml
-    conda env create --file envs/crispresso2_v2.2.6.yml
-
-For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
-
-### Step 3: Set up the Sample Sheet
-The files created in steps 3, 4, 6, 7 should be saved in a separate `config/` folder.
-
-(Updated 11/12/21 JME)
+### Input 1: Sample Sheet
 
 The Sample Sheet lists all of the sequencing libraries that will be included in the analysis, and describes their relationships and groupings.
 Example: https://drive.google.com/file/d/15dn5mh1MdgDYSD-yzLuXAkrItvfvt0k9/view?usp=sharing
+
+Note that for FlowFISH analyses, if you provide non-sorted "Neg" samples, you will need to assign them pseudo experimental key values (AmpliconID, BioRep, Guides, etc.) from your other samples to avoid the pipeline failing to find a separate non-existant sortParams file for them.
 
 Required columns:
     
@@ -52,8 +44,7 @@ Required columns:
     Bin               Name of a FACS-sorted bin (e.g.: A B C D E F). 'All' for FlowFISH-input edited samples. 'Neg' or blank if not applicable
     PCRRep            PCR replicate number or name
     ControlForAmplicon TRUE or FALSE. Set to TRUE for unedited samples that will be used to evaluate background sequencing/PCR error rate
-    VFFSpikeIn        [required, but not currently used] Integer from 0 to 100 representing the percentage of unedited cells spiked into this sample
-
+    
     [Experiment Keys] Provide any number of additional columns (e.g., CellLine, Guides, TestProbe) that distinguish different samples.
                         Key columns are defined as such by the 'experiment_keycols' parameter in the config file.
                         These columns will be combined to form a unique experiment key.
@@ -63,7 +54,7 @@ Required columns:
                         Replicate columns are defined as such by the 'replicate_keycols' parameter in the config file.
                         These columns will be combined to form a unique replicate id.
                         PCR replicate counts for each unique replicate key will be summed at the level of this replicate ID.
-                        MLE estimates and VFF spike-in calculations will also be performed at the level of this replicate ID, 
+                        MLE estimates will also be performed at the level of this replicate ID, 
                         then compared according to grouping of the experiment key.
                         
 Optional columns:
@@ -72,7 +63,6 @@ Optional columns:
     fastqR2           If provided in the Sample Sheet, overwrites the default value (config['fastqdir']/{SampleID}_*_R2_*fastq.gz)
     
     sortParamsFile    If provided in the Sample Sheet, overwrites the default value (config['sortparamsdir']/{Batch}_{SampleNumber}.csv)
-    EditFromGuide     [currently required, but soon not to be]: Distance of edit from guide spacer, used to control where CRISPResso looks for edits
 
     Parameters that overwrite values in the Amplicon Table below:
     AmpliconSeq       Sequence of the genomic amplicon to align to. If provided in the Sample Sheet, overwrites value in the Amplicon Table for this sample.
@@ -83,12 +73,11 @@ Optional columns:
     MappingSequence   Genomic sequence of this variant / allele + genomic context; must match the output of CRISPResso2.    
     RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
 
-    Other columns can be present but are ignored.
+    Other columns can be present for storing meta information but are ignored.
 
 
-### Step 4: Set up the Amplicon Table
+### Input 2: Amplicon Table
 
-(Updated 12/6/21 JME)
 
 The Amplicon Table lists details for the genomic PCR amplicons used in the experiment.  It is optional; the information could be instead provided in the Sample Sheet.
 
@@ -104,46 +93,78 @@ Required columns:
     QuantificationWindowEnd     Zero-based coordinate [) with respect to the start of the amplicon for quantifying reference allele 
     ReferenceErrorThreshold     Integer indicating how many errors (mismatch/insertion/deletion) are tolerable when inferring the reference allele.
 
-To do:  Add additional parameters here to control the crispresso2 quantification window.
+Note: The quantification window should span the length of the amplicon you wish to assay and interpret background PCR/sequencing error ie. the region you wish to edit.
 
-
-### Step 5: Provide sort params files
+### Input 3: Sorting parameters files
 
 This file lists statistics and values derived from the FACS sort for each sample. The file names need to be named {Batch}_{SampleNumber}.csv and located in the config['sortParams'] directory, or alternatively the filename listed explicitly in the Sample Sheet in a column called 'sortParamsFile'
 
 Required columns:
 
-    Bin                Name of the sorted bin, needs to match "Bin" column in the Sample Sheet
+    Name               Gate name on the cytomoter (may differ than 'Barcode' you choose to label with)
+    Barcode            Name of the sorted bin, needs to match "Bin" column in the Sample Sheet
     Count              Number of cells sorted into this bin
     Mean               Mean fluorescence values of cells sorted into this bin     
     Min                Minimum fluorescence value sorted into this bin (e.g., edge of the gate)
     Max                Maximum fluorescence value sorted into this bin (e.g., edge of the gate)
 
+Required Data:
+    
+    Total Sorted Population:  The sorted bins should be subpopulations of the same larger population that encompasses 
+                                all the bins you sorted. For estimation purposes, we need information on the total 
+                                number of cells in this population (ie. the number of cells you captured in the sort 
+                                and the cells you did not sort if applicable). Label the 'Barcode' column for this 
+                                population 'Total.'
 
-### Step 6: Set up the Variant Table (optional)
 
-The Variant Table lists details for specific variants/alleles in the experiment.  It is optional, to create condensed
-tables in which certain variants + alleles are named for plotting and downstream analysis.
+### Input 4: Variant Table
+
+The Variant Table lists details for specific variants/alleles in the experiment. 
 
 Required columns:
 
-    AmpliconID        Arbitrary name of the amplicon
-    VariantID         Unique readable name of the variant / allele
-    MappingSequence   Genomic sequence of this variant / allele + genomic context; must match the output of CRISPResso2.    
+    AmpliconID         Arbitrary name of the amplicon that matches AmpliconID in the provided amplicon table
+    VariantID          Unique readable name of the variant / allele
+    MappingSequence    Genomic sequence of this variant / allele + genomic context; We use this sequence to find the 
+                        variant of interest and quantify its frequency. We typically use the variant and 3-5nt on either 
+                        side of the variant to uniquely distinguish it within a given amplicon.  
     RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
 
 
-### Step 7: Configure workflow
+## Workflow
+
+
+### Step 1: Clone this github repository
+
+[Clone](https://help.github.com/en/articles/cloning-a-repository) this to your local system or server where you want to perform the data analysis.
+
+### Step 2: Install conda environment
+
+Install conda environments using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
+
+    conda env create --file envs/EngreitzLab.yml
+    conda env create --file envs/crispresso2_v2.2.6.yml
+
+For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
+
+### Step 3: Configure workflow
 
 Copy `example/config.json` to your newly created `config/` folder and edit the fields to point to the right files and define certain variables.
 
 Options to control behavior of the workflow at a high level:
 
-    genotyping_only     Set "true" to mark the workflow to process up to the point of aligning and quantifying variants, without attempting to calculate effect sizes via the maximum likelihood estimator
+    genotyping_only     Set "true" to mark the workflow to process up to the point of aligning and quantifying variants, without 
+                         attempting to calculate effect sizes via the maximum likelihood estimator
     single_end          Set "true" if the data is single-end as opposed to paired-end reads
     replicate_keycols   Comma-separated list of columns in the sample sheet used mark replicates (see Replicate Keys above)
     experiment_keycols  Comma-separated list of columns in the sample sheet used to mark different experiments (see Experiment Keys above)
-    reps                Total number of replicates (bioreplicates, technical replicates). E.g. 2 bioreps x 4 technical reps = 8 reps 
+    pooled              Set "true" if you are analyzing a pool of variants, "false" if analyzing a single variant
+    
+    ff_tss_guide_kd     This value is used in conjunction with the parameter below to generate a scaling factor by which to scale the
+                         data by. We assume FlowFISH probesets have non-specific binding, creating a background level of fluorescence in
+                         a given cell. Perform a total KD experiment of the gene of interest and measure the effects in both qPCR and FF assays. 
+                         The proportional difference between the two is the scaling factor we apply to the estimated effects. Set to 1 if unknown.
+    qpcr_tss_guide_kd   See above. Set to 1 if unknown.
 
 File paths (can specify relative or absolute paths):
 
@@ -153,14 +174,9 @@ File paths (can specify relative or absolute paths):
     fastqdir            Path to directory containing FASTQ files
     sortparamsdir       Path to directory containing FACS sort parameters files [not required for genotyping_only="true"]
     codedir             Path to the variant-flowfish code (e.g. "variant-flowfish/")
-
-Other parameters:
-
-    crispresso_min_average_read_quality     Parameter passed to CRISPResso2 regarding minimum read quality score (e.g., 20)
-    crispresso_min_single_bp_quality        Parameter passed to CRISPResso2 regarding minimum single bp quality score (e.g., 0)
     
     
-### Step 8: Execute workflow
+### Step 4: Execute workflow
 
 Activate the conda environment:
 
@@ -186,3 +202,54 @@ snakemake \
 `
 
 For more about cluster configuration using snakemake, see [here](https://www.sichong.site/2020/02/25/snakemake-and-slurm-how-to-manage-workflow-with-resource-constraint-on-hpc/)
+
+
+
+## Outputs
+
+
+### Structure
+
+The results generated by this workflow are partitioned in such a way to distinguish their individual contributions to the workflow. They are all housed under the aptly named '/results/' directory:
+
+    Summary/                        Contains summary analyses for every experiment performed. This will be the most useful folder 
+                                      and contains subdirectories pertaining to specific outputs to analyze.
+                                
+    ByPCRRep/                       Contains variant count information, mle logs, mle outputs, and PDFs quantifying effects within a given
+                                      PCR replicate.
+        
+    ByExperimentRepCorFilter/       Contains the same as above but the analysis is performed where PCR reps are aggregated by individual 
+                                      FlowFISH samples. This data also imposes a PCR correlation filter that is hard-coded. We drop samples
+                                      that don't pass this threshold correlation (r = 0.8)
+    ByExperimentRep/                See above minus the correlation filter
+        
+    aligned/                        Bam files for every sample. Includes unaligned fastq files for troubleshooting
+    crispresso/                     CRISPResso2 output files
+    VariantCounts/                  Count files for both reference alleles and all the variants analyzed for every fastq.
+        
+
+
+### Summary Subdirectories 
+
+Within '/summary/', contain each analyses grouped by relevancy in a specific directory. Effect size analyses here are generated from folder 'ByExperimentRepCor/':
+
+    Editing/                This folder contains information relevant for quantifying allele/variant frequencies. These data 
+                              include raw frequencies, plots for visualizing WT allele frequency, and the background error rates 
+                              from PCR and sequencing. The mean error rate for a given amplicon from your negative control samples or
+                              unedited samples should be input into the Amplicon Table column "ReferenceErrorThreshold" to ensure
+                              the WT allele is accurately quantified (failing to do so may cause inaccuracies in effect size estimations)
+        
+    Correlations/           Contains variant frequency correlation analyses on all the replicates and biological replicates (currently 
+                             undergoing modifications). Includes quantifications of variance in frequencies at each replicate level.
+                                
+    Stats/                  Contains effect sizes per variant, various plots displaying this information, correlation of effect sizes,
+                              variance in effect sizes.
+                            
+    Sequencing/             Contains read coverage and alignment count information.
+
+        
+
+
+
+
+

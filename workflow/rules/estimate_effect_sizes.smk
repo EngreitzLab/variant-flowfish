@@ -89,13 +89,13 @@ def aggregate_allelic_effect_tables(samplesheet, outfile, wildcards):
             allele_tbl[wildcards.ExperimentID] = expt
             id_split = allele_tbl[wildcards.ExperimentID].str.split('-', expand=False)
             if wildcards.ExperimentID == "ExperimentIDReplicates": # byExperimentRep
-                allele_tbl['BioRep'] = id_split.str[-3]
-                allele_tbl['Spike-In'] = id_split.str[-2]
+                allele_tbl['BioRep'] = id_split.str[-2]
+                #allele_tbl['Spike-In'] = id_split.str[-2]
                 allele_tbl['FFRep'] = id_split.str[-1]
             else: #byPCRRep
                 assert wildcards.ExperimentID == "ExperimentIDPCRRep"
-                allele_tbl['BioRep'] = id_split.str[-4]
-                allele_tbl['Spike-In'] = id_split.str[-3]
+                allele_tbl['BioRep'] = id_split.str[-3]
+                #allele_tbl['Spike-In'] = id_split.str[-3]
                 allele_tbl['FFRep'] = id_split.str[-2]
                 allele_tbl['PCRRep'] = id_split.str[-1]
             allele_tbl['Location'] = allele_tbl['VariantID'].str.split(':').str[:3].str.join(':')

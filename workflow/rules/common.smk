@@ -58,12 +58,8 @@ def add_experiment_names(samplesheet):
 		print("Warning: ExperimentID columns found and will be overwritten in the sample sheet")
 
 	## Experiments at the level of PCR replicates
-	if genotyping_only:
-		cols_ExperimentIDPCRRep = keyCols + repCols + ['PCRRep']
-		cols_ExperimentIDReplicates = keyCols + repCols
-	else:
-		cols_ExperimentIDPCRRep = keyCols + ['VFFSpikeIn'] + repCols + ['PCRRep']
-		cols_ExperimentIDReplicates = keyCols + ['VFFSpikeIn'] + repCols
+	cols_ExperimentIDPCRRep = keyCols + repCols + ['PCRRep']
+	cols_ExperimentIDReplicates = keyCols + repCols
 
 	s = samplesheet[cols_ExperimentIDPCRRep].drop_duplicates()
 	s['ExperimentIDPCRRep'] = ['-'.join([str(v) for v in list(row.values)]) for index,row in s.iterrows()]
@@ -163,10 +159,7 @@ def load_variant_Table(variant_table, requiredCols):
 
 # global variables
 genotyping_only = ('genotyping_only' in config) and (config['genotyping_only'].lower() == 'true')
-if genotyping_only:
-	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon']
-else:
-	requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon','VFFSpikeIn']
+requiredCols = ['SampleID','AmpliconID','Bin','PCRRep','ControlForAmplicon']
 
 single_end = ('single_end' in config) and (config['single_end'].lower() == 'true')
 
@@ -177,7 +170,6 @@ repCols = config['replicate_keycols'].split(',')
 codedir = config['codedir']
 fastqdir = config['fastqdir']
 sortparamsdir = config['sortparamsdir'] if not genotyping_only else None
-#n_reps = 2 # config['n_reps']
 
 samplesheet = load_sample_sheet(config['sample_sheet'], config['amplicon_info'])
 samplesheet.to_csv("SampleList.snakemake.tsv", index=False, header=True, sep='\t')
@@ -269,7 +261,7 @@ def all_input(wildcards):
 		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz')
 		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.pdf')
 
-		## Output files for power plots and variant effects
+		# Output files for power plots and variant effects
 
 		wanted_input.append('results/summary/AllelicEffectsStats.tsv')
 		wanted_input.append('results/summary/effectCorrelations.pdf')
@@ -277,18 +269,9 @@ def all_input(wildcards):
 		wanted_input.append('results/summary/volcanoEffects.pdf')
 
 		## PCR and FF replicate frequency and effect correlation plots
-		wanted_input.extend(["results/summary/BioReplicateCorrelations.pdf", \
-						"results/summary/FFReplicateCorrelations.pdf", "results/summary/PCRReplicateCorrelations.pdf", \
-						"results/summary/BioReplicateExperimentCorrelations.pdf", "results/summary/FFReplicateExperimentCorrelations.pdf"])
-
-		## Output files for replicate experiments (after merging spike-in data)
-		wanted_input.extend([])
-
-		## Output files for experiments (with replicates merged, before merging spike-in data)
-		wanted_input.extend([])
-
-		## Output files for experiments (with replicates merged, after merging spike-in data)
-		wanted_input.extend([])
+		wanted_input.extend(["results/summary/correlation_plots/BioReplicatePCRCorrelations.pdf", \
+						"results/summary/correlation_plots/BioReplicatePCRCorrelations.pdf", "results/summary/correlation_plots/PCRReplicateCorrelations.pdf", \
+						"results/summary/correlation_plots/BioReplicateCorrelations.pdf", "results/summary/correlation_plots/FFReplicateCorrelations.pdf"])
 
 	return wanted_input
 
