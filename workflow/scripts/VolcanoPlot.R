@@ -40,6 +40,14 @@ VariantEffects <- read.delim(file = opt$variantStatsFile, sep = '\t')
 allEffects <- read.delim(file = opt$allEffects, sep = '\t')
 VariantEffects$AmpliconID <- allEffects$AmpliconID[match(VariantEffects[,1], allEffects$VariantID)]
 
+
+## Local
+# setwd('/Volumes/groups/engreitz/Projects/VariantEditing/FF/20230531-S019_P151_PPIF_enh_VFF/results/summary/')
+# VariantEffects <- read.delim('AllelicEffectsStats.tsv', sep = '\t')
+# allEffects <- read.delim(file = 'AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz', sep = '\t')
+# VariantEffects$AmpliconID <- allEffects$AmpliconID[match(VariantEffects[,1], allEffects$VariantID)]
+
+
 ## Add 95% confidence interval and prepare for graphing
 ## Adding confidence intervals with specified number of reps
 VariantEffects$Percent_Effect <- (VariantEffects$Mean_Effect - 1)*100
@@ -109,7 +117,23 @@ p3 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=MinCells, col=Expression_Ef
   ggtitle(label = "Estimated target number of cells and the observed number of cells per variant")
   
 ## Plotting SD vs Effect size
-p4 <- ggplot(VariantEffects, aes(x=abs(Percent_Effect), y=Percent_SD)) + 
+
+VariantEffects$Proportion_SD <- VariantEffects$Percent_SD/VariantEffects$Percent_Effect
+SigVars <- subset(VariantEffects, BH.p.value <0.05)
+p4 <- ggplot(VariantEffects, aes(x=abs(Percent_Effect), y=abs(SD))) + 
+  geom_point(aes(col=Expression_Effect)) +
+  theme_minimal() +
+  stat_cor() +
+  #ylim(0, 10) + 
+  #xlim(0, 20) +
+  # geom_smooth(method = 'lm', se = FALSE, color = 'red', fullrange = TRUE) +
+  labs(col = "Effect") +
+  scale_color_manual(values = mycolors) +
+  xlab("Percent Effect on Gene Expression") +
+  ylab("SD")
+
+
+p10 <- ggplot(SigVars, aes(x=abs(Percent_Effect), y=abs(SD))) + 
   geom_point(aes(col=Expression_Effect)) +
   theme_minimal() +
   stat_cor() +
@@ -117,10 +141,10 @@ p4 <- ggplot(VariantEffects, aes(x=abs(Percent_Effect), y=Percent_SD)) +
   labs(col = "Effect") +
   scale_color_manual(values = mycolors) +
   xlab("Percent Effect on Gene Expression") +
-  ylab("Standard Devation of Mean effect (in % effect)")
+  ylab("SD")
 
 ## SD vs cell number
-p5 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Percent_SD)) + 
+p5 <- ggplot(SigVars, aes(x=freq, y=abs(SD))) + 
   geom_point(aes(col=Expression_Effect)) +
   theme_minimal() +
   scale_x_continuous(trans='log10') +
@@ -128,8 +152,20 @@ p5 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Percent_SD)) +
   geom_smooth(method = 'lm', se = FALSE, color = 'red', fullrange = TRUE) +
   labs(col = "Effect") +
   scale_color_manual(values = mycolors) +
-  xlab("Cells per Replicate per Variant") +
-  ylab("Standard Devation of Mean effect (in % effect)")
+  xlab("Variant Frequency") +
+  ylab("SD")
+
+p11 <- ggplot(VariantEffects, aes(x=freq, y=abs(SD))) + 
+  geom_point(aes(col=Expression_Effect)) +
+  theme_minimal() +
+  scale_x_continuous(trans='log10') +
+  stat_cor() +
+  geom_smooth(method = 'lm', se = FALSE, color = 'red', fullrange = TRUE) +
+  labs(col = "Effect") +
+  scale_color_manual(values = mycolors) +
+  xlab("Variant Frequency") +
+  ylab("SD")
+
 
 ## Power vs effect_size*number of cells
 p6 <- ggplot(VariantEffects, aes(x=mean.cellCount*abs(Percent_Effect), y=Power)) + 
@@ -181,19 +217,13 @@ p9 <- ggplot(VariantEffects, aes(x=mean.cellCount, y=Power)) +
   ylab("Power")
 
 
-
-
-x <- 0.05/nrow(VariantEffects)
-test <- pwr.t.test(d= 0.8, sig.level = x, power = 0.8, type = 'one.sample')
-p10 <- plot(test)
-
-
 ## Histogram of Variant Counts
-p11 <- ggplot(VariantEffects, aes(x = mean.cellCount)) + 
-  geom_histogram() + 
-  scale_x_log10() + 
-  theme_minimal() +
-  xlab("Cells with Variant per FFRep")
+# p11 <- ggplot(VariantEffects, aes(x = mean.cellCount)) + 
+#   geom_histogram() + 
+#   scale_x_log10() + 
+#   theme_minimal() +
+#   xlab("Cells with Variant per FFRep")
+
 
 print(p4)
 print(p5)
@@ -206,6 +236,8 @@ print(p9)
 print(p10)
 print(p11)
 invisible(dev.off())
+
+
 
 
 

@@ -261,7 +261,7 @@ def all_input(wildcards):
 		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz')
 		wanted_input.append('results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.pdf')
 
-		## Output files for power plots and variant effects
+		# Output files for power plots and variant effects
 
 		wanted_input.append('results/summary/AllelicEffectsStats.tsv')
 		wanted_input.append('results/summary/effectCorrelations.pdf')
