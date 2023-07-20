@@ -8,7 +8,7 @@ rule compute_significance_and_power:
         flat='results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
     output:
         stats='results/summary/stats/AllelicEffectsStats.tsv',
-        volcano='results/summary/stats/Volcano.pdf'
+        volcano='results/summary/stats/Volcano.pdf',
         var='results/summary/stats/modeling.pdf'
     params:
         codedir=config['codedir']
