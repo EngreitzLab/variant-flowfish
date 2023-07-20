@@ -112,23 +112,23 @@ rule plot_reference_mismatches:
 
 
 
-rule plot_variant_stats:
-	input:
-		stats='results/summary/AllelicEffectsStats.tsv',
-		allEffects='results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
-	output: 
-  		power='results/summary/powerPlots.pdf',
-  		volcano='results/summary/volcanoEffects.pdf'
-	params:
-  		codedir=config['codedir'],
-  		reps=config['reps']
-	shell:
-			"""
-			bash -c '
-				. $HOME/.bashrc 
-				conda activate vff_R
-				Rscript {params.codedir}/workflow/scripts/VolcanoPlot.R --variantStatsFile {input.stats} --allEffects {input.allEffects} --powerPlots {output.power} --volcanoPlots {output.volcano} --rep {params.reps}'
-			"""
+# rule plot_variant_stats:
+# 	input:
+# 		stats='results/summary/AllelicEffectsStats.tsv',
+# 		allEffects='results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
+# 	output: 
+#   		power='results/summary/powerPlots.pdf',
+#   		volcano='results/summary/volcanoEffects.pdf'
+# 	params:
+#   		codedir=config['codedir'],
+#   		reps=config['reps']
+# 	shell:
+# 			"""
+# 			bash -c '
+# 				. $HOME/.bashrc 
+# 				conda activate vff_R
+# 				Rscript {params.codedir}/workflow/scripts/VolcanoPlot.R --variantStatsFile {input.stats} --allEffects {input.allEffects} --powerPlots {output.power} --volcanoPlots {output.volcano} --rep {params.reps}'
+# 			"""
 
 
 

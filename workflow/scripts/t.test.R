@@ -18,6 +18,8 @@ option.list <- list(
   make_option("--allelicEffectFile", type="character", help="Allelic effect flat file"),
   make_option("--outfile", type="character", help="Output stats table"),
   make_option("--effectColumn", type="character", default="effect_size"),
+  make_option("--varPlots", type="character", help = "Name of variance modeling/power calculation plots"),
+  make_option("--volcanoPlots", type="character", help="Output PDF file with volcano plots")
   # make_option("--repPlots", type="character", help="Output file name for replicate plots")
 )
 opt <- parse_args(OptionParser(option_list=option.list))
@@ -35,12 +37,12 @@ stopifnot(opt$effectColumn %in% colnames(mle))
 mle$Percent_Effect <- (mle$effect_size - 1)*100
 
 ## Local run
-# setwd('/Volumes/groups/engreitz/Projects/VariantEditing/FF/20230531-S019_P151_PPIF_enh_VFF/results/summary/')
+# setwd("/Users/meat/Downloads/")
 # mle <- read.delim("AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz", check.names = FALSE, stringsAsFactors =F)
 # mle$Percent_Effect <- (mle$effect_size - 1)*100
 
-## Drop references and variants without observations below freq 0.000
-mle <- subset(mle, effect_size != 1 & logMean != 0 & sum1 > 500)
+## Drop references and variants without observations below freq 0.0001
+mle <- subset(mle, effect_size != 1 & logMean != 0 & freq > 0.0001)
 
 ## Capture the highest observed value to set limits of graphs
 high <- max(abs(mle$Percent_Effect))
@@ -114,14 +116,16 @@ test.p.val <- 0.05/nrow(variantStats)
 for (variant in unique(mle$VariantID)) {
   ## Select variants with at least 500 alleles per rep
   ## Choose the AmpliconID, total number of cells in rep, and the estimated effect size
-  t.data <- mle[(mle$VariantID == variant & mle$sum1 > 500),]
+  t.data <- mle[(mle$VariantID == variant & mle$freq > 0.0001),]
   t.data <- t.data[, c('AmpliconID', 'sum1', 'effect_size', 'freq')]
   ## Initialize values for power code
   ## Calculate statistics
+  reps <- length(t.data$AmpliconID)
   p.value <- 1
   MinReps <- NA
   Power <- NA
   SD <- sd(t.data$effect_size)
+  Variance <- var(t.data$effect_size)
   freq <- mean(t.data$freq)
   Mean_Effect <- mean(t.data$effect_size)
   mean.cellCount <- mean(t.data$sum1)
@@ -150,7 +154,7 @@ for (variant in unique(mle$VariantID)) {
       }
     }
   }
-  variantStats[variant, c('Mean_Effect', 'p.value', 'SD', 'MinReps', 'Power', 'mean.cellCount', 'sd.cellCount', 'freq', 'total.cellCount')] <- c(Mean_Effect, p.value, SD, MinReps, Power, mean.cellCount, sd.cellCount, freq, total.cellCount)
+  variantStats[variant, c('Mean_Effect', 'p.value', 'SD', 'Variance', 'MinReps', 'Power', 'mean.cellCount', 'sd.cellCount', 'freq', 'total.cellCount', 'reps')] <- c(Mean_Effect, p.value, SD, Variance, MinReps, Power, mean.cellCount, sd.cellCount, freq, total.cellCount, reps)
 }
 
 
@@ -164,6 +168,150 @@ save.image(file=paste0(opt$outfile,".RData"))
 
 ## Local
 ## write.table(variantStats, file = "AllelicEffectsStats.tsv", sep='\t', col.names = NA)
+
+################################################################################################
+
+## Modeling variance as a function of variant frequency
+
+
+library(gridExtra)
+variantStats$Percent_Effect <- (variantStats$Mean_Effect - 1)*100
+variantStats <- na.omit(variantStats)
+variantStats$abs_Effect <- abs(variantStats$Percent_Effect)
+variantStats$Percent_Variance <- variantStats$Variance * 100
+
+model <- lm(log(Percent_Variance) ~ log(freq), data = variantStats)
+
+# Generate new data for predictions
+newdata <- data.frame(
+  freq = exp(seq(min(log(variantStats$freq)), max(log(variantStats$freq)), length.out = 100))
+)
+
+# Add predicted log(Percent_Variance) to the newdata
+newdata$predicted_log_variance <- predict(model, newdata = newdata)
+
+# Convert predicted log(Percent_Variance) back to the original scale
+newdata$predicted_Percent_Variance <- exp(newdata$predicted_log_variance)
+
+# Plotting
+mytheme <- theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8))
+
+p10 <- ggplot(variantStats, aes(x = freq, y = Percent_Variance)) + 
+  geom_point() + 
+  geom_line(data = newdata, aes(x = freq, y = predicted_Percent_Variance), color = "red") +
+  labs(title = "Variance vs Frequency") +
+  xlab("Variant Frequency") +
+  ylab("Variance") +
+  xlim(0, 0.02) + 
+  ylim(0, 8)
+p10 <- p10 + mytheme
+p10
+
+## Log Space plotting
+newdata$log_freq = log(newdata$freq)
+
+p11 <- ggplot(variantStats, aes(x = log(freq), y = log(Percent_Variance))) + 
+  geom_point() + 
+  geom_line(data = newdata, aes(x = log_freq, y = predicted_log_variance), color = "red") +
+  labs(title = "Log(Variance) vs Log(Frequency)") +
+  xlab("Log(Variant Frequency)") +
+  ylab("Log(Variance)")
+p11 <- p11 + mytheme
+p11
+
+
+#######################################################################################
+
+## Computing power at various effect sizes as a function of variant frequencies
+
+compute_power <- function(effect_size, n_replicates, freq) {
+  predicted_variance <- predict(model, newdata = data.frame(freq = freq))
+  sd <- sqrt(exp(predicted_variance)) # transforming variance back to original scale
+  power <- power.t.test(n = n_replicates, delta = effect_size, sd = sd, 
+                        sig.level = 0.05, type = "two.sample", alternative = "two.sided")$power
+  return(power)
+}
+
+# Compute power for effect sizes: 8 replicates = number of FFReps
+effect_sizes <- seq(0.1, 0.5, by = 0.05)
+n_replicates <- 8
+freq <- frequencies <- seq(0.001, 0.05, by = 0.001)
+
+# Initialize a data frame to store the results
+power_df <- data.frame()
+
+# Loop over frequencies and effect sizes
+for (f in frequencies) {
+  for (e in effect_sizes) {
+    power <- compute_power(effect_size = e, n_replicates = n_replicates, freq = f)
+    power_df <- rbind(power_df, data.frame(Frequency = f, EffectSize = e, Power = power))
+  }
+}
+
+# Plotting
+p12 <- ggplot(power_df, aes(x = Frequency, y = Power)) +
+  geom_line() +
+  facet_wrap(~EffectSize, scales = "free") +
+  xlab("Frequency") +
+  ylab("Power") +
+  theme_minimal() +
+  ggtitle("Power as a function of Frequency and Effect Size")
+
+p12 <- p12 + mytheme
+p12
+
+
+
+
+pdf(file=opt$varPlots, width=9, height=9)
+p10
+p11
+p12
+invisible(dev.off())
+
+
+## Volcano Plots
+
+## Add 95% confidence interval and prepare for graphing
+## Adding confidence intervals with specified number of reps
+variantStats$Percent_Effect <- (variantStats$Mean_Effect - 1)*100
+variantStats$Percent_SD <- variantStats$SD*100
+variantStats$Percent_CI <- (1.96*(variantStats$SD/sqrt(varianStats$reps)))*100
+variantStats$MinCells <- (variantStats$MinReps * variantStats$mean.cellCount)/variantStats$reps
+
+
+
+## Add color scheme for differential effects of variants
+variantStats$Expression_Effect <- "Insignificant"
+variantStats$Expression_Effect[variantStats$Percent_Effect > 0.0 & variantStats$BH.p.value < 0.05] <- "Activating"
+variantStats$Expression_Effect[variantStats$Percent_Effect < 0.0 & variantStats$BH.p.value < 0.05] <- "Suppressive"
+
+## Volcano Plotting of Variant effects and significance
+pdf(file=opt$volcanoPlots, width=9, height=7)
+mycolors <- c("#00AFBB", "gray", "#E7B800")
+names(mycolors) <- c("Activating", "Insignificant", "Suppressive")
+for (amplicon in unique(variantStats$AmpliconID)) {
+  ampliconEffects <- variantStats[variantStats$AmpliconID == amplicon, ]
+  p13 <- ggplot(data=ampliconEffects, aes(x=Percent_Effect, y=-log10(BH.p.value), col=Expression_Effect)) +
+    geom_point() +
+    geom_errorbarh(aes(xmin=Percent_Effect-Percent_CI, xmax=Percent_Effect+Percent_CI)) +
+    scale_color_manual(values = mycolors) +
+    geom_hline(yintercept=-log10(0.05), col="red") +
+    theme_minimal() +
+    ylab("-Log10 Benjamini-Hochberg p-value") +
+    xlab("% Effect on Gene Expression") +
+    labs(col = "Effect") +
+    ggtitle(label = paste(amplicon, "Variant Effects"))
+}
+p13 <- p13 + mytheme
+p13
+invisible(dev.off())
+
+
+
+
+
+
 
 
 
