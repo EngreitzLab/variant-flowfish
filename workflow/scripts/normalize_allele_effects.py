@@ -39,10 +39,10 @@ def adjust_effects_heterozygous_editing(effects_table, variantInfoFile, pooled='
         if guide_counts_file and os.path.exists(guide_counts_file):
             guide_counts = pd.read_table(guide_counts_file)
             guide_counts.columns = ['guide_count', 'guide']
-            ppif_guides = guide_counts[guide_counts['guide'].str.contains('PPIF_')]
-            ppif_guides['guide_freq'] = ppif_guides['guide_count'] / ppif_guides['guide_count'].sum()
-            ppif_guides['VariantID'] = ppif_guides['guide'].apply(lambda x: re.match(r'pegRNAsgOptiGibson_epeg-peg\d*-.*-(.*chr.*)', x).group(1))
-            effects_table = effects_table.merge(ppif_guides, on='VariantID', how='left')
+            # need to provide an exact regex that matches the guide format!!!!!!!
+            guide_counts['VariantID'] = guide_counts['guide'].apply(lambda x: re.match(r'.*(chr([1-9]|[1-2][0-3]):([0-9]*|[0-9]*\-[0-9]*)\:[ACGT]*\>[AGCT]*$)', x).group(1))
+            guide_counts['guide_freq'] = guide_counts['guide_count'] / guide_counts['guide_count'].sum()
+            effects_table = effects_table.merge(guide_counts, on='VariantID', how='left')
             effects_table['guide_freq'].fillna(1, inplace=True)
             if 'input.fraction' in effects_table.columns:
                 effects_table['adjusted_freq'] = effects_table.apply(lambda x: x['input.fraction']/x['guide_freq'] if x['input.fraction']/x['guide_freq'] <= 1 else 1, axis=1)
