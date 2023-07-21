@@ -71,10 +71,11 @@ rule normalize_allelic_effect_sizes:
 		variantInfo=config['variant_info'],
 		pooled=config['pooled'],
 		ff_tss_guide_kd=config['ff_tss_guide_kd'],
-		qpcr_tss_guide_kd=config['qpcr_tss_guide_kd']
+		qpcr_tss_guide_kd=config['qpcr_tss_guide_kd'],
+		guide_counts_file=config['guide_counts_file']
 	shell:
 		"""
-		python {params.codedir}/workflow/scripts/normalize_allele_effects.py -i {input} -o {output} -v {params.variantInfo} -p {params.pooled} -f {params.ff_tss_guide_kd} -q {params.qpcr_tss_guide_kd}
+		python {params.codedir}/workflow/scripts/normalize_allele_effects.py -i {input} -o {output} -v {params.variantInfo} -p {params.pooled} -f {params.ff_tss_guide_kd} -q {params.qpcr_tss_guide_kd} -g {params.guide_counts_file}
 		"""
 
 
@@ -148,8 +149,9 @@ rule normalize_allelic_effect_sizes_ignoreInputBin:
 		variantInfo=config['variant_info'],
 		pooled=config['pooled'],
 		ff_tss_guide_kd=config['ff_tss_guide_kd'],
-		qpcr_tss_guide_kd=config['qpcr_tss_guide_kd']
+		qpcr_tss_guide_kd=config['qpcr_tss_guide_kd'],
+		guide_counts_file=config['guide_counts_file']
 	shell:
 		"""
-		python {params.codedir}/workflow/scripts/normalize_allele_effects.py -i {input} -o {output} -v {params.variantInfo} -p {params.pooled} -f {params.ff_tss_guide_kd} -q {params.qpcr_tss_guide_kd}
+		python {params.codedir}/workflow/scripts/normalize_allele_effects.py -i {input} -o {output} -v {params.variantInfo} -p {params.pooled} -f {params.ff_tss_guide_kd} -q {params.qpcr_tss_guide_kd} -g {params.guide_counts_file}
 		"""

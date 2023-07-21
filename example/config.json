@@ -12,6 +12,7 @@
     "reps": 4,
     "genotyping_only": "True",
     "pooled": "True", 
+    "guide_counts_file": "config/GuideCount.txt",
     "ff_tss_guide_kd": 0.65,
     "qpcr_tss_guide_kd": 0.96
 }
