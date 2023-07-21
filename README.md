@@ -130,6 +130,17 @@ Required columns:
                         side of the variant to uniquely distinguish it within a given amplicon.  
     RefAllele         TRUE/FALSE if this is (one of) the reference alleles.  Used for plotting purposes
 
+### Input 5 (optional): Guide Counts Table
+TODO: Describe guide counts table skew ratio. The format is like this:
+43936   *
+25697   pegRNAsgOptiGibson-peg393-PPIF_enhancer_original-chr10:81046426:GTTAG>AGCCA
+25245   pegRNAsgOptiGibson-peg359-PPIF_enhancer_original-chr10:81046401:TGGGA>AACCC
+24567   pegRNAsgOptiGibson-peg406-PPIF_enhancer_original-chr10:81046441:CACCA>TCGGT
+22996   pegRNAsgOptiGibson-peg388-PPIF_enhancer_original-chr10:81046421:CGTTG>TTGGG
+22884   pegRNAsgOptiGibson-peg342-PPIF_enhancer_original-chr10:81046391:AGCCA>TTGGG
+22720   pegRNAsgOptiGibson-peg462-PPIF_enhancer_original-chr10:81046481:GGTTT>GCAGC
+22655   pegRNAsgOptiGibson-peg351-PPIF_enhancer_original-chr10:81046401:TGGGA>GCAGC
+...
 
 ## Workflow
 
