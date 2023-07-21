@@ -271,12 +271,13 @@ invisible(dev.off())
 
 
 ## Volcano Plots
+variantStats$AmpliconID <- mle$AmpliconID[match(rownames(variantStats), mle$VariantID)]
 
 ## Add 95% confidence interval and prepare for graphing
 ## Adding confidence intervals with specified number of reps
 variantStats$Percent_Effect <- (variantStats$Mean_Effect - 1)*100
 variantStats$Percent_SD <- variantStats$SD*100
-variantStats$Percent_CI <- (1.96*(variantStats$SD/sqrt(varianStats$reps)))*100
+variantStats$Percent_CI <- (1.96*(variantStats$SD/sqrt(variantStats$reps)))*100
 variantStats$MinCells <- (variantStats$MinReps * variantStats$mean.cellCount)/variantStats$reps
 
 

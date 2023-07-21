@@ -263,10 +263,10 @@ def all_input(wildcards):
 
 		# Output files for power plots and variant effects
 
-		wanted_input.append('results/summary/AllelicEffectsStats.tsv')
-		wanted_input.append('results/summary/effectCorrelations.pdf')
-		wanted_input.append('results/summary/powerPlots.pdf')
-		wanted_input.append('results/summary/volcanoEffects.pdf')
+		wanted_input.append('results/summary/stats/AllelicEffectsStats.tsv')
+		# wanted_input.append('results/summary/effectCorrelations.pdf')
+		wanted_input.append('results/summary/stats/modeling.pdf')
+		wanted_input.append('results/summary/stats/Volcano.pdf')
 
 		## PCR and FF replicate frequency and effect correlation plots
 		wanted_input.extend(["results/summary/correlation_plots/BioReplicatePCRCorrelations.pdf", \
