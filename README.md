@@ -132,6 +132,8 @@ Required columns:
 
 ### Input 5 (optional): Guide Counts Table
 TODO: Describe guide counts table skew ratio. The format is like this:
+
+```
 43936   *
 25697   pegRNAsgOptiGibson-peg393-PPIF_enhancer_original-chr10:81046426:GTTAG>AGCCA
 25245   pegRNAsgOptiGibson-peg359-PPIF_enhancer_original-chr10:81046401:TGGGA>AACCC
@@ -141,6 +143,7 @@ TODO: Describe guide counts table skew ratio. The format is like this:
 22720   pegRNAsgOptiGibson-peg462-PPIF_enhancer_original-chr10:81046481:GGTTT>GCAGC
 22655   pegRNAsgOptiGibson-peg351-PPIF_enhancer_original-chr10:81046401:TGGGA>GCAGC
 ...
+```
 
 ## Workflow
 
