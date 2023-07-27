@@ -80,24 +80,27 @@ rule plot_allelic_effect_sizes_ignoreInputBin:
 		"""
 
 # PCR correlation plots
-rule plot_PCR_correlations:
-	input:
-		pcr_replicates = samplesheet['ExperimentIDPCRRep_BinCounts'].str.rstrip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
-	output:
-		biorep_correlation_plots = "results/summary/correlation_plots/BioReplicatePCRCorrelations.pdf",
-		ffrep_correlation_plots = "results/summary/correlation_plots/FFReplicatePCRCorrelations.pdf",
-		pcr_correlation_plots = "results/summary/correlation_plots/PCRReplicateCorrelations.pdf"
-	run:
-		plot_pcr_correlations(input.pcr_replicates, output.biorep_correlation_plots, output.ffrep_correlation_plots, output.pcr_correlation_plots)
+if not genotyping_only:
+	rule plot_PCR_correlations:
+		input:
+			pcr_replicates = samplesheet['ExperimentIDPCRRep_BinCounts'].str.rstrip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
+		output:
+			biorep_correlation_plots = "results/summary/correlation_plots/BioReplicatePCRCorrelations.pdf",
+			ffrep_correlation_plots = "results/summary/correlation_plots/FFReplicatePCRCorrelations.pdf",
+			pcr_correlation_plots = "results/summary/correlation_plots/PCRReplicateCorrelations.pdf"
+		run:
+			plot_pcr_correlations(input.pcr_replicates, output.biorep_correlation_plots, output.ffrep_correlation_plots, output.pcr_correlation_plots)
 
-rule plot_experiment_correlations:
-	input:
-		pcr_replicates = samplesheet['ExperimentIDPCRRep_BinCounts'].str.rstrip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
-	output:
-		biorep_correlation_plots = "results/summary/correlation_plots/BioReplicateCorrelations.pdf",
-		ffrep_correlation_plots = "results/summary/correlation_plots/FFReplicateCorrelations.pdf",
-	run:
-		plot_pcr_correlations_averaged(input.pcr_replicates, output.biorep_correlation_plots, output.ffrep_correlation_plots)
+	rule plot_experiment_correlations:
+		input:
+			pcr_replicates = samplesheet['ExperimentIDPCRRep_BinCounts'].str.rstrip('.bin_counts.txt').unique() + '.effects_vs_ref_ignoreInputBin.txt'
+		output:
+			biorep_correlation_plots = "results/summary/correlation_plots/BioReplicateCorrelations.pdf",
+			ffrep_correlation_plots = "results/summary/correlation_plots/FFReplicateCorrelations.pdf",
+		run:
+			plot_pcr_correlations_averaged(input.pcr_replicates, output.biorep_correlation_plots, output.ffrep_correlation_plots)
+
+
 
 # Reference error plots
 rule plot_reference_mismatches:
