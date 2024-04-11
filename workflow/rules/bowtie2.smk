@@ -118,7 +118,7 @@ rule create_bowtie2_index_for_PhiX:
     """
     bash -c '
       . $HOME/.bashrc 
-      conda activate crispresso2env
+      conda activate VFFenv
       bowtie2-build {input.fasta} {input.fasta}
     '
     """
@@ -137,7 +137,7 @@ if not single_end:
       """
       bash -c '
         . $HOME/.bashrc 
-        conda activate VFFend
+        conda activate VFFenv
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
             -1 {params.fastqdir}/Undetermined_S0_R1_001.fastq.gz \
