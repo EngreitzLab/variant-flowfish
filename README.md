@@ -12,6 +12,7 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 * Jesse Engreitz (@engreitz)
 * Hank Jones
 * Katherine Guo
+* Michael Montgomery
 
 ## Description
 
@@ -24,6 +25,7 @@ We designed this pipeline to specifically analyze genome editing efficiencies ac
 ## Usage
 
 There are several required inputs prior to installing and executing this pipeline. For ease of use, generate a subdirectory 'config/' in the directory you are performing the data analysis. Generate and place the following documents inside it.
+
 
 ### Input 1: Sample Sheet
 
@@ -154,10 +156,13 @@ TODO: Describe guide counts table skew ratio. The format is like this:
 
 ### Step 2: Install conda environment
 
-Install conda environments using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html):
+Install the "VFFenv" conda environment using [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html):
 
-    conda env create --file envs/EngreitzLab.yml
-    conda env create --file envs/crispresso2_v2.2.6.yml
+We provide yml files for both the developer version (ony pins direct dependencies and defaults to minimum versions) and the release version (all dependencies frozen) of this enviroment. We recommend building the VFFenv from the release version of the yml file.
+    
+    mamba env create -f envs/VFFenv_release_240411.yml
+    or
+    conda env create --file envs/VFFenv_release_240411.yml
 
 For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
 
