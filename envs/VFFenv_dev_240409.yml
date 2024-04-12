@@ -1,0 +1,31 @@
+name: VFFenv
+channels:
+  - daler
+  - plotly
+  - bih-cubi
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.8
+  - pandas=1.1.5 # pinned
+  - numpy>=1.19.1
+  - numpy-base>=1.19.1
+  - snakemake>=5.5.4
+  - matplotlib>=3.3.1
+  - seaborn>=0.11.2
+  - scipy>=1.5.2
+  - regex>=2020.10.15
+  - bowtie2>=2.4.2
+  - samtools>=1.11
+  - crispresso2>=2.2.6
+  - r-base>=3.6.3
+  - r-optparse=1.6.2 # pinned
+  - r-tidyr>=0.8.3
+  - r-dplyr>=0.8.0.1
+  - r-ggplot2>=3.1.1
+  - r-cowplot>=1.1.1
+  - r-ggExtra
+  - r-ggpubr
+  - r-pwr>=1.3_0
+  - r-Hmisc>=4.2_0

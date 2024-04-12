@@ -22,7 +22,7 @@ rule create_bowtie2_index:
     """
     bash -c '
       . $HOME/.bashrc 
-      conda activate EngreitzLab
+      conda activate VFFenv
       bowtie2-build {input.fasta} {input.fasta}
     '
     """
@@ -54,7 +54,7 @@ if not single_end:
       """
       bash -c '
         . $HOME/.bashrc 
-        conda activate EngreitzLab
+        conda activate VFFenv
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
             -1 {input.read1} \
@@ -84,7 +84,7 @@ else:
       """
       bash -c '
         . $HOME/.bashrc 
-        conda activate EngreitzLab
+        conda activate VFFenv
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
             -U {input.read1} \
@@ -118,7 +118,7 @@ rule create_bowtie2_index_for_PhiX:
     """
     bash -c '
       . $HOME/.bashrc 
-      conda activate crispresso2_210104
+      conda activate VFFenv
       bowtie2-build {input.fasta} {input.fasta}
     '
     """
@@ -137,7 +137,7 @@ if not single_end:
       """
       bash -c '
         . $HOME/.bashrc 
-        conda activate EngreitzLab
+        conda activate VFFenv
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
             -1 {params.fastqdir}/Undetermined_S0_R1_001.fastq.gz \
@@ -158,7 +158,7 @@ else:  ## single_end
       """
       bash -c '
         . $HOME/.bashrc 
-        conda activate EngreitzLab
+        conda activate VFFenv
         mkdir -p tmp
         bowtie2 -x {input.fasta} \
             -U {params.fastqdir}/Undetermined_S0_R1_001.fastq.gz \

@@ -129,7 +129,7 @@ rule plot_reference_mismatches:
 # 			"""
 # 			bash -c '
 # 				. $HOME/.bashrc 
-# 				conda activate vff_R
+# 				conda activate VFFenv
 # 				Rscript {params.codedir}/workflow/scripts/VolcanoPlot.R --variantStatsFile {input.stats} --allEffects {input.allEffects} --powerPlots {output.power} --volcanoPlots {output.volcano} --rep {params.reps}'
 # 			"""
 

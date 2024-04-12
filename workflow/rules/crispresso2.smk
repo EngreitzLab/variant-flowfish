@@ -20,7 +20,7 @@ if single_end:
 			"""
 			bash -c '
 				. $HOME/.bashrc 
-				conda activate crispresso2_v2.2.6
+				conda activate VFFenv
 				CRISPResso \
 					-r1 {input.read1} \
 					-o results/crispresso/ \
@@ -55,7 +55,7 @@ else:
 			"""
 			bash -c '
 				. $HOME/.bashrc 
-				conda activate crispresso2_v2.2.6
+				conda activate VFFenv
 				CRISPResso \
 					-r1 {input.read1} \
 					-r2 {input.read2} \
@@ -81,7 +81,7 @@ rule run_crispresso_aggregate:
 		"""
 		bash -c '
 			. $HOME/.bashrc 
-			conda activate crispresso2_v2.2.6
+			conda activate VFFenv
 			cd results/crispresso/
 			CRISPRessoAggregate --name Aggregate --suppress_plots --prefix ./CRISPResso_on_ || true'
 		"""
