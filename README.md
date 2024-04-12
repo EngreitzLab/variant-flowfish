@@ -161,7 +161,7 @@ Install the "VFFenv" conda environment using [conda](https://conda.io/projects/c
 We provide yml files for both the developer version (ony pins direct dependencies and defaults to minimum versions) and the release version (all dependencies frozen) of this enviroment. We recommend building the VFFenv from the release version of the yml file.
     
     mamba env create -f envs/VFFenv_release_240411.yml
-    or
+    #or
     conda env create --file envs/VFFenv_release_240411.yml
 
 For installation details, see the [instructions in the Snakemake documentation](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
