@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import argparse
 import regex as re
-from collections import Counter
+import ahocorasick
 
 pd.options.mode.chained_assignment = None  # default='warn', turn off warnings bc we are doing assignments correctly
 
@@ -71,31 +71,57 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         if len(variantInfo) == 0:
             print('No matching variants found for AmpliconID: %s, check inputs.' % sample_info['AmpliconID'])
             exit(0)
-        variantSearchList = []
+        variantSearchList = []        
 
-        # select rows which Aligned_Sequence contains a variant
+        # Create an Aho-Corasick Automaton
+        A = ahocorasick.Automaton()
+
+        # Make MappingSequence - VariantID dictionary
+        variant_dict = pd.DataFrame(variantInfo[['MappingSequence', 'VariantID']]).set_index('MappingSequence')['VariantID'].to_dict() 
+        for idx, variant in enumerate(variant_dict.keys()):
+            A.add_word(variant, (idx, variant))
+        A.make_automaton()
+
+        matches = []
+        match_counts = []
+        # Iterate over all reads
+        for index, row in allele_tbl.iterrows():
+            num_matches = 0
+            # Search for
+            results = A.iter(row['Aligned_Sequence'])        
+
+            # Iterate over the results
+            variant_list = []
+            for end_index, (idx, word) in results:
+                num_matches += 1
+                variant_list.append(variant_dict[word]) 
+            if num_matches > 1:
+                matches.append(variant_list)
+            elif num_matches == 1:
+                matches.append(variant_list[0])
+            else: # no match 
+                matches.append(None)
+            match_counts.append(num_matches)
+        allele_tbl['n_variant_matches'] = match_counts
+        allele_tbl['VariantID'] = matches
+
+        # allele_tbl_count_data = pd.DataFrame(allele_tbl.groupby(['num_variant_matches'])['#Reads'].sum()).T
+        # SampleID_col = [SampleID]*len(allele_tbl)
+        # allele_tbl.insert(loc=0, column='SampleID', value=SampleID_col) 
+        # allele_tbl.to_csv('read_data.csv', mode='a', index=False, header=False)
+
         unmatched_variants = []
+
         for index, row in variantInfo.iterrows():
-            variant_df = allele_tbl[allele_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)].copy()
+            variant_df = allele_tbl[allele_tbl['VariantID'] == row['VariantID']]
+            # If allele_tbl['VariantID'] exactly matches a VariantID, it is the only match in that read
 
             # store unmatched variants and continue to next variant in iteration
             if len(variant_df) == 0:
                 unmatched_variants.append(row)
                 continue
 
-            # add column of locations where this variant is found
-            variant_df['MatchLocations'] = variant_df.apply(lambda x: find_variant_locations(row.MappingSequence, x.Aligned_Sequence, x.Reference_Sequence), axis=1)
-            variant_df['MatchLocationReads'] = variant_df.apply(lambda x: {y : x['#Reads'] for y in x['MatchLocations']}, axis=1)
-
-            # keep this code in case we want to filter on variant location or something
-            # allele_tbl['MatchLocations'] = allele_tbl['Aligned_Sequence'].apply(lambda x: find_variant_locations(row.MappingSequence, x))
-            # keep only rows where the variant is found (i.e., where MatchLocations is not empty)
-            # variant_df = allele_tbl[allele_tbl['MatchLocations'].map(lambda x: len(x)) > 0]
-            # drop the column so it is empty for next variant
-            # allele_tbl.drop('MatchLocations', axis=1, inplace=True)
-
             variant_df['Match_Sequence'] = row.MappingSequence
-            variant_df['VariantID'] = row.VariantID
             variantSearchList.append(variant_df)
 
         if len(variantSearchList) > 0:
@@ -105,17 +131,13 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
             variant_counts = variants_grouped.sum()
             variant_counts.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
             variant_counts['Counts'] = variants_grouped.size()
-            # add dictionary of variant locations : reads
-            variant_counts['MatchLocationReadDict'] = variants_grouped['MatchLocationReads'].apply(lambda x: list(x))
-            variant_counts['MatchLocationReadDict'] = variant_counts['MatchLocationReadDict'].apply(lambda x: str(dict(sum([Counter(d) for d in x], Counter()))))
             variant_counts = variant_counts.reset_index()
         else:
             # set up empty variant_counts dataframe if no variants found
             variant_counts = pd.DataFrame(columns=['Reference_Name', 'Match_Sequence', 'VariantID', '#Reads', '%Reads', 'Counts', 'MatchLocations', 'RefAllele'])
 
         # get rows of allele_tbl that do not contain one of the variants
-        # maybe update to check location of variant
-        references = allele_tbl[~allele_tbl['Aligned_Sequence'].str.contains('|'.join(variantInfo[variantInfo['RefAllele'].astype(str).str.casefold() == 'false']['MappingSequence']))]
+        references = allele_tbl[allele_tbl['n_variant_matches'] == 0]
         references.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
 
         # get mismatch info for references
