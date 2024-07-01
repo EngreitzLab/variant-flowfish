@@ -90,35 +90,34 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         match_counts = []
         for index, row in allele_tbl.iterrows():
             num_matches = 0
-            # Search in some text
+            # Search in each read
             results = A.iter(row['Aligned_Sequence'])        
 
             # Iterate over the results
-            word_list = []
+            variant_list = []
             for end_index, (idx, word) in results:
                 num_matches += 1
-                word_list.append(variant_dict[word])
-                # print(f"Found '{word}' ending at position {end_index}")
+                variant_list.append(variant_dict[word])
             if num_matches > 1:
-                # print("multiple matches found!")
-                matches.append(word_list)
+                matches.append(variant_list)
             elif num_matches == 1:
-                matches.append(word_list[0])
+                matches.append(variant_list[0])
             else: # no match 
                 matches.append(None)
             match_counts.append(num_matches)
-        allele_tbl['num_variant_matches'] = match_counts
+        allele_tbl['n_variant_matches'] = match_counts
         allele_tbl['VariantID'] = matches
 
-        allele_tbl_count_data = pd.DataFrame(allele_tbl.groupby(['num_variant_matches'])['#Reads'].sum()).T
-        SampleID_col = [SampleID]
-        allele_tbl_count_data.insert(loc=0, column='SampleID', value=SampleID_col) 
-
-        allele_tbl_count_data.to_csv('/oak/stanford/groups/engreitz/Projects/VariantEditing/FF/230818_S022_PPIF_promoter_P153_VFF/results/read_data.csv', mode='a', index=False, header=False)
+        # allele_tbl_count_data = pd.DataFrame(allele_tbl.groupby(['num_variant_matches'])['#Reads'].sum()).T
+        SampleID_col = [SampleID]*len(allele_tbl)
+        allele_tbl.insert(loc=0, column='SampleID', value=SampleID_col) 
+        allele_tbl.to_csv('read_data.csv', mode='a', index=False, header=False)
 
         for index, row in variantInfo.iterrows():
             variant_df = allele_tbl[allele_tbl['VariantID'] == row['VariantID']]
-            # variant_df = allele_tbl[allele_tbl['Aligned_Sequence'].str.contains(row.MappingSequence)].copy()
+            # variant_df = allele_tbl[(allele_tbl['VariantID'] == row['VariantID']) & (allele_tbl['n_variant_matches'] == 1)] 
+            # this is redundant because if allele_tbl['VariantID'] exactly matches a VariantID, it is the only match in that read
+
 
             # store unmatched variants and continue to next variant in iteration
             # if len(variant_df) == 0:
@@ -158,7 +157,7 @@ def aggregate_variant_counts(samplesheet, SampleID, outfile, variantInfoFile):
         # get rows of allele_tbl that do not contain one of the variants
         # maybe update to check location of variant
         # references = allele_tbl[~allele_tbl['Aligned_Sequence'].str.contains('|'.join(variantInfo[variantInfo['RefAllele'].astype(str).str.casefold() == 'false']['MappingSequence']))]
-        references = allele_tbl[allele_tbl['num_variant_matches'] == 0]
+        references = allele_tbl[allele_tbl['n_variant_matches'] == 0]
         references.drop(['n_deleted', 'n_inserted', 'n_mutated'], axis=1, inplace=True)
 
         # get mismatch info for references
