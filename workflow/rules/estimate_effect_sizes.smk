@@ -111,9 +111,20 @@ rule aggregate_allelic_effects:
         lambda wildcards: 
         	['results/{dir}/{e}.effects_vs_ref_ignoreInputBin.txt'.format(dir=wildcards.replicateDirectory, e=e) for e in samplesheet.loc[samplesheet['Bin'].isin(binList),wildcards.ExperimentID].drop_duplicates()]
     output:
-        flat='results/summary/V1_AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz'
+        flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz'
     run:
-        aggregate_allelic_effect_tables(samplesheet, output.flat, wildcards) 
+        aggregate_allelic_effect_tables(samplesheet, output.flat, wildcards)
+
+# need to specifically rename the by experiment rep file, but not by pcr rep file
+rule rename_V1_allelic_effects:
+	input:
+		'results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
+	output:
+		'results/summary/V1_AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
+	run:
+		import os
+	        os.rename(input[0], output[0])
+
 
 # V2 of effect size normalization
 rule normalize_allelic_effect_sizes_V2:
