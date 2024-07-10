@@ -113,8 +113,31 @@ rule aggregate_allelic_effects:
     output:
         flat='results/summary/AllelicEffects.{replicateDirectory}.{ExperimentID}.flat.tsv.gz'
     run:
-        aggregate_allelic_effect_tables(samplesheet, output.flat, wildcards) 
+        aggregate_allelic_effect_tables(samplesheet, output.flat, wildcards)
 
+# need to specifically rename the by experiment rep file, but not by pcr rep file
+rule rename_V1_allelic_effects:
+	input:
+		'results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
+	output:
+		'results/summary/V1_AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
+	run:
+		import os
+	        os.rename(input[0], output[0])
+
+
+# V2 of effect size normalization
+rule normalize_allelic_effect_sizes_V2:
+	input:
+		'results/summary/V1_AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
+	output:
+		'results/summary/AllelicEffects.byExperimentRep.ExperimentIDReplicates.flat.tsv.gz'
+	params:
+		codedir=config['codedir']
+	shell:
+		"""
+		python {params.codedir}/workflow/scripts/V2_effect_size_adjustment.py {input} {output}
+		"""
 
 ###################################################################################
 ## Run again, but ignore input bin counts

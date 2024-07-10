@@ -19,6 +19,7 @@ dependencies:
   - bowtie2>=2.4.2
   - samtools>=1.11
   - crispresso2>=2.2.6
+  - pyahocorasick>=2.1.0 #added 070224 for dealing with reads that have multiple edits
   - r-base>=3.6.3
   - r-optparse=1.6.2 # pinned
   - r-tidyr>=0.8.3
