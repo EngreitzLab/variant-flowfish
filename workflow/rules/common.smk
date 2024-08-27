@@ -147,6 +147,7 @@ def get_bin_list():
 			print("\nWARNING: Did not find any entries with Bin == 'Neg' (unedited cells used to assess sequencing error rate). Was this intended, or was 'Neg' mispelled?\n\n")
 	binList = binList[(binList != "All") & (binList != "Neg") & (binList.notnull())]
 	binList = [str(b) for b in list(binList)]
+	binList.sort()
 	print("Processing unique bins: " + ' '.join(binList))
 	return(binList)
 

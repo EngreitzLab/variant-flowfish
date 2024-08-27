@@ -49,6 +49,8 @@ def adjust_effects_heterozygous_editing_V2(effects_table, output_file):
 
 	effects_table['effect_size_updated'] = effects_table['effect_size_updated'] + 1 # revert to where 1 = no effect
 	effects_table = effects_table.rename(columns={'effect_size_updated': 'effect_size'}) # rename this as effect_size to be reported
+	effects_table.loc[effects_table["effect_size"] < 0, "effect_size"] = 0  # update rows where effect_size < 0 to be 0
+ 
 
 	# drop columns that are not needed - initial effect size (no adjustment) and effect_size_scaled_qpcr (with old adjustments) can be found in the V1 allelic effect size output file
 	columns_to_drop = [
