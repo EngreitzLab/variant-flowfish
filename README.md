@@ -1,9 +1,9 @@
-# Snakemake workflow: Variant-FlowFISH
+# Snakemake workflow: Variant-EFFECTS
 
 [![Snakemake](https://img.shields.io/badge/snakemake-≥5.5.0-brightgreen.svg)](https://snakemake.bitbucket.io)
 [![Build Status](https://travis-ci.org/snakemake-workflows/{{cookiecutter.repo_name}}.svg?branch=master)](https://travis-ci.org/snakemake-workflows/{{cookiecutter.repo_name}})
 
-This snakemake workflow is for analysis of Variant-FlowFISH data.
+This snakemake workflow is for analysis of Variant-EFFECTS screens.
 
 
 ## Authors
@@ -12,12 +12,12 @@ This snakemake workflow is for analysis of Variant-FlowFISH data.
 * Jesse Engreitz (@engreitz)
 * Hank Jones
 * Katherine Guo
-* Michael Montgomery
+* Michael Montgomery (@MichaelMont94)
 
 ## Description
 
 
-This pipeline is configured to analyze Variant-FlowFISH and other like experiments with the capacity to analyze hundreds of variants in a single analysis. It can also be set solely to assess genome editing rates using [CRISPResso2](https://github.com/pinellolab/CRISPResso2). 
+This pipeline is configured to analyze Variant-EFFECTS screens and other like experiments with the capacity to analyze hundreds of variants in a single analysis. It can also be set solely to assess genome editing rates using [CRISPResso2](https://github.com/pinellolab/CRISPResso2). 
 
 We designed this pipeline to specifically analyze genome editing efficiencies across samples/modalities, compute effect sizes for genetic variants, generate statistics concerning technical noise introduced at various steps in the molecular biological workflow, and to provide data optimized for interpretation and transferrability. Significane scores for variants are computed using 1-sample T-tests and corrected for multiple testing.
 
@@ -199,21 +199,21 @@ File paths (can specify relative or absolute paths):
 
 Activate the conda environment:
 
-    conda activate EngreitzLab 
+    conda activate VFFenv 
 
 Test your configuration by performing a dry-run via
 
-    snakemake -s variant-flowfish/workflow/Snakefile --configfile config/config.json -n
+    snakemake -s variant-effects/workflow/Snakefile --configfile config/config.json -n
 
 Execute the workflow locally via
 
-    snakemake -s variant-flowfish/workflow/Snakefile --configfile config/config.json -n
+    snakemake -s variant-effects/workflow/Snakefile --configfile config/config.json -n
 
 using `$N` cores or run it in a cluster environment (Stanford Sherlock SLURM) via
 
 `
 snakemake \
-  -s variant-flowfish/workflow/Snakefile \
+  -s variant-effects/workflow/Snakefile \
   --configfile config/config.json \
   --cores 1 \
   --jobs 200 \
