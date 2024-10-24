@@ -192,7 +192,7 @@ File paths (can specify relative or absolute paths):
     variant_info        Path to Variant Info table
     fastqdir            Path to directory containing FASTQ files
     sortparamsdir       Path to directory containing FACS sort parameters files [not required for genotyping_only="true"]
-    codedir             Path to the variant-flowfish code (e.g. "variant-flowfish/")
+    codedir             Path to the variant-effects code (e.g. "variant-effects/")
     
     
 ### Step 4: Execute workflow
