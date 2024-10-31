@@ -1,4 +1,4 @@
-# Snakemake workflow: Variant-EFFECTS
+# Snakemake workflow: Variant-EFFECTS (also known as Variant-FlowFISH)
 
 [![Snakemake](https://img.shields.io/badge/snakemake-≥5.5.0-brightgreen.svg)](https://snakemake.bitbucket.io)
 [![Build Status](https://travis-ci.org/snakemake-workflows/{{cookiecutter.repo_name}}.svg?branch=master)](https://travis-ci.org/snakemake-workflows/{{cookiecutter.repo_name}})
@@ -192,7 +192,7 @@ File paths (can specify relative or absolute paths):
     variant_info        Path to Variant Info table
     fastqdir            Path to directory containing FASTQ files
     sortparamsdir       Path to directory containing FACS sort parameters files [not required for genotyping_only="true"]
-    codedir             Path to the variant-effects code (e.g. "variant-effects/")
+    codedir             Path to the variant-effects code (e.g. "variant-flowfish/")
     
     
 ### Step 4: Execute workflow
@@ -203,17 +203,17 @@ Activate the conda environment:
 
 Test your configuration by performing a dry-run via
 
-    snakemake -s variant-effects/workflow/Snakefile --configfile config/config.json -n
+    snakemake -s variant-flowfish/workflow/Snakefile --configfile config/config.json -n
 
 Execute the workflow locally via
 
-    snakemake -s variant-effects/workflow/Snakefile --configfile config/config.json -n
+    snakemake -s variant-flowfish/workflow/Snakefile --configfile config/config.json -n
 
 using `$N` cores or run it in a cluster environment (Stanford Sherlock SLURM) via
 
 `
 snakemake \
-  -s variant-effects/workflow/Snakefile \
+  -s variant-flowfish/workflow/Snakefile \
   --configfile config/config.json \
   --cores 1 \
   --jobs 200 \
