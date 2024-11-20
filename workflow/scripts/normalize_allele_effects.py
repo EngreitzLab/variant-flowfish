@@ -40,7 +40,7 @@ def adjust_effects_heterozygous_editing(effects_table, variantInfoFile, pooled='
             guide_counts = pd.read_table(guide_counts_file)
             guide_counts.columns = ['guide_count', 'guide']
             # need to provide an exact regex that matches the guide format!!!!!!!
-            guide_counts['VariantID'] = guide_counts['guide'].apply(lambda x: re.match(r'.*(chr([1-9]|[1-2][0-3]):([0-9]*|[0-9]*\-[0-9]*)\:[ACGT]*\>[AGCT]*$)', x).group(1))
+            guide_counts['VariantID'] = guide_counts['guide'].apply(lambda x: re.match(r'.*(chr([1-9]|1[0-9]|2[0-3]):([0-9]*|[0-9]*\-[0-9]*)\:[ACGT]*\>[AGCT]*$)', x).group(1))
             guide_counts['guide_freq'] = guide_counts['guide_count'] / guide_counts['guide_count'].sum()
             effects_table = effects_table.merge(guide_counts, on='VariantID', how='left')
             effects_table['guide_freq'].fillna(1, inplace=True)
