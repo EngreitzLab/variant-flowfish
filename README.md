@@ -1,4 +1,4 @@
-# Snakemake workflow: Variant-EFFECTS (also known as Variant-FlowFISH)
+# Snakemake workflow: Variant-EFFECTS (formerly known as Variant-FlowFISH)
 
 [![Snakemake](https://img.shields.io/badge/snakemake-≥5.5.0-brightgreen.svg)](https://snakemake.bitbucket.io)
 [![Build Status](https://travis-ci.org/snakemake-workflows/{{cookiecutter.repo_name}}.svg?branch=master)](https://travis-ci.org/snakemake-workflows/{{cookiecutter.repo_name}})
